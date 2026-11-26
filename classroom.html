@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://apis.google.com https://www.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com http://127.0.0.1:9000 ws://127.0.0.1:9000 http://127.0.0.1:9099; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://*.firebaseio.com https://*.firebasedatabase.app; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>CODE SPACE · Classroom Edition</title>
+  <link rel="icon" href="./assets/favicon.svg">
+  <link rel="stylesheet" href="./css/game.css">
+  <link rel="stylesheet" href="./css/classroom.css">
+  <script type="module" src="./js/classroom/ui.mjs"></script>
+</head>
+<body>
+<main class="shell classroom">
+  <header class="class-header">
+    <div><p class="edition">Orientamento in ingresso · Ferraris</p><h1>CODE <span>SPACE</span></h1><p class="subtitle">Classroom Edition</p></div>
+    <a href="./index.html">Gioca da solo</a>
+  </header>
+  <p class="class-status" id="connection" role="status">Pronto per la sessione.</p>
+  <p id="feedback" class="class-error" role="alert" hidden></p>
+
+  <section id="entry" class="class-card">
+    <div id="join-panel">
+      <h2>Unisciti a una sessione</h2>
+      <form id="join-form" class="class-form">
+        <label>PIN <input id="join-pin" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label>
+        <label>Nickname <input name="name" maxlength="16" autocomplete="off" required></label>
+        <button>Entra in sala d’attesa</button>
+      </form>
+    </div>
+    <div id="host-panel" hidden>
+      <h2>Crea una sessione</h2>
+      <button id="host-login" type="button">Accedi come Host con Google</button>
+      <form id="host-email" class="class-form" hidden>
+        <label>Email Host <input type="email" name="email" autocomplete="username" required></label>
+        <label>Password Host <input type="password" name="password" autocomplete="current-password" required></label>
+        <button>Accedi al progetto configurato</button>
+      </form>
+      <form id="create-form" class="class-form" hidden>
+        <label>Titolo sessione <input name="title" maxlength="60" value="Orientamento Ferraris" required></label>
+        <label>Giocatori <input name="capacity" type="number" value="30" min="1" max="50" required></label>
+        <label>Durata in minuti <input name="minutes" type="number" value="40" min="1" max="90" required></label>
+        <label>Difficoltà <select name="difficulty"><option value="standard">Normale</option><option value="calm">Assistita</option><option value="hard">Intensa</option></select></label>
+        <label>Boss in secondi <input name="bossSeconds" type="number" value="60" min="10" max="180" required></label>
+        <label>Missioni per obiettivo didattico <input name="required" type="number" value="4" min="0" max="5" required></label>
+        <label><input type="checkbox" name="audio"> Audio consentito</label>
+        <label><input type="checkbox" name="skip" checked> Salto delle missioni</label>
+        <label><input type="checkbox" name="late" checked> Ingresso tardivo</label>
+        <button>Crea e mostra il PIN</button>
+      </form>
+    </div>
+    <div id="projector-entry" hidden><h2>Modalità proiettore</h2><button type="button" id="projector-login">Accedi con l’account Host</button></div>
+    <p class="class-links"><a id="demo-link" href="./classroom.html?demo=1">Prova la dimostrazione locale</a> <a href="./classroom.html?role=host">Accesso Host</a></p>
+  </section>
+
+  <section id="room-panel" hidden>
+    <div class="class-grid">
+      <section class="class-card class-identity">
+        <p class="edition" id="phase-label"></p><h2 id="room-title"></h2>
+        <div id="pin-panel"><p class="class-pin" id="pin-value"></p><img id="join-qr" width="148" height="148" alt="QR Code per unirsi"><a id="join-link">Apri il link di ingresso</a></div>
+        <p id="participants"></p><p id="clock" class="class-clock"></p>
+        <p id="room-message" role="status"></p>
+        <p id="player-summary"></p>
+        <button type="button" id="help" hidden>Chiedi aiuto</button>
+      </section>
+      <section id="host-controls" class="class-card" hidden>
+        <h2>Centro di controllo</h2>
+        <p id="host-totals"></p>
+        <div class="class-actions">
+          <button data-command="start">Avvia missione</button><button data-command="pause">Pausa globale</button><button data-command="resume">Riprendi tutti</button>
+          <button data-command="boss">Avvia il boss</button><button data-command="end">Termina sessione</button>
+          <button data-option="lock">Blocca ingressi</button><button data-option="rocks">Sospendi asteroidi</button>
+          <button data-option="assist">Modalità Assistita</button><button data-option="rank">Mostra classifica</button>
+          <button data-option="podium">Mostra podio</button><button data-option="reveal">Rivela il prossimo posto</button>
+        </div>
+        <form id="message-form" class="class-form"><label>Messaggio <input name="message" maxlength="160" required></label><button>Invia a tutti</button></form>
+        <label>Difficoltà <select id="live-difficulty"><option value="calm">Assistita</option><option value="standard">Normale</option><option value="hard">Intensa</option></select></label>
+        <p class="class-links"><a id="projector-link" target="_blank" rel="noopener">Apri proiettore</a>
+          <button id="new-room" type="button">Nuova sessione</button><button id="delete-room" type="button">Elimina dati</button>
+          <button id="sign-out" type="button">Esci dall’account Host</button></p>
+      </section>
+    </div>
+    <section id="podium" class="class-card" hidden><h2>Podio della missione</h2><div id="podium-list"></div></section>
+    <section id="rank" class="class-card">
+      <div class="class-toolbar"><h2>Classifica</h2><div id="rank-tools" hidden><label>Cerca <input id="rank-search" type="search"></label>
+      <label>Ordina <select id="rank-order"><option value="score">Posizione</option><option value="name">Nickname</option><option value="help">Richieste di aiuto</option></select></label></div></div>
+      <div class="table-scroll" tabindex="0"><table><thead id="rank-head"></thead><tbody id="rank-body"></tbody></table></div>
+    </section>
+    <iframe id="flight-frame" title="Volo Classroom" src="about:blank" hidden></iframe>
+  </section>
+</main>
+</body>
+</html>

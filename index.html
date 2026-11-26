@@ -7,6 +7,7 @@
   <title>CODE SPACE – Python Edition</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./css/game.css">
+  <link rel="stylesheet" href="./css/classroom.css">
   <script type="module" src="./js/game/main.mjs"></script>
   <script type="module" src="./js/storage/offline.mjs"></script>
 </head>
@@ -19,7 +20,7 @@
         <h1>CODE <span>SPACE</span></h1>
         <p class="subtitle">Python Edition</p>
       </div>
-      <nav aria-label="Opzioni"><a href="./laboratorio.html">Laboratorio Python</a> <button id="settings-open" class="secondary" type="button">Impostazioni</button> <button id="teacher-open" class="quiet" type="button">Modalità docente</button></nav>
+      <nav aria-label="Opzioni"><a href="./laboratorio.html">Laboratorio Python</a> <a href="./classroom.html">Unisciti a una sessione</a> <a href="./classroom.html?role=host">Crea una sessione — Host</a> <button id="settings-open" class="secondary" type="button">Impostazioni</button> <button id="teacher-open" class="quiet" type="button">Modalità docente</button></nav>
     </header>
 
     <div class="dashboard">
@@ -43,7 +44,7 @@
               <h2>Pronti al decollo?</h2>
               <p>Comandante, la tua navicella ha perso i sistemi di bordo. Attraversa il campo di asteroidi, raccogli energia e riprogramma i sistemi con Python.</p>
               <img class="hero-ship" src="./assets/aurora.svg" alt="La navicella Aurora in orbita">
-              <button type="button" data-action="tutorial">Inizia missione</button>
+              <button type="button" data-action="tutorial">Gioca da solo</button>
               <button type="button" id="continue" class="secondary" hidden>Continua</button>
             </div>
             <div id="tutorial-panel" class="state-panel" hidden>
