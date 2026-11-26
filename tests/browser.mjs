@@ -12,7 +12,7 @@ const mime = {
   '.js': 'text/javascript', '.svg': 'image/svg+xml',
 };
 
-export async function openBrowser(path = '') {
+export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900 } = {}) {
   const profile = await mkdtemp(`${tmpdir()}/codespace-browser-`);
   const requests = [];
   const server = createServer(async (req, res) => {
@@ -44,6 +44,7 @@ export async function openBrowser(path = '') {
   browser.stderr.setEncoding('utf8').on('data', chunk => { stderr = (stderr + chunk).slice(-4000); });
   const pending = new Map();
   const network = [];
+  const errors = [];
   let messageId = 0;
   let buffer = '';
   const [input, output] = browser.stdio.slice(3);
@@ -83,12 +84,14 @@ export async function openBrowser(path = '') {
       if (message.id) {
         pending.get(message.id)?.(message);
         pending.delete(message.id);
+      } else if (message.method === 'Runtime.exceptionThrown') {
+        errors.push(message.params.exceptionDetails.exception?.description ?? message.params.exceptionDetails.text);
       } else if (message.method === 'Network.requestWillBeSent') {
         network.push(message.params.request.url);
       } else if (message.method === 'Target.attachedToTarget') {
         const { sessionId, targetInfo } = message.params;
         if (targetInfo.type === 'worker') {
-          void send('Network.enable', {}, sessionId)
+          void Promise.all([send('Network.enable', {}, sessionId), send('Runtime.enable', {}, sessionId)])
             .then(() => send('Runtime.runIfWaitingForDebugger', {}, sessionId))
             .catch(() => {});
         }
@@ -115,6 +118,10 @@ export async function openBrowser(path = '') {
     });
     const page = (method, params) => send(method, params, sessionId);
     await page('Network.enable');
+    await page('Page.enable');
+    await page('Runtime.enable');
+    await page('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+    if (beforeLoad) await page('Page.addScriptToEvaluateOnNewDocument', { source: beforeLoad });
     await page('Target.setAutoAttach', {
       autoAttach: true, waitForDebuggerOnStart: true, flatten: true,
     });
@@ -126,7 +133,11 @@ export async function openBrowser(path = '') {
       }
       return response.result.value;
     }
-    return { evaluate, close, requests, network, origin, prefix, version: version.product };
+    async function screenshot() {
+      const { data } = await page('Page.captureScreenshot', { format: 'png' });
+      return Buffer.from(data, 'base64');
+    }
+    return { evaluate, page, screenshot, close, requests, network, errors, origin, prefix, version: version.product };
   } catch (error) {
     await close();
     throw error;

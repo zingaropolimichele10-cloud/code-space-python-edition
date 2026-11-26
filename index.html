@@ -16,7 +16,7 @@
         <p class="edition">Orientamento Ferraris · Python Edition</p>
         <h1>CODE <span>SPACE</span></h1>
       </div>
-      <a href="./laboratorio.html">Laboratorio Python <span aria-hidden="true">↗</span></a>
+      <a href="./laboratorio.html">Laboratorio Python</a>
     </header>
 
     <div class="dashboard">
@@ -28,7 +28,7 @@
           <div><span>Scudo</span><strong id="shield">Spento</strong></div>
         </div>
         <div class="viewport" id="viewport" data-state="MENU">
-          <canvas id="space" width="960" height="540" aria-label="Campo di gioco spaziale"></canvas>
+          <canvas id="space" tabindex="-1" width="960" height="540" aria-label="Campo di gioco spaziale"></canvas>
           <div class="overlay" id="overlay">
             <div id="menu-panel" class="state-panel">
               <p class="edition">Rotta verso il Ferraris</p>
@@ -69,9 +69,38 @@
         <div class="keys" aria-label="Frecce direzionali"><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd></div>
         <button type="button" id="pause-button" class="secondary" data-action="pause" hidden>Pausa <kbd>Esc</kbd></button>
         <button type="button" id="final-button" data-action="final" hidden>Avvia sfida finale</button>
+        <p id="mission-note"></p>
+        <button type="button" id="mission-retry" class="secondary" hidden>Riprendi missione</button>
         <label class="setting"><input id="light" type="checkbox"> Grafica leggera</label>
       </aside>
     </div>
+    <dialog id="control-center" aria-labelledby="mission-title">
+      <div class="mission-heading">
+        <p class="edition" id="mission-id"></p>
+        <p class="mission-concept" id="mission-concept"></p>
+      </div>
+      <h2 id="mission-title"></h2>
+      <p id="mission-goal" class="mission-goal"></p>
+      <p id="mission-explanation"></p>
+      <div class="mission-grid">
+        <form id="mission-form">
+          <label for="mission-code">Codice Python</label>
+          <textarea id="mission-code" rows="6" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+          <button id="mission-run" type="submit">Esegui</button>
+          <button id="mission-hint" type="button" class="secondary">Indizio (0/3)</button>
+        </form>
+        <div class="mission-results">
+          <h3>Esito</h3>
+          <p id="mission-status" role="status"></p>
+          <pre id="mission-output" aria-label="Output Python"></pre>
+          <ol id="mission-hints" aria-label="Indizi" aria-live="polite"></ol>
+        </div>
+      </div>
+      <div class="mission-actions">
+        <button id="mission-skip" type="button" class="secondary">Salta per ora</button>
+        <button id="mission-done" type="button" hidden>Torna al gioco</button>
+      </div>
+    </dialog>
   </main>
 </body>
 </html>

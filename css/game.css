@@ -53,3 +53,40 @@ kbd { border: 1px solid #446281; border-radius: .25rem; padding: .1rem .3rem; co
   .viewport { min-height: 17rem; background: #081629; display: grid; align-items: center; }
   .hud div { padding-inline: .4rem; }
 }
+#control-center {
+  width: min(53rem, calc(100% - 1.5rem));
+  max-height: calc(100% - 1.5rem);
+  overflow: auto;
+  border: 1px solid #5283a6;
+  border-radius: .7rem;
+  padding: clamp(.8rem, 3vw, 1.6rem);
+  color: #eef5ff;
+  background: #0d1c34;
+}
+#control-center::backdrop { background: #030811c9; }
+.mission-heading { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .4rem; }
+.mission-concept { color: var(--cyan); font-size: .82rem; }
+#mission-title { margin-bottom: .45rem; font-size: clamp(1.4rem, 4vw, 2.1rem); }
+.mission-goal { margin-bottom: .35rem; color: var(--gold); font-weight: 750; }
+#mission-explanation { color: var(--muted); line-height: 1.45; }
+.mission-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+#mission-form, .mission-results { min-width: 0; }
+#mission-form label, .mission-results h3 { margin: 0 0 .4rem; display: block; font-size: .87rem; font-weight: 750; }
+#mission-code, #mission-output {
+  width: 100%; display: block; margin: 0 0 .55rem; padding: .75rem;
+  border: 1px solid #496b8c; border-radius: .35rem; color: inherit; background: #060f20;
+  font: .95rem/1.45 ui-monospace, monospace;
+}
+#mission-code { min-height: 8rem; resize: vertical; tab-size: 4; }
+#mission-output { max-height: 9rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+#mission-output:empty, #mission-hints:empty { display: none; }
+.mission-results { border: 1px solid var(--line); border-radius: .4rem; background: #081529; padding: .75rem; }
+#mission-status { overflow-wrap: anywhere; }
+#mission-status[data-result="error"] { color: #ffb3a8; }
+#mission-status[data-result="success"] { color: #9cf1c8; }
+#mission-hints { margin-bottom: 0; padding-left: 1.3rem; color: #ffe1a2; }
+#mission-hints li { white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: .45rem; }
+.mission-actions { margin-top: .8rem; display: flex; justify-content: flex-end; }
+@media (max-width: 42rem) {
+  .mission-grid { grid-template-columns: 1fr; }
+}

@@ -40,3 +40,15 @@ test('La richiesta più recente prevale anche se arrivano risposte obsolete', as
   workers[1].reply();
   assert.equal((await second).id, workers[1].request.id);
 });
+
+test('Chiudere una missione annulla il Worker anche senza un nuovo invio', async () => {
+  const { run, workers } = setup();
+  const attempt = run('vite = 5');
+  run.cancel();
+  assert.equal((await attempt).error.code, 'CANCELLED');
+  assert.equal(workers[0].terminated, true);
+  workers[0].reply();
+  const next = run('vite = 3');
+  workers[1].reply();
+  assert.equal((await next).ok, true);
+});

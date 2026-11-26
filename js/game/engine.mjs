@@ -64,7 +64,11 @@ export function createGame({ random = Math.random, nextMission = () => null } = 
 
   function action(name) {
     switch (name) {
-      case 'tutorial': return transition(State.TUTORIAL);
+      case 'tutorial':
+        if (!transition(State.TUTORIAL)) return false;
+        resetSector();
+        world.ship.invulnerable = 0;
+        return true;
       case 'start':
         if (!transition(State.PLAYING)) return false;
         world.time = world.score = 0;
@@ -160,13 +164,21 @@ export function createGame({ random = Math.random, nextMission = () => null } = 
     if (world.stars.length >= LIMITS.stars || world.stars.some(star => star.mission != null)) return;
     const { x, y } = world.ship;
     world.stars.push({ x: clamp(x + (x < WIDTH / 2 ? 94 : -94), 28, WIDTH - 28),
-      y, radius: 20, vy: 0, mission });
+      y: clamp(y, 48, HEIGHT - 24), radius: 20, vy: 0, mission, age: 0 });
   }
 
   function updateStars(dt) {
     for (let index = world.stars.length - 1; index >= 0; index--) {
       const star = world.stars[index];
       star.y += star.vy * dt;
+      if (star.mission != null && (star.age += dt) >= 7) {
+        const dx = world.ship.x - star.x;
+        const dy = world.ship.y - star.y;
+        const distance = Math.hypot(dx, dy);
+        const fraction = distance ? Math.min(1, 480 * dt / distance) : 0;
+        star.x += dx * fraction;
+        star.y += dy * fraction;
+      }
       if (star.y > HEIGHT + star.radius) {
         world.stars.splice(index, 1);
       } else if (overlaps(world.ship, star)) {
@@ -186,7 +198,9 @@ export function createGame({ random = Math.random, nextMission = () => null } = 
       rock.angle += rock.spin * dt;
       if (rock.y > HEIGHT + rock.radius || rock.x < -rock.radius || rock.x > WIDTH + rock.radius) {
         world.rocks.splice(index, 1);
-      } else if (world.ship.invulnerable === 0 && overlaps(world.ship, rock)) {
+      } else if (world.ship.invulnerable === 0 && overlaps(
+        world.shield || (world.emergency && world.lives < 3) ? { ...world.ship, radius: 24 } : world.ship, rock,
+      )) {
         world.rocks.splice(index, 1);
         world.ship.invulnerable = 1.25;
         burst(rock.x, rock.y, world.shield || (world.emergency && world.lives < 3) ? '#69dfff' : '#ff8976');
@@ -204,8 +218,12 @@ export function createGame({ random = Math.random, nextMission = () => null } = 
   }
 
   function step(elapsed) {
-    if (world.state !== State.PLAYING && world.state !== State.FINAL_CHALLENGE) return;
     const dt = clamp(elapsed, 0, LIMITS.dt);
+    if (world.state === State.TUTORIAL) {
+      moveShip(dt);
+      return;
+    }
+    if (world.state !== State.PLAYING && world.state !== State.FINAL_CHALLENGE) return;
     const final = world.state === State.FINAL_CHALLENGE;
     const difficulty = Math.min(world.time / 150, 1);
     world.time += dt;
@@ -233,7 +251,10 @@ export function createGame({ random = Math.random, nextMission = () => null } = 
       particle.y += particle.vy * dt;
       if ((particle.ttl -= dt) <= 0) world.particles.splice(index, 1);
     }
-    if (final && (world.finalLeft -= dt) <= 0) transition(State.VICTORY);
+    if (final) {
+      world.finalLeft = Math.max(0, world.finalLeft - dt);
+      if (world.finalLeft === 0) transition(State.VICTORY);
+    }
   }
 
   return { world, keys, action, step, openMission, closeMission, grant };

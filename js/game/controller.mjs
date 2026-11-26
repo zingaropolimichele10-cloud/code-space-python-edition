@@ -9,7 +9,7 @@ const panels = {
 };
 const copy = {
   [State.MENU]: ['In attesa', 'Avvia il tutorial per conoscere i comandi.'],
-  [State.TUTORIAL]: ['Pronti a partire', 'Punteggio e vite sono visibili sopra il campo.'],
+  [State.TUTORIAL]: ['Pronti a partire', 'Prova le quattro frecce prima del decollo.'],
   [State.PLAYING]: ['In volo', 'Raccogli stelle dorate ed evita gli asteroidi.'],
   [State.PAUSED]: ['Volo sospeso', 'Riprendi quando sei pronto.'],
   [State.MISSION]: ['Centro di controllo', 'Il volo riprenderà quando chiuderai la missione.'],
@@ -59,11 +59,11 @@ export function mountGame({ nextMission, finalReady = world => world.time >= 25,
     refresh();
   }));
   addEventListener('keydown', event => {
-    if (event.target.closest?.('textarea, input, select, [contenteditable]')) return;
+    if (event.target.closest?.('textarea, input:not([type=checkbox]), select, [contenteditable]')) return;
     if (event.key === 'Escape' && !event.repeat) {
       if (game.action(world.state === State.PAUSED ? 'resume' : 'pause')) event.preventDefault();
       refresh();
-    } else if (arrows.has(event.key) && flying.has(world.state)) {
+    } else if (arrows.has(event.key) && (flying.has(world.state) || world.state === State.TUTORIAL)) {
       event.preventDefault();
       keys.add(event.key);
     }

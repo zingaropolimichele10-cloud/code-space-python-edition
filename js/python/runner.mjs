@@ -8,7 +8,7 @@ export function createPythonRunner({
 } = {}) {
   let active;
 
-  return function run(source) {
+  function run(source) {
     const id = ++nextRequestId;
     active?.finish(failure('CANCELLED'));
     if (typeof source !== 'string' || source.length > limits.source) {
@@ -48,5 +48,8 @@ export function createPythonRunner({
         finish(failure('WORKER_ERROR'));
       }
     });
-  };
+  }
+
+  run.cancel = () => active?.finish(failure('CANCELLED'));
+  return run;
 }

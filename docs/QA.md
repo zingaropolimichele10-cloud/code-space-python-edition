@@ -44,4 +44,51 @@ Il primo avvio completo ha rilevato cinque casi browser in errore. Il blocco ind
 
 ## Limiti della verifica
 
-Chrome di marca, Edge e Firefox non sono stati eseguiti. Chromium headless ha verificato l’implementazione web nel motore condiviso da Chrome ed Edge. La prova su oltre 15 postazioni, il profilo prestazionale Canvas e la distribuzione offline completa appartengono alla validazione del gioco finale. Il test di rete dimostra che il prototipo usa risorse locali sotto HTTP.
+Chrome di marca, Edge e Firefox non sono stati eseguiti. Chromium headless ha verificato l’implementazione web nel motore condiviso da Chrome ed Edge. La fase 01 si limitava al laboratorio Python autonomo. Le misurazioni Canvas delle fasi successive sono riportate più sotto. Il test di rete dimostra che il prototipo usa risorse locali sotto HTTP.
+
+# Rapporto QA delle fasi 02 e 03
+
+La suite completa è stata eseguita il 26 novembre 2026 con Node.js 24.22.3 e Chromium 156.0.8078.79. L’esito è **39 passati, 0 falliti, 0 saltati**, inclusi i due test contenitore. Sono stati rieseguiti tutti i 20 scenari Python obbligatori, le prove sul timer esterno e il recupero dagli errori. L’integrità npm dichiarata per Skulpt 1.2.0 corrisponde a quella documentata nel repository.
+
+```sh
+# Avvio del gioco e del laboratorio autonomo
+python3 -m http.server 8000 --bind 127.0.0.1
+
+# Verifica completa in un ambiente che supporta la sandbox Chromium
+node --test tests/*.test.mjs
+
+# Verifica e screenshot nel container isolato di sviluppo
+CODESPACE_NO_SANDBOX=1 CODESPACE_SCREENSHOTS=docs/screenshots node --test tests/*.test.mjs
+```
+
+| Copertura | Atteso e osservato |
+| --- | --- |
+| Movimento | Tutte le frecce muovono nella direzione prevista. La diagonale ha la stessa lunghezza del percorso assiale. Due passi dimezzati producono lo stesso spostamento e i bordi fermano la nave. Tutorial interattivo verificato in Chromium. |
+| Collisioni e scudi | L’impatto riduce le vite. L’invulnerabilità impedisce il secondo danno ravvicinato. Lo scudo ordinario assorbe un urto e torna disponibile. Sotto 3 vite la riserva assorbe un solo urto successivo. |
+| Stelle e transizioni | Una stella normale aggiunge 10 punti, una Python 25 e una sola missione. Durante la missione lo stato e il Canvas restano invariati e la freccia sposta il cursore del testo. |
+| Pausa, focus e ripresa | La perdita di focus arresta il volo e svuota i tasti attivi. Alla ripresa il movimento richiede un nuovo comando. La grafica leggera e il ridimensionamento restano sotto il limite di pixel testato. |
+| Validazione | Espressioni equivalenti per le quattro missioni principali sono accettate. Valore diverso, tipo sbagliato, sintassi, errore di esecuzione e timeout hanno esiti distinti senza assegnazione di premi. |
+| Potenziamenti | Movimento più rapido misurato in Canvas, 5 vite nell’HUD, scudo attivo e vernice blu. La quinta missione accetta `True` con 2 vite e `False` con 4, rifiutando uno scudo sempre attivo. Il motore verifica il consumo effettivo della riserva. |
+| Indizi e recupero | Tre indizi appaiono uno alla volta. La chiusura conserva bozza e indizi e annulla una richiesta Python pendente. La missione rimane riapribile con il suo codice. |
+| Game over e checkpoint | A zero vite appare l’azione di ripresa. Chromium ha verificato il ripristino a 3 vite nel primo settore e la disponibilità di una missione lasciata in sospeso. |
+| Sfida e riavvii | Il finale termina con la vittoria e si può vincere con i soli completamenti 1–4. Tre riavvii consecutivi mantengono le missioni, ripristinano le vite e lasciano al massimo un callback di frame del gioco in coda. Il conteggio sopravvive al ricaricamento. |
+| Rete e diagnostica | Tutte le richieste runtime osservate per pagina e Worker rimangono sotto `/code-space-python-edition/`. Nessuna eccezione non gestita osservata da DevTools nei flussi verificati. |
+
+### Prestazioni misurate
+
+- **Simulazione Node con generatore deterministico:** 108.000 passi, equivalenti a 1.800 secondi con passo 1/60. Una prova della suite completa ha impiegato **127,3 ms a parete**, solo per il motore senza Canvas. Picchi di **7 asteroidi, 7 stelle, 20 particelle** rispetto ai limiti **16, 8, 90**. Si sono verificati 43 recuperi dal checkpoint.
+- **Chromium headless, viewport 1.360 × 900, grafica standard, volo iniziale e RAF reale:** 121 intervalli in **2.016,6 ms**, circa **60 intervalli/s**, mediana **16,7 ms** e 95º percentile **16,8 ms**. Il campione misura la cadenza dei callback nel container, per circa due secondi. Le prove funzionali usano un orologio controllato e non concorrono a quella misura.
+
+### Diagnosi durante la verifica
+
+La suite browser iniziale non installava il clock controllato prima della navigazione. L’attivazione esplicita del dominio Page del protocollo DevTools ha corretto l’avvio. È stato inoltre necessario indicare il codice virtuale della freccia per esercitare il movimento nativo del cursore e attendere la fine del lampeggio di invulnerabilità prima di campionare il colore della nave. Il primo test unitario combinava un percorso ai bordi con un’ulteriore prova di danno e la traiettoria causava già collisioni. I due scenari ora partono da sessioni separate. La suite finale è passata senza modifiche al Worker Skulpt.
+
+### Schermate
+
+Acquisite in Chromium e controllate visivamente per leggibilità e sovrapposizioni. Il Centro di controllo è stato verificato anche a 430 × 900. L’ispezione ha rilevato un glifo mancante nel collegamento al laboratorio, rimosso prima delle catture finali.
+
+[Menu](screenshots/02-menu.png) · [Tutorial](screenshots/02-tutorial.png) · [Volo](screenshots/02-volo.png) · [Game over](screenshots/02-game-over.png) · [Centro di controllo](screenshots/03-centro-di-controllo.png) · [Centro a larghezza ridotta](screenshots/03-centro-mobile.png) · [Sfida finale](screenshots/03-sfida-finale.png) · [Vittoria](screenshots/03-vittoria.png)
+
+### Limiti residui
+
+I tempi didattici di 15–20 minuti e le prestazioni su oltre 15 PC non sono stati misurati con studenti. Restano da provare i browser ufficiali Chrome, Edge e Firefox sulle postazioni del Ferraris. Le richieste locali sono state verificate sotto HTTP. Distribuzione offline completa, modalità docente e audio restano nelle fasi successive.
