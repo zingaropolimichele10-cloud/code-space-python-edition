@@ -1,10 +1,11 @@
 import { State } from '../game/engine.mjs';
 import { createPythonRunner } from '../python/runner.mjs';
 import { loadCompleted, saveCompleted } from '../storage/progress.mjs';
+import { installEditorTools } from './editor-tools.mjs';
 import { missions } from './catalog.mjs';
 import { validateMission } from './validate.mjs';
 
-export function createCenter() {
+export function createCenter({ sound = () => {} } = {}) {
   const completed = loadCompleted();
   const pending = new Set();
   const drafts = new Map();
@@ -14,6 +15,9 @@ export function createCenter() {
   const dialog = get('control-center');
   const editor = get('mission-code');
   const status = get('mission-status');
+  const reward = get('mission-reward');
+  const indent = get('mission-indent');
+  const updateEditor = installEditorTools(editor, get('line-numbers'), indent);
   const output = get('mission-output');
   const button = get('mission-run');
   const hints = get('mission-hints');
@@ -23,6 +27,7 @@ export function createCenter() {
   const retry = get('mission-retry');
   const note = get('mission-note');
   let active;
+  let practice = false;
   let revision = 0;
 
   function nextMission() {
@@ -30,14 +35,14 @@ export function createCenter() {
   }
 
   function syncHints() {
-    const count = shownHints.get(active.id) ?? 0;
+    const count = shownHints.get(practice ? 0 : active.id) ?? 0;
     hints.replaceChildren(...active.hints.slice(0, count).map(text => {
       const item = document.createElement('li');
       item.textContent = text;
       return item;
     }));
     hintButton.disabled = count >= active.hints.length;
-    hintButton.textContent = count === active.hints.length ? 'Tre indizi consultati' : `Indizio (${count}/3)`;
+    hintButton.textContent = count === active.hints.length ? 'Tre indizi consultati' : `Indizio (${3 - count} disponibili)`;
   }
 
   function bind(game, refresh) {
@@ -49,12 +54,13 @@ export function createCenter() {
       if (!active) return;
       revision++;
       run.cancel();
-      drafts.set(active.id, editor.value);
+      if (!practice) drafts.set(active.id, editor.value);
       active = undefined;
       dialog.close();
       game.closeMission();
       refresh();
-      get('space').focus({ preventScroll: true });
+      get(practice ? 'tutorial-next' : 'space').focus({ preventScroll: true });
+      practice = false;
     }
 
     skip.addEventListener('click', leave);
@@ -69,8 +75,8 @@ export function createCenter() {
     });
     hintButton.addEventListener('click', () => {
       if (!active) return;
-      const count = shownHints.get(active.id) ?? 0;
-      shownHints.set(active.id, Math.min(count + 1, active.hints.length));
+      const count = shownHints.get(practice ? 0 : active.id) ?? 0;
+      shownHints.set(practice ? 0 : active.id, Math.min(count + 1, active.hints.length));
       syncHints();
     });
     get('mission-form').addEventListener('submit', async event => {
@@ -78,7 +84,7 @@ export function createCenter() {
       if (!active || button.disabled) return;
       const mission = active;
       const source = editor.value;
-      drafts.set(mission.id, source);
+      if (!practice) drafts.set(mission.id, source);
       const current = ++revision;
       button.disabled = true;
       output.textContent = '';
@@ -90,10 +96,16 @@ export function createCenter() {
       status.textContent = result.message;
       status.dataset.result = result.ok ? 'success' : 'error';
       if (result.ok) {
-        completed.add(mission.id);
-        pending.delete(mission.id);
-        saveCompleted(completed);
-        game.grant(mission.upgrade, mission.id);
+        if (!practice) {
+          completed.add(mission.id);
+          pending.delete(mission.id);
+          saveCompleted(completed);
+          game.grant(mission.upgrade, mission.id);
+        }
+        sound('success');
+        get('reward-text').textContent = practice ? 'Prova riuscita. Il volo inizierà con la configurazione di partenza.' : mission.reward;
+        reward.hidden = false;
+        indent.disabled = true;
         skip.hidden = true;
         done.hidden = false;
         editor.readOnly = true;
@@ -107,15 +119,25 @@ export function createCenter() {
 
   function onState({ world }) {
     if (world.state !== State.MISSION) return;
-    active = missions.find(({ id }) => id === world.mission);
-    pending.add(active.id);
-    get('mission-id').textContent = `Missione ${String(active.id).padStart(2, '0')}${active.optional ? ' · Facoltativa' : ''}`;
+    show(missions.find(({ id }) => id === world.mission));
+  }
+
+  function show(mission, demonstration = false) {
+    if (dialog.open) return;
+    practice = demonstration;
+    active = mission;
+    if (!practice) pending.add(active.id);
+    get('mission-id').textContent = practice ? 'Prova del tutorial' : `Missione ${String(active.id).padStart(2, '0')}${active.optional ? ' · Facoltativa' : ''}`;
     get('mission-title').textContent = active.title;
     get('mission-concept').textContent = active.concept;
     get('mission-goal').textContent = active.goal;
     get('mission-explanation').textContent = active.explanation;
-    editor.value = drafts.get(active.id) ?? active.source;
+    editor.value = (practice ? undefined : drafts.get(active.id)) ?? active.source;
     editor.readOnly = false;
+    reward.hidden = true;
+    indent.disabled = false;
+    updateEditor();
+    sound('mission');
     button.disabled = false;
     status.textContent = 'Modifica il codice e premi Esegui.';
     status.dataset.result = '';
@@ -128,7 +150,7 @@ export function createCenter() {
   }
 
   return {
-    bind, onState,
+    bind, onState, demo: () => show(missions[0], true),
     nextStar: () => {
       const mission = nextMission();
       return mission && !pending.has(mission.id) ? mission.id : null;

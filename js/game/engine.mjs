@@ -20,7 +20,7 @@ const finalSeconds = 22;
 const clamp = (value, low, high) => Math.max(low, Math.min(value, high));
 const overlaps = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < (a.radius + b.radius) ** 2;
 
-export function createGame({ random = Math.random, nextMission = () => null } = {}) {
+export function createGame({ random = Math.random, nextMission = () => null, sound = () => {} } = {}) {
   const world = {
     state: State.MENU,
     light: false,
@@ -116,7 +116,7 @@ export function createGame({ random = Math.random, nextMission = () => null } = 
   function grant(upgrades, reward) {
     Object.assign(world.upgrades, upgrades);
     if (reward === 2) world.lives = world.upgrades.maxLives;
-    if (reward === 3) world.shield = true;
+    if (reward === 3) { world.shield = true; sound('shield'); }
     if (reward === 5) world.emergency = true;
     if (reward) checkpointNow();
   }
@@ -183,6 +183,7 @@ export function createGame({ random = Math.random, nextMission = () => null } = 
         world.stars.splice(index, 1);
       } else if (overlaps(world.ship, star)) {
         world.stars.splice(index, 1);
+        sound('star');
         world.score += star.mission == null ? 10 : 25;
         burst(star.x, star.y, '#ffd577');
         if (star.mission != null && openMission(star.mission)) return;
@@ -204,6 +205,7 @@ export function createGame({ random = Math.random, nextMission = () => null } = 
         world.rocks.splice(index, 1);
         world.ship.invulnerable = 1.25;
         burst(rock.x, rock.y, world.shield || (world.emergency && world.lives < 3) ? '#69dfff' : '#ff8976');
+        sound(world.shield || (world.emergency && world.lives < 3) ? 'shield' : 'impact');
         if (world.shield) {
           world.shield = false;
           shieldCooling = 18;
@@ -253,7 +255,7 @@ export function createGame({ random = Math.random, nextMission = () => null } = 
     }
     if (final) {
       world.finalLeft = Math.max(0, world.finalLeft - dt);
-      if (world.finalLeft === 0) transition(State.VICTORY);
+      if (world.finalLeft === 0 && transition(State.VICTORY)) sound('victory');
     }
   }
 

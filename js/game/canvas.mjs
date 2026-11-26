@@ -8,6 +8,11 @@ const maxPixels = 1_350_000;
 
 export function createCanvas(canvas) {
   const ctx = canvas.getContext('2d', { alpha: false });
+  const planet = ctx.createRadialGradient(744, 116, 10, 785, 145, 104);
+  planet.addColorStop(0, '#305582');
+  planet.addColorStop(.72, '#17294b');
+  planet.addColorStop(1, '#0d1932');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const backdrop = ctx.createRadialGradient(WIDTH * 0.6, HEIGHT * 0.5, 40, WIDTH * 0.5, HEIGHT * 0.5, 580);
   backdrop.addColorStop(0, '#112d54');
   backdrop.addColorStop(1, '#040917');
@@ -53,10 +58,18 @@ export function createCanvas(canvas) {
     ctx.setTransform(canvas.width / WIDTH, 0, 0, canvas.height / HEIGHT, 0, 0);
     ctx.fillStyle = world.light ? '#081529' : backdrop;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    for (const star of sky.slice(0, world.light ? 58 : sky.length)) {
+    if (!world.light) {
+      circle(785, 145, 104, '#40658a', planet);
+      ctx.beginPath();
+      ctx.ellipse(785, 145, 146, 22, -0.24, 0, Math.PI);
+      ctx.strokeStyle = '#50709499';
+      ctx.stroke();
+    }
+    for (let index = 0; index < (world.light ? 58 : sky.length); index++) {
+      const star = sky[index];
       ctx.fillStyle = star.bright ? '#92bbdf' : '#365677';
       const size = star.bright ? 2 : 1;
-      ctx.fillRect(star.x, (star.y + world.time * (star.bright ? 11 : 5)) % HEIGHT, size, size);
+      ctx.fillRect(star.x, (star.y + (reduced.matches ? 0 : world.time * (star.bright ? 11 : index % 2 ? 5 : 2))) % HEIGHT, size, size);
     }
     for (const rock of world.rocks) {
       ctx.save();
@@ -64,7 +77,7 @@ export function createCanvas(canvas) {
       ctx.rotate(rock.angle);
       polygon(shape.map((ratio, index) => {
         const angle = index / shape.length * Math.PI * 2;
-        return [Math.cos(angle) * ratio * rock.radius, Math.sin(angle) * ratio * rock.radius];
+        return [Math.cos(angle) * (ratio - (index % 3 === 0 ? (Math.round(rock.radius) % 5) * .027 : 0)) * rock.radius, Math.sin(angle) * (ratio - (index % 3 === 0 ? (Math.round(rock.radius) % 5) * .027 : 0)) * rock.radius];
       }), '#4a506a', '#a7a9c3');
       circle(-rock.radius * 0.24, rock.radius * 0.15, rock.radius * 0.22, '#737991', '#34394f');
       circle(rock.radius * 0.38, -rock.radius * 0.29, rock.radius * 0.14, null, '#34394f');
@@ -84,7 +97,7 @@ export function createCanvas(canvas) {
         return [star.x + Math.cos(angle) * radius, star.y + Math.sin(angle) * radius];
       }), '#ffd36b', '#fff2c2');
     }
-    for (const particle of world.particles) {
+    for (const particle of reduced.matches ? [] : world.particles) {
       ctx.globalAlpha = Math.min(1, particle.ttl * 3);
       circle(particle.x, particle.y, 2, null, particle.color);
     }
@@ -95,11 +108,14 @@ export function createCanvas(canvas) {
     if (world.shield || (world.emergency && world.lives < 3)) {
       circle(0, 0, 24, '#81ecff', '#23b8ff25');
     }
-    if (ship.invulnerable > 0 && Math.sin(ship.invulnerable * 27) < 0) ctx.globalAlpha = 0.48;
-    polygon([[-5, 11], [0, 26 + Math.sin(world.time * 30) * 4], [5, 11]], '#57d8ff');
+    if (!reduced.matches && ship.invulnerable > 0 && Math.sin(ship.invulnerable * 27) < 0) ctx.globalAlpha = 0.48;
+    polygon([[-5, 11], [0, 26 + (reduced.matches ? 0 : Math.sin(world.time * 30) * 4)], [5, 11]], '#57d8ff');
     polygon([[0, -20], [16, 13], [5, 10], [0, 15], [-5, 10], [-16, 13]],
       world.upgrades.color === 'blu' ? '#409bff' : '#ef786a', '#dcecff');
     polygon([[0, -9], [5, 4], [-5, 4]], '#bcf5ff');
+    ctx.fillStyle = '#5ee8ff';
+    ctx.fillRect(-12, 8, 3, 2);
+    ctx.fillRect(9, 8, 3, 2);
     ctx.restore();
   }
 

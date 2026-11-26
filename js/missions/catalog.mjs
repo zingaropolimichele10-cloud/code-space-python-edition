@@ -1,6 +1,6 @@
 export const missions = [
   {
-    id: 1, title: 'Turbo spaziale', concept: 'Variabili numeriche',
+    id: 1, reward: 'Velocità: 5 → 10', title: 'Turbo spaziale', concept: 'Variabili numeriche',
     goal: 'Porta la velocità della navicella a 10.',
     explanation: 'Una variabile conserva un valore. Con il segno = assegni il risultato a destra al nome a sinistra.',
     source: 'velocita = 5', variable: 'velocita', type: 'int', value: 10, upgrade: { speed: 10 },
@@ -12,7 +12,7 @@ export const missions = [
     success: 'velocita contiene l’intero 10. La navicella ora si muove al doppio della velocità iniziale.',
   },
   {
-    id: 2, title: 'Riparazione di emergenza', concept: 'Variabili numeriche',
+    id: 2, reward: 'Vite: 3 → 5', title: 'Riparazione di emergenza', concept: 'Variabili numeriche',
     goal: 'Imposta le vite a 5.',
     explanation: 'Puoi assegnare un nuovo valore alla stessa variabile. Per contare le vite si usa un numero intero.',
     source: 'vite = 3', variable: 'vite', type: 'int', value: 5, upgrade: { maxLives: 5 },
@@ -24,7 +24,7 @@ export const missions = [
     success: 'vite contiene l’intero 5. L’HUD mostra cinque vite e la navicella è riparata.',
   },
   {
-    id: 3, title: 'Scudo energetico', concept: 'Booleani',
+    id: 3, reward: 'Scudo energetico attivo', title: 'Scudo energetico', concept: 'Booleani',
     goal: 'Attiva lo scudo assegnando True a scudo.',
     explanation: 'Un booleano rappresenta uno stato: True per acceso e False per spento.',
     source: 'scudo = False', variable: 'scudo', type: 'bool', value: true, upgrade: { shield: true },
@@ -36,7 +36,7 @@ export const missions = [
     success: 'scudo contiene il booleano True. La protezione è attiva e si ricarica dopo ogni impatto assorbito.',
   },
   {
-    id: 4, title: 'Camuffamento', concept: 'Stringhe',
+    id: 4, reward: 'Rivestimento blu', title: 'Camuffamento', concept: 'Stringhe',
     goal: 'Imposta il colore della navicella a “blu”.',
     explanation: 'Una stringa conserva del testo. Le virgolette delimitano il testo da assegnare.',
     source: 'colore = "rosso"', variable: 'colore', type: 'str', value: 'blu', upgrade: { color: 'blu' },
@@ -48,7 +48,7 @@ export const missions = [
     success: 'colore contiene la stringa “blu”. Il rivestimento della navicella è cambiato.',
   },
   {
-    id: 5, title: 'Protezione automatica', concept: 'Condizioni if', optional: true,
+    id: 5, reward: 'Riserva di emergenza', title: 'Protezione automatica', concept: 'Condizioni if', optional: true,
     goal: 'Accendi lo scudo solo quando le vite sono inferiori a 3.',
     explanation: 'Il Centro fornisce le vite. Il blocco sotto if viene eseguito solo quando la sua condizione è vera. Il rientro fa parte del codice.',
     source: 'scudo = False\nif vite < 3:\n    pass',

@@ -1,3 +1,4 @@
+import { createTutorial } from './tutorial.mjs';
 import { createCanvas } from './canvas.mjs';
 import { createGame, State } from './engine.mjs';
 
@@ -19,12 +20,13 @@ const copy = {
 };
 
 export function mountGame({ nextMission, finalReady = world => world.time >= 25, onState = () => {},
-  missionCount = () => 0, onRefresh = () => {} } = {}) {
-  const game = createGame({ nextMission });
+  missionCount = () => 0, sound, onRefresh = () => {} } = {}) {
+  const game = createGame({ nextMission, sound });
   const { world, keys } = game;
   const byId = id => document.getElementById(id);
+  const tutorial = createTutorial();
   const canvas = createCanvas(byId('space'));
-  const hud = Object.fromEntries(['lives', 'score', 'mission-count', 'shield', 'flight-status', 'flight-note']
+  const hud = Object.fromEntries(['lives', 'score', 'mission-count', 'speed', 'shield', 'flight-status', 'flight-note']
     .map(id => [id, byId(id)]));
   const set = (id, value) => {
     if (hud[id].textContent !== value) hud[id].textContent = value;
@@ -38,6 +40,7 @@ export function mountGame({ nextMission, finalReady = world => world.time >= 25,
       byId('overlay').hidden = !(world.state in panels);
       for (const [state, id] of Object.entries(panels)) byId(id).hidden = state !== world.state;
       byId('pause-button').hidden = !flying.has(world.state);
+      if (world.state === State.TUTORIAL) tutorial.start(world);
       set('flight-status', copy[world.state][0]);
       if (panels[world.state]) byId(panels[world.state]).querySelector('button')?.focus({ preventScroll: true });
       onState(game);
@@ -47,19 +50,28 @@ export function mountGame({ nextMission, finalReady = world => world.time >= 25,
       : copy[world.state][1]);
     set('lives', `${world.lives} / ${world.upgrades.maxLives}`);
     set('score', String(world.score));
+    set('speed', String(world.upgrades.speed));
     set('mission-count', `${missionCount()} / 4`);
     set('shield', world.shield ? 'Attivo' : world.emergency && world.lives < 3 ? 'Emergenza'
       : world.upgrades.shield ? 'In ricarica' : 'Spento');
     byId('final-button').hidden = !(world.state === State.PLAYING && finalReady(world));
+    if (world.state === State.TUTORIAL) {
+      const text = byId('tutorial-text');
+      const button = byId('tutorial-next');
+      if (text.textContent !== tutorial.text) text.textContent = tutorial.text;
+      const label = tutorial.last ? 'Prova il Centro di controllo' : 'Prossima prova';
+      if (button.textContent !== label) button.textContent = label;
+    }
     onRefresh(game);
   }
 
+  byId('tutorial-next').addEventListener('click', () => { tutorial.next(world); refresh(); });
   document.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => {
     if (button.dataset.action !== 'final' || finalReady(world)) game.action(button.dataset.action);
     refresh();
   }));
   addEventListener('keydown', event => {
-    if (event.target.closest?.('textarea, input:not([type=checkbox]), select, [contenteditable]')) return;
+    if (document.querySelector('dialog[open]') || event.target.closest?.('textarea, input:not([type=checkbox]), select, [contenteditable]')) return;
     if (event.key === 'Escape' && !event.repeat) {
       if (game.action(world.state === State.PAUSED ? 'resume' : 'pause')) event.preventDefault();
       refresh();
@@ -83,6 +95,19 @@ export function mountGame({ nextMission, finalReady = world => world.time >= 25,
     if (world.light) world.particles.length = 0;
     canvas.resize(world.light);
   });
+  const settings = byId('settings');
+  const light = byId('light');
+  const settingsLight = byId('settings-light');
+  byId('settings-open').addEventListener('click', () => {
+    game.action('pause');
+    refresh();
+    settingsLight.checked = light.checked;
+    settings.showModal();
+  });
+  settingsLight.addEventListener('change', () => {
+    light.checked = settingsLight.checked;
+    light.dispatchEvent(new Event('change'));
+  });
   new ResizeObserver(() => canvas.resize(world.light)).observe(byId('space'));
   canvas.resize(world.light);
   refresh();
@@ -90,10 +115,11 @@ export function mountGame({ nextMission, finalReady = world => world.time >= 25,
   function frame(now) {
     game.step(previous === undefined ? 0 : (now - previous) / 1000);
     previous = now;
+    tutorial.update(game);
     refresh();
     canvas.draw(world);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
-  return { game, refresh };
+  return { game, refresh, tutorial };
 }
