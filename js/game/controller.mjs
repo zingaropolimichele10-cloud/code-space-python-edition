@@ -44,6 +44,9 @@ export function mountGame({ nextMission, onState = () => {},
       if (world.state === State.TUTORIAL) tutorial.start(world);
       if (panels[world.state]) byId(panels[world.state]).querySelector('button')?.focus({ preventScroll: true });
       onState(game);
+      if (flying.has(world.state) && !document.querySelector('dialog[open]')) {
+        byId('space').focus({ preventScroll: true });
+      }
     }
     set('flight-status', copy[world.state][0] + (world.options.demo && flying.has(world.state) ? ' · Demo' : ''));
     set('flight-note', world.state === State.FINAL_CHALLENGE

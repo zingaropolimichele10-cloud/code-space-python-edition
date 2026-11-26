@@ -1,6 +1,9 @@
 export const missions = [
   {
     id: 1, reward: 'Velocità: 5 → 10', title: 'Turbo spaziale', concept: 'Variabili numeriche',
+    briefing: 'I propulsori sono in modalità lenta. Il pilota automatico legge la variabile velocita per decidere quanto spingere.',
+    edit: 'Cambia il numero a destra di = nella riga di velocita.',
+    preview: 'In volo: spinta doppia e due scie turbo.',
     goal: 'Porta la velocità della navicella a 10.',
     explanation: 'Una variabile conserva un valore. Con il segno = assegni il risultato a destra al nome a sinistra.',
     source: 'velocita = 5', variable: 'velocita', type: 'int', value: 10, upgrade: { speed: 10 },
@@ -13,6 +16,9 @@ export const missions = [
   },
   {
     id: 2, reward: 'Vite: 3 → 5', title: 'Riparazione di emergenza', concept: 'Variabili numeriche',
+    briefing: 'Lo scafo è danneggiato. Il sistema di riparazione legge quante vite deve ripristinare.',
+    edit: 'Cambia il numero assegnato a vite.',
+    preview: 'In volo: scafo riparato e indicatore con cinque vite.',
     goal: 'Imposta le vite a 5.',
     explanation: 'Puoi assegnare un nuovo valore alla stessa variabile. Per contare le vite si usa un numero intero.',
     source: 'vite = 3', variable: 'vite', type: 'int', value: 5, upgrade: { maxLives: 5 },
@@ -25,7 +31,10 @@ export const missions = [
   },
   {
     id: 3, reward: 'Scudo energetico attivo', title: 'Scudo energetico', concept: 'Booleani',
-    goal: 'Attiva lo scudo assegnando True a scudo.',
+    briefing: 'Il generatore dello scudo è spento. Il computer legge lo stato del generatore da una variabile.',
+    edit: 'Cambia il valore dopo scudo =. Scrivilo senza virgolette.',
+    preview: 'In volo: anello azzurro e un impatto assorbito prima della ricarica.',
+    goal: 'Accendi lo scudo energetico.',
     explanation: 'Un booleano rappresenta uno stato: True per acceso e False per spento.',
     source: 'scudo = False', variable: 'scudo', type: 'bool', value: true, upgrade: { shield: true },
     hints: [
@@ -37,6 +46,9 @@ export const missions = [
   },
   {
     id: 4, reward: 'Rivestimento blu', title: 'Camuffamento', concept: 'Stringhe',
+    briefing: 'Il rivestimento è ancora rosso. Il sistema di bordo legge da Python il nome del colore da usare.',
+    edit: 'Cambia la parola tra virgolette nella riga di colore.',
+    preview: 'In volo: scafo blu e scia azzurra.',
     goal: 'Imposta il colore della navicella a “blu”.',
     explanation: 'Una stringa conserva del testo. Le virgolette delimitano il testo da assegnare.',
     source: 'colore = "rosso"', variable: 'colore', type: 'str', value: 'blu', upgrade: { color: 'blu' },
@@ -50,12 +62,15 @@ export const missions = [
   {
     id: 5, reward: 'Riserva di emergenza', title: 'Protezione automatica', concept: 'Condizioni if', optional: true,
     goal: 'Accendi lo scudo solo quando le vite sono inferiori a 3.',
-    explanation: 'Il Centro fornisce le vite. Il blocco sotto if viene eseguito solo quando la sua condizione è vera. Il rientro fa parte del codice.',
-    source: 'scudo = False\nif vite < 3:\n    pass',
+    briefing: 'Con poche vite, Aurora ha bisogno di una protezione d’emergenza. Il computer di bordo fornisce già la variabile vite.',
+    edit: 'Cambia il valore di scudo sulla riga rientrata. Lascia invariato lo scudo di partenza.',
+    preview: 'In volo: una protezione di riserva per partenza o checkpoint.',
+    explanation: 'if significa “se” e < significa “minore di”. Le righe rientrate si eseguono quando la condizione è vera. True significa vero (attivo), False significa falso (spento).',
+    source: 'scudo = False\nif vite < 3:\n    scudo = False',
     variable: 'scudo', type: 'bool', upgrade: { autoShield: true },
     hints: [
-      'Con meno di 3 vite entra nel blocco if. Fuori dal blocco lascia lo scudo spento.',
-      'Al posto di pass scrivi un’assegnazione a scudo. Mantieni i quattro spazi del rientro.',
+      'Pensa a quando serve lo scudo: con 2 vite la condizione è vera, con 4 è falsa.',
+      'Cambia solo il secondo False in True. Mantieni i quattro spazi del rientro.',
       'scudo = False\nif vite < 3:\n    scudo = True\n\nL’assegnazione nel blocco si esegue con 2 vite e si salta con 4.',
     ],
     success: 'Con 2 vite lo scudo è attivo e con 4 è spento. La riserva d’emergenza protegge una volta per partenza o ripresa dal checkpoint.',

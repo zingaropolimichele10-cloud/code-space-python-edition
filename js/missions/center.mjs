@@ -8,6 +8,9 @@ export function createCenter({ progress, sound = () => {} }) {
   const completed = new Set(progress.state.completed);
   const pending = new Set(progress.state.skipped);
   const drafts = new Map(Object.entries(progress.state.drafts).map(([id, code]) => [Number(id), code]));
+  if (drafts.get(5) === 'scudo = False\nif vite < 3:\n    pass') {
+    drafts.set(5, missions.find(mission => mission.id === 5).source);
+  }
   const shownHints = new Map();
   const run = createPythonRunner();
   const get = id => document.getElementById(id);
@@ -151,6 +154,11 @@ export function createCenter({ progress, sound = () => {} }) {
     get('mission-title').textContent = active.title;
     get('mission-concept').textContent = active.concept;
     get('mission-goal').textContent = active.goal;
+    get('mission-briefing').textContent = active.briefing;
+    get('mission-edit').textContent = active.edit;
+    get('mission-preview').textContent = active.preview;
+    get('mission-preview').dataset.mission = active.id;
+    get('mission-scenarios').hidden = active.id !== 5;
     get('mission-explanation').textContent = active.explanation;
     editor.value = (practice ? undefined : drafts.get(active.id)) ?? active.source;
     editor.readOnly = false;
