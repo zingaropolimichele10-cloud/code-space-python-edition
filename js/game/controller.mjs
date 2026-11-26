@@ -21,7 +21,7 @@ const copy = {
 };
 
 export function mountGame({ nextMission, onState = () => {},
-  missionCount = () => 0, sound, onCheckpoint, initialLight = false, onLight = () => {}, onRefresh = () => {} } = {}) {
+  missionCount = () => 0, allowAction = () => true, sound, onCheckpoint, initialLight = false, onLight = () => {}, onRefresh = () => {} } = {}) {
   const game = createGame({ nextMission, sound, onCheckpoint });
   const { world, keys } = game;
   const byId = id => document.getElementById(id);
@@ -86,13 +86,14 @@ export function mountGame({ nextMission, onState = () => {},
 
   byId('tutorial-next').addEventListener('click', () => { tutorial.next(world); refresh(); });
   document.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => {
-    if (game.action(button.dataset.action) && flying.has(world.state)) byId('space').focus({ preventScroll: true });
+    if (allowAction(button.dataset.action) && game.action(button.dataset.action) && flying.has(world.state)) byId('space').focus({ preventScroll: true });
     refresh();
   }));
   addEventListener('keydown', event => {
     if (document.querySelector('dialog[open]') || event.target.closest?.('textarea, input:not([type=checkbox]), select, [contenteditable]')) return;
     if (event.key === 'Escape' && !event.repeat) {
-      if (game.action(world.state === State.PAUSED ? 'resume' : 'pause')) event.preventDefault();
+      const action = world.state === State.PAUSED ? 'resume' : 'pause';
+      if (allowAction(action) && game.action(action)) event.preventDefault();
       refresh();
     } else if (event.code === FIRE_KEY && flying.has(world.state)) {
       if (event.target.closest?.('button, a, input, select')) return;

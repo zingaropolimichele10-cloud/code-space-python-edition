@@ -331,7 +331,10 @@ function syncFrame(current, now) {
   }
   if (!frameReady || frameRoom !== room) return;
   const key = [current, control.seq, scores[store.uid]?.mask ?? 0].join('/');
-  if (key === sentPolicy) return;
+  if (key === sentPolicy) {
+    frame.contentWindow.postMessage({ type: 'cs:heartbeat', room, seq: control.seq }, location.origin);
+    return;
+  }
   sentPolicy = key;
   frame.contentWindow.postMessage({
     type: 'cs:policy', room, state: current, seq: control.seq, settings: control.settings,
@@ -404,7 +407,7 @@ async function login(email, password) {
   if (projector) {
     const id = params.get('room');
     const existing = id && await store.get('rooms/' + id);
-    if (!existing || existing.owner !== uid) throw Error('Questo proiettore è riservato all’Host della sessione.');
+    if (!existing || (!demo && existing.owner !== uid)) throw Error('Questo proiettore è riservato all’Host della sessione.');
     attach(id);
     return;
   }

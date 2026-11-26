@@ -32,6 +32,11 @@ export function createCenter({ progress, sound = () => {} }) {
   let practice = false;
   let unlocked = false;
   let revision = 0;
+  let locked = false;
+  let skipAllowed = true;
+  let interrupt = () => {};
+  let attempts = 0;
+  let since = 0;
 
   function nextMission() {
     return missions.find(({ id }) => !completed.has(id));
@@ -81,11 +86,12 @@ export function createCenter({ progress, sound = () => {} }) {
       practice = false;
     }
 
-    skip.addEventListener('click', leave);
+    interrupt = leave;
+    skip.addEventListener('click', () => { if (skipAllowed && !locked) leave(); });
     done.addEventListener('click', leave);
     dialog.addEventListener('cancel', event => {
       event.preventDefault();
-      leave();
+      if (!locked && (skipAllowed || editor.readOnly)) leave();
     });
     retry.addEventListener('click', () => {
       const id = [...pending].sort((a, b) => a - b)[0];
@@ -99,7 +105,8 @@ export function createCenter({ progress, sound = () => {} }) {
     });
     get('mission-form').addEventListener('submit', async event => {
       event.preventDefault();
-      if (!active || button.disabled) return;
+      if (!active || button.disabled || locked) return;
+      attempts++;
       const mission = active;
       const source = editor.value;
       saveDraft();
@@ -146,6 +153,8 @@ export function createCenter({ progress, sound = () => {} }) {
     if (dialog.open) return;
     practice = demonstration;
     active = mission;
+    attempts = 0;
+    since = Date.now();
     if (!practice && !completed.has(active.id)) {
       pending.add(active.id);
       progress.update({ skipped: [...pending] });
@@ -166,11 +175,11 @@ export function createCenter({ progress, sound = () => {} }) {
     indent.disabled = false;
     updateEditor();
     sound('mission');
-    button.disabled = false;
+    button.disabled = locked;
     status.textContent = 'Modifica il codice e premi Esegui.';
     status.dataset.result = '';
     output.textContent = '';
-    skip.hidden = false;
+    skip.hidden = !skipAllowed;
     done.hidden = true;
     syncHints();
     dialog.showModal();
@@ -178,7 +187,33 @@ export function createCenter({ progress, sound = () => {} }) {
   }
 
   return {
-    bind, onState,
+    bind, onState, interrupt: () => interrupt(),
+    observe() {
+      const mission = active && !practice ? active.id : 0;
+      return { mission, since: mission ? since : 0, attempts: mission ? attempts : 0,
+        hints: mission ? (shownHints.get(mission) ?? 0) : 0 };
+    },
+    classroomPolicy(game, { blocked, skip, mask }) {
+      for (const mission of missions) {
+        if ((mask & (1 << (mission.id - 1))) && !completed.has(mission.id)) {
+          completed.add(mission.id);
+          pending.delete(mission.id);
+          game.grant(mission.upgrade);
+        }
+      }
+      skipAllowed = skip;
+      if (!active) { locked = blocked; return; }
+      if (locked !== blocked && blocked && status.dataset.result === 'pending') {
+        revision++;
+        run.cancel();
+        status.dataset.result = '';
+        status.textContent = 'Verifica annullata durante la sospensione. Premi Esegui dopo la ripresa.';
+      }
+      locked = blocked;
+      button.disabled = locked || editor.readOnly || status.dataset.result === 'pending';
+      skip.hidden = !skipAllowed || editor.readOnly;
+      skip.disabled = locked;
+    },
     hasIncomplete: () => completed.size < missions.length,
     completedMissions: () => missions.filter(({ id }) => completed.has(id)),
     unlock() { unlocked = true; },
