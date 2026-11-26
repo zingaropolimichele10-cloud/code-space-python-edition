@@ -12,7 +12,7 @@ const mime = {
   '.js': 'text/javascript', '.svg': 'image/svg+xml',
 };
 
-export async function openBrowser() {
+export async function openBrowser(path = '') {
   const profile = await mkdtemp(`${tmpdir()}/codespace-browser-`);
   const requests = [];
   const server = createServer(async (req, res) => {
@@ -118,7 +118,7 @@ export async function openBrowser() {
     await page('Target.setAutoAttach', {
       autoAttach: true, waitForDebuggerOnStart: true, flatten: true,
     });
-    await page('Page.navigate', { url: origin + prefix });
+    await page('Page.navigate', { url: origin + prefix + path });
     async function evaluate(expression) {
       const response = await page('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
       if (response.exceptionDetails) {

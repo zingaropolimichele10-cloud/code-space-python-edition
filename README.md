@@ -7,6 +7,6 @@ Dalla radice del repository, avvia `python3 -m http.server 8000 --bind 127.0.0.1
 
 Consulta [specifiche](SPECIFICATIONS.md), [architettura](docs/ARCHITECTURE.md) e [roadmap](docs/ROADMAP.md).
 
-La pagina apre il **Laboratorio Python**. Modifica l’esempio e premi **Esegui** per leggere l’output e i valori delle variabili. Il sito carica Skulpt localmente.
+La pagina apre il gioco. Seleziona **Laboratorio Python** per usare il prototipo autonomo. Modifica l’esempio e premi **Esegui** per leggere l’output e i valori delle variabili. Il sito carica Skulpt localmente.
 
 Per eseguire le verifiche usa `node --test tests/*.test.mjs` con Chromium installato. Puoi specificare il binario con `CHROMIUM_BIN`. Consulta [risultati QA e opzioni per il container](docs/QA.md).

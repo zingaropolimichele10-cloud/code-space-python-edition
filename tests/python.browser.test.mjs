@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { openBrowser } from './browser.mjs';
 
 test('Prototipo Python in Chromium', async t => {
-  const browser = await openBrowser();
+  const browser = await openBrowser('laboratorio.html');
   t.after(browser.close);
   t.diagnostic(browser.version);
   const { evaluate } = browser;
@@ -111,7 +111,7 @@ test('Prototipo Python in Chromium', async t => {
       return [location.pathname, document.querySelector('#output').textContent,
         document.querySelector('#variabili').textContent];
     })()`);
-    assert.deepEqual(result, [browser.prefix, '10\n', 'velocita = 10 (intero)']);
+    assert.deepEqual(result, [browser.prefix + 'laboratorio.html', '10\n', 'velocita = 10 (intero)']);
     assert.ok(browser.requests.includes(browser.prefix + 'workers/python.worker.js'));
     assert.ok(browser.requests.includes(browser.prefix + 'vendor/skulpt/skulpt.min.js'));
   });

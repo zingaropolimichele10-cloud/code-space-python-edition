@@ -6,29 +6,71 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'">
   <title>CODE SPACE – Python Edition</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./css/prototype.css">
-  <script type="module" src="./js/python/editor.mjs"></script>
+  <link rel="stylesheet" href="./css/game.css">
+  <script type="module" src="./js/game/main.mjs"></script>
 </head>
 <body>
-  <main>
-    <header>
-      <h1>CODE SPACE <span>Python Edition</span></h1>
-      <p>Laboratorio Python</p>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="edition">Orientamento Ferraris · Python Edition</p>
+        <h1>CODE <span>SPACE</span></h1>
+      </div>
+      <a href="./laboratorio.html">Laboratorio Python <span aria-hidden="true">↗</span></a>
     </header>
-    <div class="laboratorio">
-      <form>
-        <label for="codice">Codice Python</label>
-        <textarea id="codice" rows="12" spellcheck="false" autocapitalize="off" autocomplete="off">velocita = 5 * 2
-print(velocita)</textarea>
-        <button type="submit">Esegui</button>
-      </form>
-      <section aria-label="Risultati">
-        <p id="stato" role="status">Pronto per eseguire.</p>
-        <h2>Output</h2>
-        <pre id="output" tabindex="0"></pre>
-        <h2>Variabili</h2>
-        <pre id="variabili" tabindex="0"></pre>
-      </section>
+
+    <div class="dashboard">
+      <div class="flight">
+        <div class="hud" aria-label="Stato della partita">
+          <div><span>Vite</span><strong id="lives">3 / 3</strong></div>
+          <div><span>Punteggio</span><strong id="score">0</strong></div>
+          <div><span>Missioni</span><strong id="mission-count">0 / 4</strong></div>
+          <div><span>Scudo</span><strong id="shield">Spento</strong></div>
+        </div>
+        <div class="viewport" id="viewport" data-state="MENU">
+          <canvas id="space" width="960" height="540" aria-label="Campo di gioco spaziale"></canvas>
+          <div class="overlay" id="overlay">
+            <div id="menu-panel" class="state-panel">
+              <p class="edition">Rotta verso il Ferraris</p>
+              <h2>Pronti al decollo?</h2>
+              <p>Attraversa il campo di asteroidi. Raccogli stelle e usa Python per potenziare la tua navicella.</p>
+              <button type="button" data-action="tutorial">Inizia</button>
+            </div>
+            <div id="tutorial-panel" class="state-panel" hidden>
+              <h2>Comandi di volo</h2>
+              <p>Usa le quattro frecce per muoverti. Raccogli le stelle dorate ed evita gli asteroidi. Premi Esc per mettere in pausa.</p>
+              <button type="button" data-action="start">Decolla</button>
+              <button type="button" class="secondary" data-action="menu">Indietro</button>
+            </div>
+            <div id="paused-panel" class="state-panel" hidden>
+              <h2>Partita in pausa</h2>
+              <button type="button" data-action="resume">Riprendi</button>
+              <button type="button" class="secondary" data-action="menu">Menu principale</button>
+            </div>
+            <div id="game-over-panel" class="state-panel" hidden>
+              <h2>Navicella fuori uso</h2>
+              <p>Il checkpoint ripristina le vite e i potenziamenti.</p>
+              <button type="button" data-action="checkpoint">Riparti dal checkpoint</button>
+              <button type="button" class="secondary" data-action="menu">Menu principale</button>
+            </div>
+            <div id="victory-panel" class="state-panel" hidden>
+              <p class="edition">Rotta completata</p>
+              <h2>Missione compiuta!</h2>
+              <p>Hai attraversato il settore finale.</p>
+              <button type="button" data-action="menu">Menu principale</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="flight-panel" aria-label="Controlli di volo">
+        <p class="edition">Console di volo</p>
+        <h2 id="flight-status" aria-live="polite">In attesa</h2>
+        <p id="flight-note">Avvia il tutorial per conoscere i comandi.</p>
+        <div class="keys" aria-label="Frecce direzionali"><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd></div>
+        <button type="button" id="pause-button" class="secondary" data-action="pause" hidden>Pausa <kbd>Esc</kbd></button>
+        <button type="button" id="final-button" data-action="final" hidden>Avvia sfida finale</button>
+        <label class="setting"><input id="light" type="checkbox"> Grafica leggera</label>
+      </aside>
     </div>
   </main>
 </body>
