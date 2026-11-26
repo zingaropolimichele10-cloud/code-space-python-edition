@@ -1,25 +1,44 @@
 # Configurare Firebase per Classroom
 
-1. Apri la console Firebase con l’account del responsabile. Su iPad usa Safari in orizzontale e, se necessario, seleziona **Richiedi sito desktop**. Crea un progetto senza Analytics. Verifica il piano **Spark** e mantienilo gratuito. Interrompi la configurazione se richiede Blaze o una carta.
-2. Da **Impostazioni progetto → Le tue app**, registra un’app **Web**. Conserva l’oggetto di configurazione Web. GitHub Pages continuerà a servire il sito.
-3. Apri **Authentication → Sign-in method** e abilita **Anonymous** e **Google**. Per Google, imposta l’email di assistenza richiesta dalla console. In **Settings → Authorized domains** aggiungi l’hostname di GitHub Pages, per esempio zingaropolimichele10-cloud.github.io, senza schema o percorso.
-4. Apri **Realtime Database → Create Database**, scegli la regione opportuna e seleziona **Locked mode**. Copia l’URL del database nella configurazione Web. In **Rules** incolla e pubblica database.rules.json. Verifica che l’editor accetti le regole prima di distribuire il frontend.
-5. Crea l’accesso Host. Nella pagina Classroom premi **Accedi come Host con Google**. Alla prima prova il login crea l’identità, mentre l’accesso alla sessione è negato finché l’UID non è autorizzato. In **Authentication → Users** copia l’UID del responsabile. In **Realtime Database → Data** aggiungi sotto hosts una chiave uguale a quell’UID con valore booleano true. Il testo "true" non è equivalente.
-6. Copia js/classroom/config.example.mjs in js/classroom/config.mjs e sostituisci i valori con quelli dell’app Web. Servono apiKey, authDomain, projectId, appId e databaseURL. La configurazione Web è pubblica. Password, token, chiavi amministrative e file service account restano esclusi dal repository. Se 2.0.0 è già servita dalla cache, cambia versione nel manifest e nel Service Worker prima di distribuire la configurazione.
-7. Per iPad che blocca l’accesso Google via popup, consenti il popup per il sito. In alternativa abilita **Email/Password**, crea nella console l’account del solo responsabile, autorizzane l’UID e imposta hostEmail a true nel modulo. Inserisci la password direttamente nel modulo di login del browser. Gli studenti usano sempre Anonymous.
-8. Dopo la pubblicazione autorizzata, apri la pagina Host e uno studente su profili separati. Crea il PIN, avvia il decollo e verifica pausa, assistenza, classifica e uscita. Prova il QR con l’iPad e il proiettore con il collegamento riservato generato dall’Host. Prima dell’evento, prova anche le regole con gli emulatori e verifica i volumi in **Usage**.
-9. Controlla i limiti correnti nelle due pagine ufficiali. La stima assume 100 connessioni RTDB simultanee, 1 GB di storage e 10 GB/mese di download Spark, valori da riconfermare. Due gruppi contemporanei da 50, oltre a Host e proiettori, oltrepassano 100 connessioni. Controlla anche le soglie Auth per nuove identità dallo stesso IP. [Prezzi Firebase](https://firebase.google.com/pricing) · [Limiti database](https://firebase.google.com/docs/database/usage/limits) · [Limiti Auth](https://firebase.google.com/docs/auth/limits)
-10. A fine evento termina la sessione e premi **Elimina dati**. In console verifica che i nodi siano spariti. Per le aule archiviate prima della pulizia, rimuovi per ID le raccolte rooms, members, names, seats, scores, presence metrics, projectors e viewAccess, e il PIN corrispondente. Elimina separatamente gli utenti anonimi dell’evento dalla console Auth. Per revocare l’Host elimina il suo UID sotto hosts.
+## Console Firebase del progetto `code-space-classroom`
 
-Per completare il collegamento sono utili la configurazione pubblica dell’app Web, l’URL RTDB e la conferma dell’hostname autorizzato e dell’UID abilitato. Condividi solo configurazione pubblica, mai password o token.
+Il frontend contiene la configurazione Web pubblica, con accesso Host Email/Password e accesso studente anonimo. Il Service Worker usa la revisione `2.0.0-firebase.1`, così una scheda che ha la 2.0.0 può installare la configurazione aggiornata. Le credenziali Host si inseriscono solo nel modulo del gioco.
+
+1. Apri [Realtime Database del progetto](https://console.firebase.google.com/project/code-space-classroom/database). Seleziona l’istanza `code-space-classroom-default-rtdb` in `europe-west1`. Apri **Regole / Rules**, sostituisci l’intero editor con il contenuto di [database.rules.json](../database.rules.json), poi premi **Pubblica / Publish**. Il file è integrale e identico a quello indicato da `firebase.json`. Lascia il database in modalità bloccata se l’editor rifiuta le regole.
+2. Apri **Authentication → Users** e verifica che la riga dell’account Host abbia l’UID `ixRse6E0cJYSz4BBZAldEq2BTmI2`. Da **Realtime Database → Dati / Data**, se il database è vuoto, usa **⋮ → Importa JSON / Import JSON** alla radice e importa questo intero documento. Se ci sono già dati, aggiungi il figlio `hosts` o, se esiste, modifica solo il figlio identificato dall’UID. Il valore deve avere tipo **booleano**.
+
+   ```json
+   {
+     "hosts": {
+       "ixRse6E0cJYSz4BBZAldEq2BTmI2": true
+     }
+   }
+   ```
+
+   L’unico record iniziale è `/hosts/ixRse6E0cJYSz4BBZAldEq2BTmI2`. Il gioco crea PIN, aule e presenze quando servono. Per revocare l’Host elimina il suo figlio sotto `hosts`.
+3. Apri **Authentication → Sign-in method** e verifica **Email/Password** e **Anonymous**. Vai in **Authentication → Settings → Authorized domains → Add domain**, inserisci `zingaropolimichele10-cloud.github.io` e premi **Add**. Usa solo il nome del dominio, senza schema o percorso. Questa configurazione usa Email/Password per l’Host, quindi Google può restare disattivato.
+4. In **Impostazioni progetto** conferma **Spark**. In **Realtime Database → Usage** controlla le connessioni durante il collaudo sulla rete scolastica. Verifica anche le soglie Auth per identità anonime create dallo stesso IP. [Prezzi Firebase](https://firebase.google.com/pricing) · [Limiti database](https://firebase.google.com/docs/database/usage/limits) · [Limiti Auth](https://firebase.google.com/docs/auth/limits)
+
+## Collaudo su dispositivi distinti
+
+Dopo il rilascio autorizzato del frontend aggiornato, visita [Classroom Host su GitHub Pages](https://zingaropolimichele10-cloud.github.io/code-space-python-edition/classroom.html?role=host). Se avevi già aperto il sito, conferma l’aggiornamento quando appare o chiudi le schede del gioco e riaprilo.
+
+| Dispositivo | Azione | Risultato atteso |
+| --- | --- | --- |
+| A, iPad o PC Host | Accedi nell’app con l’account autorizzato e crea una sessione di prova. | Compaiono PIN, QR e comandi Host. |
+| B e C, due dispositivi studente | Apri il QR o la pagina Classroom studente, inserisci il PIN e scegli pseudonimi distinti. | Entrambi appaiono nella lobby. Le due sessioni studente rimangono indipendenti. |
+| A, B e C | Avvia, metti in pausa e riprendi. Su B esegui una missione Python e chiedi aiuto. Su C ricarica durante il volo. | Le fasi si sincronizzano, la classifica si aggiorna, l’Host vede l’aiuto, C recupera l’iscrizione. |
+| D, proiettore o profilo separato | Apri il link proiettore riservato e, separatamente, la pagina di accesso Host con un account Email/Password di prova fuori allowlist. | Il proiettore mostra solo i dati pubblici. L’account di prova riceve il rifiuto e la scheda A mantiene il controllo. |
+| A | Termina la sessione, mostra il podio e premi **Elimina dati**. | B e C vedono il termine. In console la sessione e il PIN di prova risultano rimossi. |
+
+Il rifiuto mostrato nell’interfaccia va affiancato alla prova automatica delle regole qui sotto. Prima dell’evento ripeti il collaudo sulla rete del laboratorio. A fine evento rimuovi i dati con **Elimina dati** e rimuovi separatamente dalla console Auth le identità anonime create per l’evento.
 
 ## Verifica locale
 
 Serve Java 21 e il CLI Firebase per l’emulatore RTDB. Avvia:
 
 ```sh
-firebase emulators:start --only auth,database --project demo-codespace
-node tools/firebase-emulator-check.mjs
+firebase emulators:exec --only auth,database --project demo-codespace "node tools/firebase-emulator-check.mjs"
 ```
 
 Servendo il sito su loopback, apri classroom.html?emulator=1&role=host. Crea l’account Host di prova nell’emulatore Auth e imposta hosts/UID al booleano true nell’emulatore RTDB. Nel percorso studente usa classroom.html?emulator=1. Il file emulator/config.mjs è riservato al progetto demo. Usa profili separati per i ruoli.

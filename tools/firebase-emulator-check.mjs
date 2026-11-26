@@ -35,7 +35,9 @@ if (!process.argv.includes('--auth-only')) {
     else if (identity) url.searchParams.set('auth', identity.idToken);
     const res = await fetch(url, { method, headers, body: data === undefined ? undefined : JSON.stringify(data) });
     assert.equal(res.ok, allowed, path + ' HTTP ' + res.status);
-    return res.json();
+    const payload = await res.json();
+    if (!allowed) assert.match(payload.error ?? '', /permission denied/i, path);
+    return payload;
   }
   const now = Date.now();
   const room = crypto.randomUUID();
@@ -48,11 +50,19 @@ if (!process.argv.includes('--auth-only')) {
   await db('pins', student, 'GET', undefined, false);
   await db('hosts/' + student.localId, student, 'PUT', true, false);
   await db('pins/' + pin, host, 'PUT', ticket, false);
+  await db('rooms/' + room, host, 'PUT', control, false);
+  await db('hosts/' + host.localId, host, 'PUT', true, false);
   await db('hosts/' + host.localId, 'admin', 'PUT', true);
   await db('pins/' + pin, host, 'PUT', ticket);
   await db('rooms/' + room, host, 'PUT', control);
   await db('rooms/' + room, student, 'GET');
   await db('rooms/' + room + '/locked', student, 'PUT', true, false);
+  const otherEmail = 'host-second-' + crypto.randomUUID() + '@example.test';
+  const unlisted = await auth('signUp', { email: otherEmail, password: crypto.randomUUID() });
+  await db('rooms/' + room + '/locked', unlisted, 'PUT', true, false);
+  await db('hosts/' + unlisted.localId, 'admin', 'PUT', true);
+  await db('rooms/' + room + '/locked', unlisted, 'PUT', true, false);
+  await db('rooms/' + room, null, 'PUT', control, false);
   await db('seats/' + room + '/30', student, 'PUT', student.localId, false);
   await db('seats/' + room + '/0', student, 'PUT', student.localId);
   await db('names/' + room + '/vega', student, 'PUT', student.localId);
@@ -79,5 +89,7 @@ if (!process.argv.includes('--auth-only')) {
   await db('seats/' + room + '/1', spectator, 'PUT', spectator.localId, false);
   await db(membership + '/kicked', host, 'PUT', true);
   await db(report, student, 'PUT', score, false);
+  await db('hosts/' + host.localId, 'admin', 'DELETE');
+  await db('rooms/' + room + '/locked', host, 'PUT', true, false);
   console.log('Realtime Database Emulator: ammissione, autorizzazioni, isolamento, tentativi negati e revoca verificati.');
 }

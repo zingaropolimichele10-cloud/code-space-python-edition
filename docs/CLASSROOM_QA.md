@@ -31,3 +31,9 @@ node tools/firebase-emulator-check.mjs --auth-only
 ## Esito di rilascio
 
 Gioco individuale e demo verificati. La modalità online rimane un candidato. Prima di usarla in aula occorre collaudare le regole runtime, la rete scolastica, accesso Google e QR sull’iPad, gestione delle riconnessioni e carico simultaneo sul progetto reale. Rimane la riserva individuale negli ZIP 1.0.0 e 1.1.0.
+
+## Configurazione Firebase di produzione
+
+Revisione cache `2.0.0-firebase.1`. La suite in Chromium ha prodotto 65 esiti positivi, 0 falliti e 0 saltati, inclusa la migrazione dal commit `b15e515` con la nuova configurazione e i progressi conservati. Verificati di nuovo ZIP, avvio offline e demo senza server. Auth Emulator ha confermato accesso Email/Password e due identità anonime distinte.
+
+L’audit statico delle regole è passato e il file delle regole è identico a quello di `b15e515`. Il proxy ha bloccato gli endpoint di produzione e il JAR dell’emulatore RTDB con HTTP 403. La prova dei permessi RTDB in esecuzione e il collaudo tra dispositivi restano aperti. [Procedura console e collaudo](FIREBASE_SETUP.md)

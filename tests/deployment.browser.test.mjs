@@ -12,9 +12,9 @@ import { openBrowser } from './browser.mjs';
 const project = fileURLToPath(new URL('../', import.meta.url));
 const { version, runtime } = JSON.parse(await readFile(join(project, 'release-manifest.json')));
 const cachePrefix = 'code-space:/code-space-python-edition/:';
-const baseline = '2204764';
+const baselines = { '1.1.0': '2204764', '2.0.0': 'b15e515' };
 
-async function unpack(t, previous = false) {
+async function unpack(t, previous) {
   const dir = await mkdtemp(join(tmpdir(), 'codespace-release-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const archive = join(dir, 'release.zip');
@@ -23,12 +23,12 @@ async function unpack(t, previous = false) {
     source = join(dir, 'baseline');
     await mkdir(source);
     const snapshot = join(dir, 'baseline.tar');
-    execFileSync('git', ['archive', '--output=' + snapshot, baseline], { cwd: project });
+    execFileSync('git', ['archive', '--output=' + snapshot, baselines[previous]], { cwd: project });
     execFileSync('tar', ['-xf', snapshot, '-C', source]);
   }
   execFileSync('python3', ['tools/build-offline.py', archive], { cwd: source });
   execFileSync('python3', ['-m', 'zipfile', '-e', archive, dir]);
-  return join(dir, 'code-space-python-edition-' + (previous ? '1.1.0' : version));
+  return join(dir, 'code-space-python-edition-' + (previous ?? version));
 }
 
 async function waitFor(browser, expression) {
@@ -103,7 +103,7 @@ async function verifyUpdate(t, previous) {
   }
   await browser.evaluate('navigator.serviceWorker.getRegistration().then(r => r.update()).then(() => true)');
   await waitFor(browser, "!document.getElementById('offline-notice').hidden");
-  const old = cachePrefix + (previous ? '1.1.0' : version);
+  const old = cachePrefix + (previous ?? version);
   const next = cachePrefix + (previous ? version : version.replace(/\d+$/, patch => String(Number(patch) + 1)));
   assert.deepEqual((await browser.evaluate('caches.keys()')).sort(), [old, next]);
   const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' });
@@ -129,13 +129,27 @@ async function verifyUpdate(t, previous) {
     assert.equal(await replacement.evaluate("document.getElementById('mission-code').value"),
       'scudo = False\nif vite < 3:\n    scudo = False');
   }
+  if (previous === '2.0.0') {
+    assert.deepEqual(await replacement.evaluate(`import('./js/classroom/config.mjs').then(({default: c}) => ({
+      project: c.projectId, auth: c.authDomain, database: c.databaseURL,
+      appMatchesSender: c.appId.startsWith('1:' + c.messagingSenderId + ':web:'),
+      hostEmail: c.hostEmail, hostGoogle: c.hostGoogle
+    }))`), {
+      project: 'code-space-classroom',
+      auth: 'code-space-classroom.firebaseapp.com',
+      database: 'https://code-space-classroom-default-rtdb.europe-west1.firebasedatabase.app/',
+      appMatchesSender: true, hostEmail: true, hostGoogle: false,
+    });
+  }
   assert.deepEqual(browser.errors, []);
 }
 
 test('Aggiornamento atomico: cache in attesa, messaggio e rimozione della versione precedente',
-  t => verifyUpdate(t, false));
-test('Aggiornamento reale 1.1.0 → 2.0.0 con recupero del salvataggio',
-  t => verifyUpdate(t, true));
+  t => verifyUpdate(t));
+test('Aggiornamento reale 1.1.0 con recupero del salvataggio',
+  t => verifyUpdate(t, '1.1.0'));
+test('Aggiornamento reale da b15e515: nuova configurazione Firebase nella cache e progressi conservati',
+  t => verifyUpdate(t, '2.0.0'));
 
 test('ZIP estratto avviato dal server Python su loopback e sull’indirizzo LAN del container', async t => {
   const directory = await unpack(t);
