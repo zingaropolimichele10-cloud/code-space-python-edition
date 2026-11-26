@@ -3,7 +3,7 @@ import { build } from 'esbuild';
 await build({
   stdin: { contents: `
     export { initializeApp } from 'firebase/app';
-    export { getAuth, signInAnonymously, signInWithRedirect, GoogleAuthProvider,
+    export { getAuth, signInAnonymously, signInWithPopup, GoogleAuthProvider,
       onAuthStateChanged, signOut, connectAuthEmulator, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
     export { getDatabase, ref, get, set, update, runTransaction, onValue,
       onChildAdded, onChildChanged, onChildRemoved, onDisconnect, serverTimestamp, connectDatabaseEmulator } from 'firebase/database';

@@ -124,10 +124,10 @@
       "$room": {
         ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) && !newData.exists()",
         "$seat": {
-          ".read": "(auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val())",
           ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (((((auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val()) && root.child('rooms').child($room).child('phase').val() !== 'ended') && root.child('rooms').child($room).child('locked').val() === false && (root.child('rooms').child($room).child('phase').val() === 'lobby' || root.child('rooms').child($room).child('settings/late').val() === true)) && auth.token.firebase.sign_in_provider === 'anonymous') && !root.child('members').child($room).child(auth.uid).exists() && ((!data.exists() && newData.val() === auth.uid) || (data.val() === auth.uid && !newData.exists())) && $seat.matches(/^(0|[1-9][0-9]?)$/) && $seat * 1 < root.child('rooms').child($room).child('settings/capacity').val())",
           ".validate": "newData.isString()"
-        }
+        },
+        ".read": "(auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val())"
       }
     },
     "names": {
@@ -145,7 +145,7 @@
         ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) && !newData.exists()",
         ".read": "(auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val()) || (auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true)",
         "$uid": {
-          ".validate": "newData.hasChildren(['name', 'key', 'seat', 'kicked'])",
+          ".validate": "newData.hasChildren(['name', 'key', 'seat', 'kicked']) && (!data.exists() || newData.child('seat').val() === data.child('seat').val() && newData.child('name').val() === data.child('name').val() && (data.child('kicked').val() !== true || newData.child('kicked').val() === true))",
           "name": {
             ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z][A-Za-z0-9_-]{1,15}$/)"
           },
@@ -175,7 +175,7 @@
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000 && newData.val() % 1 === 0 && (!data.exists() || newData.val() >= data.val())"
           },
           "mask": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 31 && newData.val() % 1 === 0"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 31 && newData.val() % 1 === 0 && (!data.exists() || data.val() % 2 < 1 || newData.val() % 2 >= 1) && (!data.exists() || data.val() % 4 < 2 || newData.val() % 4 >= 2) && (!data.exists() || data.val() % 8 < 4 || newData.val() % 8 >= 4) && (!data.exists() || data.val() % 16 < 8 || newData.val() % 16 >= 8) && (!data.exists() || data.val() % 32 < 16 || newData.val() % 32 >= 16)"
           },
           "boss": {
             ".validate": "newData.isBoolean() && (data.val() !== true || newData.val() === true)"
