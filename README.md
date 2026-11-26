@@ -13,6 +13,6 @@ Per eseguire le verifiche usa `node --test tests/*.test.mjs` con Chromium instal
 
 ## Gioco e missioni
 
-Scegli **Inizia**, prova le frecce e premi **Decolla**. Le stelle contrassegnate PYTHON aprono il Centro di controllo. Dopo quattro missioni puoi avviare la sfida finale. La quinta missione è facoltativa. **Grafica leggera** riduce il carico del Canvas.
+Scegli **Inizia missione**, prova le frecce e decolla quando sei pronto. Le stelle PYTHON aprono il Centro di controllo. Puoi iniziare la sfida finale di 60 secondi anche con missioni incomplete. La quinta è sempre facoltativa. **Continua** ripristina il checkpoint locale. **Grafica leggera** riduce il carico del Canvas e l’audio parte disattivato.
 
 Vedi la [guida docente](docs/TEACHER_GUIDE.md), le [verifiche](docs/QA.md) e le [schermate](docs/screenshots/).

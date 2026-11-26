@@ -109,7 +109,7 @@ test('Scudi a consumo, ricarica e sfida finale con vittoria', () => {
   game.action('pause');
   game.action('resume');
   assert.equal(world.state, State.FINAL_CHALLENGE);
-  tick(game, 1321);
+  tick(game, 3601);
   assert.equal(world.state, State.VICTORY);
   assert.equal(game.action('menu'), true);
   game.action('tutorial');

@@ -92,3 +92,62 @@ Acquisite in Chromium e controllate visivamente per leggibilità e sovrapposizio
 ### Limiti residui
 
 I tempi didattici di 15–20 minuti e le prestazioni su oltre 15 PC non sono stati misurati con studenti. Restano da provare i browser ufficiali Chrome, Edge e Firefox sulle postazioni del Ferraris. Le richieste locali sono state verificate sotto HTTP. Distribuzione offline completa, modalità docente e audio restano nelle fasi successive.
+
+# Rapporto QA delle fasi 04 e 05
+
+Verifica del 26 novembre 2026 con Node.js 24.22.3 e Chromium headless 156.0.8078.79. Sono stati rieseguiti tutti i 39 esiti delle fasi precedenti. La verifica del timer finale ora usa la durata di 60 secondi e le asserzioni sul ripristino usano lo schema v2.
+
+```sh
+node --test tests/*.test.mjs
+
+# Esecuzione e catture nel container isolato
+CODESPACE_NO_SANDBOX=1 CODESPACE_ORIENTATION_SCREENSHOTS=docs/screenshots/fasi-04-05 node --test tests/*.test.mjs
+```
+
+| Caso | Esito osservato |
+| --- | --- |
+| Menu e navigazione | Impostazioni aperte da tastiera, chiusura con Esc, percorso da menu a tutorial e volo, scelta di rigiocare e recupero esercizi dalla vittoria. |
+| Tutorial | Provate le direzioni e le tappe di asteroide, stella normale e stella Python. Il Centro di prova accetta codice valido senza assegnare progressi. Ritornare al tutorial consente ancora di scegliere quando decollare. |
+| Editor | Selezione e cursore con freccia, copia e incolla nativi con clipboard di Chromium, numerazione su due righe e rientro a quattro spazi. Il gioco resta sospeso durante le missioni. |
+| Audio | All’avvio il contesto non viene creato e il mute è attivo. Un comando da tastiera crea il contesto. Disattivazione e volume del 33% sono salvati. I sei eventi sono coperti con nodi Web Audio simulati e si verifica il recupero da errore del contesto. |
+| Persistenza | Provati migrazione, tipi e valori fuori intervallo, schema incompatibile, checkpoint e durata della sfida. Chromium ha ricaricato una bozza saltata usando **Continua** e **Riprendi missione**. |
+| Storage indisponibile | La pagina avvia il volo sia con accesso bloccato sia con JSON corrotto. La prova JavaScript conferma l’uso della memoria durante la sessione. |
+| Modalità docente | Soluzione della missione selezionata, apertura diretta, sblocco del selettore, demo, assenza di asteroidi in demo, livello Intenso, durate errate respinte e sfida configurata a 12 secondi. Annullare il reset preserva i dati e confermarlo li azzera. **Avvia nuova sessione** torna al tutorial. |
+| Finale libero | Il comando studente avvia la sfida standard da 60 s con zero missioni. Verificata la vittoria con zero missioni nel finale dimostrativo e con quattro missioni senza la quinta nel finale standard. |
+| Layout | Controlli DOM su 1024 × 768, 1280 × 720, 1366 × 768, 1920 × 1080 e 430 × 700. A 1366 e 1920 le catture coprono anche gli stati modali. |
+| Browser e rete | Nessuna eccezione JavaScript non gestita nei flussi osservati. Tutte le richieste runtime registrate rimangono sotto il sottopercorso di GitHub Pages. |
+
+### Problemi corretti
+
+La chiusura della prova del tutorial faceva partire il volo. Il Centro ora distingue la prova dalla missione e il motore accetta la chiusura di una missione solo dallo stato MISSION. Il salvataggio su pagehide poteva riscrivere uno stato senza modifiche. Ora scrive solo se esistono aggiornamenti pendenti. La revisione di una cattura a 1920 × 1080 ha evidenziato il Canvas nero durante il ridimensionamento. Il ResizeObserver ora ridisegna subito dopo un cambio di risoluzione e il test verifica che il Canvas resti dipinto a ogni cattura.
+
+### Schermate verificate
+
+| Schermata | 1366 × 768 | 1920 × 1080 |
+| --- | --- | --- |
+| Menu | [1366](screenshots/fasi-04-05/1366x768-01-menu.png) | [1920](screenshots/fasi-04-05/1920x1080-01-menu.png) |
+| Impostazioni | [1366](screenshots/fasi-04-05/1366x768-02-impostazioni.png) | [1920](screenshots/fasi-04-05/1920x1080-02-impostazioni.png) |
+| Tutorial | [1366](screenshots/fasi-04-05/1366x768-03-tutorial.png) | [1920](screenshots/fasi-04-05/1920x1080-03-tutorial.png) |
+| Centro di controllo | [1366](screenshots/fasi-04-05/1366x768-04-centro.png) | [1920](screenshots/fasi-04-05/1920x1080-04-centro.png) |
+| Volo | [1366](screenshots/fasi-04-05/1366x768-05-volo.png) | [1920](screenshots/fasi-04-05/1920x1080-05-volo.png) |
+| Modalità docente | [1366](screenshots/fasi-04-05/1366x768-06-docente.png) | [1920](screenshots/fasi-04-05/1920x1080-06-docente.png) |
+| Finale | [1366](screenshots/fasi-04-05/1366x768-07-finale.png) | [1920](screenshots/fasi-04-05/1920x1080-07-finale.png) |
+| Vittoria | [1366](screenshots/fasi-04-05/1366x768-08-vittoria.png) | [1920](screenshots/fasi-04-05/1920x1080-08-vittoria.png) |
+
+### Limiti residui
+
+Le misure sono del container di sviluppo. La durata didattica con studenti, le prestazioni sulle postazioni del Ferraris, i browser ufficiali Chrome, Edge e Firefox e la distribuzione offline completa richiedono una prova successiva. La generazione audio è stata verificata in Chromium e tramite test sui nodi, senza una prova di ascolto in aula.
+
+### Esito finale e confronto prestazionale
+
+**48 esiti positivi, zero fallimenti e zero test saltati**, inclusi tre contenitori browser. Nove esiti si aggiungono alla suite precedente.
+
+| Misura | Fasi 02–03 | Fasi 04–05 |
+| --- | --- | --- |
+| Simulazione Node, 108.000 passi, senza Canvas | 127,3 ms a parete | 135,3 ms a parete |
+| Picchi di asteroidi, stelle e particelle | 7, 7, 20 | 7, 7, 20 |
+| Recuperi dal checkpoint nel simulatore | 43 | 43 |
+| Chromium RAF reale, 1360 × 900 | 121 intervalli in 2016,6 ms | 121 intervalli in 2016,6 ms |
+| Mediana e 95º percentile RAF | 16,7 / 16,8 ms | 16,7 / 16,7 ms |
+
+La misura Chromium riguarda circa due secondi di volo iniziale con grafica standard. I valori sono campioni del container, senza ripetizioni sufficienti per stimare una differenza prestazionale stabile.

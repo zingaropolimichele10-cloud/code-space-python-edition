@@ -231,7 +231,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     assert.equal(await state(), 'FINAL_CHALLENGE');
     await advance(45);
     await saveScreenshot(browser, '03-sfida-finale');
-    await advance(430);
+    await advance(1170);
     assert.equal(await state(), 'VICTORY');
     await saveScreenshot(browser, '03-vittoria');
     await evaluate("document.querySelector('#victory-panel [data-action=menu]').click()");
@@ -243,7 +243,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
       await evaluate("document.querySelector('#paused-panel [data-action=menu]').click()");
     }
     assert.equal(await evaluate('peakFrames'), 1);
-    assert.deepEqual(await evaluate("JSON.parse(localStorage.getItem('code-space:missioni:v1'))"), [1, 2, 3, 4, 5]);
+    assert.deepEqual(await evaluate("JSON.parse(localStorage.getItem('code-space:progress:v2')).completed"), [1, 2, 3, 4, 5]);
     await browser.page('Page.reload');
     await waitForPage(browser);
     assert.equal(await text('mission-count'), '4 / 4');
@@ -284,7 +284,10 @@ test('Game over nel browser e vittoria senza missione facoltativa', async t => {
   assert.equal(await evaluate("document.querySelector('#mission-retry').hidden"), false);
 
   await evaluate(`
-    localStorage.setItem('code-space:missioni:v1', '[1,2,3,4]');
+    const progress = JSON.parse(localStorage.getItem('code-space:progress:v2'));
+    progress.completed = [1,2,3,4];
+    progress.skipped = [];
+    localStorage.setItem('code-space:progress:v2', JSON.stringify(progress));
     sessionStorage.setItem('test:checkpoint', '1');
   `);
   await browser.page('Page.reload');
@@ -293,8 +296,8 @@ test('Game over nel browser e vittoria senza missione facoltativa', async t => {
     document.querySelector('[data-action=tutorial]').click();
     document.querySelector('[data-action=start]').click();
     document.querySelector('#final-button').click();
-    advance(480);
-    return [document.querySelector('#viewport').dataset.state, JSON.parse(localStorage.getItem('code-space:missioni:v1'))];
+    advance(1220);
+    return [document.querySelector('#viewport').dataset.state, JSON.parse(localStorage.getItem('code-space:progress:v2')).completed];
   })()`), ['VICTORY', [1, 2, 3, 4]]);
   assert.deepEqual(browser.errors, []);
 });

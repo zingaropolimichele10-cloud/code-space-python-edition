@@ -1,25 +1,21 @@
-const key = 'code-space:audio:v1';
 const tones = {
   star: [660, 990], impact: [155, 72], shield: [310, 610], mission: [440, 554, 660],
   success: [523, 659, 784], victory: [523, 659, 784, 1047],
 };
 
-export function createAudio({ Context = globalThis.AudioContext ?? globalThis.webkitAudioContext } = {}) {
-  let enabled = false;
-  let volume = 0.25;
+export function createAudio({
+  Context = globalThis.AudioContext ?? globalThis.webkitAudioContext,
+  preferences = { enabled: false, volume: .25 }, onChange = () => {},
+} = {}) {
+  let { enabled, volume } = preferences;
   let context;
   let master;
-  try {
-    const saved = JSON.parse(localStorage.getItem(key));
-    enabled = saved?.enabled === true;
-    if (Number.isFinite(saved?.volume) && saved.volume >= 0 && saved.volume <= 1) volume = saved.volume;
-  } catch { /* Preferenze locali facoltative. */ }
 
   function configure(muted, level) {
     enabled = !muted;
     volume = level;
     if (master) master.gain.value = enabled ? volume * 0.16 : 0;
-    try { localStorage.setItem(key, JSON.stringify({ enabled, volume })); } catch { /* Sessione in memoria. */ }
+    onChange({ enabled, volume });
   }
 
   async function unlock() {

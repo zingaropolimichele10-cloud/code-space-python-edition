@@ -1,14 +1,13 @@
 import { State } from '../game/engine.mjs';
 import { createPythonRunner } from '../python/runner.mjs';
-import { loadCompleted, saveCompleted } from '../storage/progress.mjs';
 import { installEditorTools } from './editor-tools.mjs';
 import { missions } from './catalog.mjs';
 import { validateMission } from './validate.mjs';
 
-export function createCenter({ sound = () => {} } = {}) {
-  const completed = loadCompleted();
-  const pending = new Set();
-  const drafts = new Map();
+export function createCenter({ progress, sound = () => {} }) {
+  const completed = new Set(progress.state.completed);
+  const pending = new Set(progress.state.skipped);
+  const drafts = new Map(Object.entries(progress.state.drafts).map(([id, code]) => [Number(id), code]));
   const shownHints = new Map();
   const run = createPythonRunner();
   const get = id => document.getElementById(id);
@@ -28,6 +27,7 @@ export function createCenter({ sound = () => {} } = {}) {
   const note = get('mission-note');
   let active;
   let practice = false;
+  let unlocked = false;
   let revision = 0;
 
   function nextMission() {
@@ -45,7 +45,14 @@ export function createCenter({ sound = () => {} } = {}) {
     hintButton.textContent = count === active.hints.length ? 'Tre indizi consultati' : `Indizio (${3 - count} disponibili)`;
   }
 
+  function saveDraft(defer = false) {
+    if (!active || practice) return;
+    drafts.set(active.id, editor.value);
+    progress.update({ drafts: Object.fromEntries(drafts) }, defer);
+  }
+
   function bind(game, refresh) {
+    editor.addEventListener('input', () => saveDraft(true));
     for (const { id, upgrade } of missions) {
       if (completed.has(id)) game.grant(upgrade);
     }
@@ -54,10 +61,10 @@ export function createCenter({ sound = () => {} } = {}) {
       if (!active) return;
       revision++;
       run.cancel();
-      if (!practice) drafts.set(active.id, editor.value);
+      saveDraft();
       active = undefined;
       dialog.close();
-      game.closeMission();
+      if (!practice) game.closeMission();
       refresh();
       get(practice ? 'tutorial-next' : 'space').focus({ preventScroll: true });
       practice = false;
@@ -70,8 +77,8 @@ export function createCenter({ sound = () => {} } = {}) {
       leave();
     });
     retry.addEventListener('click', () => {
-      const mission = nextMission();
-      if (mission && pending.has(mission.id) && game.openMission(mission.id)) refresh();
+      const id = [...pending].sort((a, b) => a - b)[0];
+      if (id && game.openMission(id)) refresh();
     });
     hintButton.addEventListener('click', () => {
       if (!active) return;
@@ -84,7 +91,7 @@ export function createCenter({ sound = () => {} } = {}) {
       if (!active || button.disabled) return;
       const mission = active;
       const source = editor.value;
-      if (!practice) drafts.set(mission.id, source);
+      saveDraft();
       const current = ++revision;
       button.disabled = true;
       output.textContent = '';
@@ -93,13 +100,15 @@ export function createCenter({ sound = () => {} } = {}) {
       const result = await validateMission(mission, source, run, () => current === revision);
       if (!result || current !== revision) return;
       output.textContent = result.output;
-      status.textContent = result.message;
+      status.textContent = result.ok && practice
+        ? 'velocita contiene l’intero 10. Python calcola il valore a destra di = prima di assegnarlo.'
+        : result.message;
       status.dataset.result = result.ok ? 'success' : 'error';
       if (result.ok) {
         if (!practice) {
           completed.add(mission.id);
           pending.delete(mission.id);
-          saveCompleted(completed);
+          progress.update({ completed: [...completed], skipped: [...pending] });
           game.grant(mission.upgrade, mission.id);
         }
         sound('success');
@@ -126,7 +135,10 @@ export function createCenter({ sound = () => {} } = {}) {
     if (dialog.open) return;
     practice = demonstration;
     active = mission;
-    if (!practice) pending.add(active.id);
+    if (!practice && !completed.has(active.id)) {
+      pending.add(active.id);
+      progress.update({ skipped: [...pending] });
+    }
     get('mission-id').textContent = practice ? 'Prova del tutorial' : `Missione ${String(active.id).padStart(2, '0')}${active.optional ? ' · Facoltativa' : ''}`;
     get('mission-title').textContent = active.title;
     get('mission-concept').textContent = active.concept;
@@ -150,7 +162,12 @@ export function createCenter({ sound = () => {} } = {}) {
   }
 
   return {
-    bind, onState, demo: () => show(missions[0], true),
+    bind, onState,
+    hasIncomplete: () => completed.size < missions.length,
+    completedMissions: () => missions.filter(({ id }) => completed.has(id)),
+    unlock() { unlocked = true; },
+    reset() { completed.clear(); pending.clear(); drafts.clear(); shownHints.clear(); unlocked = false; },
+    demo: () => show(missions[0], true),
     nextStar: () => {
       const mission = nextMission();
       return mission && !pending.has(mission.id) ? mission.id : null;
@@ -158,12 +175,13 @@ export function createCenter({ sound = () => {} } = {}) {
     count: () => [...completed].filter(id => id <= 4).length,
     onRefresh({ world }) {
       const mission = nextMission();
-      const retryable = mission && pending.has(mission.id);
-      const text = mission ? (retryable ? `In sospeso: ${mission.title}.`
+      const retryable = pending.size > 0;
+      const text = mission ? (retryable ? `In sospeso: ${missions.find(item => item.id === Math.min(...pending)).title}.`
         : mission.optional ? 'La missione 05 è facoltativa.' : 'Raccogli la stella contrassegnata PYTHON.')
         : 'Tutte le missioni sono completate.';
       if (note.textContent !== text) note.textContent = text;
       retry.hidden = world.state !== State.PLAYING || !retryable;
+      get('open-unlocked').hidden = world.state !== State.PLAYING || !unlocked;
     },
   };
 }

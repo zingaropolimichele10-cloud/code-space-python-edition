@@ -6,31 +6,35 @@ export const State = Object.freeze(Object.fromEntries(
     .map(name => [name, name]),
 ));
 const transitions = {
-  MENU: ['TUTORIAL'],
+  MENU: ['TUTORIAL', 'PLAYING', 'FINAL_CHALLENGE'],
   TUTORIAL: ['PLAYING', 'MENU'],
   PLAYING: ['PAUSED', 'MISSION', 'GAME_OVER', 'FINAL_CHALLENGE'],
   PAUSED: ['PLAYING', 'FINAL_CHALLENGE', 'MENU'],
   MISSION: ['PLAYING'],
   GAME_OVER: ['PLAYING', 'FINAL_CHALLENGE', 'MENU'],
   FINAL_CHALLENGE: ['PAUSED', 'GAME_OVER', 'VICTORY'],
-  VICTORY: ['MENU'],
+  VICTORY: ['MENU', 'PLAYING'],
 };
 
-const finalSeconds = 22;
+export const DEFAULT_FLIGHT = Object.freeze({ duration: 60, difficulty: 'standard', asteroids: true, demo: false });
+const difficultyScale = { calm: 0.65, standard: 1, hard: 1.35 };
+const baseUpgrades = { speed: 5, maxLives: 3, shield: false, color: 'rosso', autoShield: false };
 const clamp = (value, low, high) => Math.max(low, Math.min(value, high));
 const overlaps = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < (a.radius + b.radius) ** 2;
 
-export function createGame({ random = Math.random, nextMission = () => null, sound = () => {} } = {}) {
+export function createGame({ random = Math.random, nextMission = () => null, sound = () => {}, onCheckpoint = () => {} } = {}) {
   const world = {
     state: State.MENU,
     light: false,
     ship: { x: WIDTH / 2, y: HEIGHT * 0.8, radius: 15, invulnerable: 0 },
     rocks: [], stars: [], particles: [],
-    upgrades: { speed: 5, maxLives: 3, shield: false, color: 'rosso', autoShield: false },
+    upgrades: { ...baseUpgrades },
+    options: { ...DEFAULT_FLIGHT },
     time: 0, score: 0, lives: 3, shield: false, emergency: false,
-    finalLeft: finalSeconds, mission: null,
+    finalLeft: DEFAULT_FLIGHT.duration, mission: null,
   };
   let checkpoint;
+  let challengeDuration = DEFAULT_FLIGHT.duration;
   let pausedFrom;
   let rockIn;
   let starIn;
@@ -47,15 +51,18 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
 
   function checkpointNow(mode = State.PLAYING) {
     checkpoint = { mode, time: world.time, score: world.score };
+    if (mode === State.FINAL_CHALLENGE) checkpoint.duration = challengeDuration;
+    onCheckpoint(checkpoint);
   }
 
-  function resetSector() {
+  function resetSector(duration = world.options.duration) {
     Object.assign(world.ship, { x: WIDTH / 2, y: HEIGHT * 0.8, invulnerable: 1.4 });
     world.rocks.length = world.stars.length = world.particles.length = 0;
     world.lives = world.upgrades.maxLives;
     world.shield = world.upgrades.shield;
     world.emergency = world.upgrades.autoShield;
-    world.finalLeft = finalSeconds;
+    challengeDuration = duration;
+    world.finalLeft = challengeDuration;
     rockIn = 1.4;
     starIn = 0.7;
     missionIn = 2.5;
@@ -80,17 +87,23 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
         pausedFrom = world.state;
         return transition(State.PAUSED);
       case 'resume': return world.state === State.PAUSED && transition(pausedFrom);
+      case 'recover':
+        if (!transition(State.PLAYING)) return false;
+        resetSector();
+        checkpointNow();
+        return true;
       case 'checkpoint':
-        if (world.state !== State.GAME_OVER || !transition(checkpoint.mode)) return false;
+        if (world.state !== State.GAME_OVER || !checkpoint || !transition(checkpoint.mode)) return false;
         world.time = checkpoint.time;
         world.score = checkpoint.score;
-        resetSector();
+        resetSector(checkpoint.duration);
         return true;
       case 'final':
-        if (!transition(State.FINAL_CHALLENGE)) return false;
-        checkpointNow(State.FINAL_CHALLENGE);
+        if (world.state !== State.PLAYING || !transition(State.FINAL_CHALLENGE)) return false;
         world.rocks.length = world.stars.length = world.particles.length = 0;
-        world.finalLeft = finalSeconds;
+        challengeDuration = world.options.duration;
+        world.finalLeft = challengeDuration;
+        checkpointNow(State.FINAL_CHALLENGE);
         world.ship.invulnerable = 1.4;
         rockIn = 0.3;
         return true;
@@ -101,16 +114,45 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
 
   function openMission(id) {
     if (id == null || !transition(State.MISSION)) return false;
+    world.stars = world.stars.filter(star => star.mission !== id);
     world.mission = id;
     return true;
   }
 
   function closeMission() {
-    if (!transition(State.PLAYING)) return false;
+    if (world.state !== State.MISSION || !transition(State.PLAYING)) return false;
     world.mission = null;
     world.ship.invulnerable = Math.max(world.ship.invulnerable, 1);
     missionIn = 3;
     return true;
+  }
+
+  function restore(point) {
+    if (!point || world.state !== State.MENU || !transition(point.mode)) return false;
+    world.score = point.score;
+    world.time = point.time;
+    resetSector(point.duration);
+    checkpointNow(point.mode);
+    return true;
+  }
+
+  function reset() {
+    if (world.state === State.MISSION) return false;
+    if (world.state !== State.MENU) {
+      if (world.state === State.PLAYING || world.state === State.FINAL_CHALLENGE) action('pause');
+      if (!action('menu')) return false;
+    }
+    world.time = world.score = 0;
+    world.mission = null;
+    Object.assign(world.upgrades, baseUpgrades);
+    resetSector();
+    checkpoint = undefined;
+    return true;
+  }
+
+  function configure(options) {
+    Object.assign(world.options, options);
+    if (!world.options.asteroids || world.options.demo) world.rocks.length = 0;
   }
 
   function grant(upgrades, reward) {
@@ -228,12 +270,16 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     if (world.state !== State.PLAYING && world.state !== State.FINAL_CHALLENGE) return;
     const final = world.state === State.FINAL_CHALLENGE;
     const difficulty = Math.min(world.time / 150, 1);
+    const finalStage = final ? 1 - world.finalLeft / challengeDuration : 0;
+    const multiplier = difficultyScale[world.options.difficulty];
     world.time += dt;
     moveShip(dt);
     if (shieldCooling > 0 && (shieldCooling -= dt) <= 0) world.shield = true;
     if ((rockIn -= dt) <= 0) {
-      spawnRock(difficulty, final);
-      rockIn = final ? 0.54 : 1.65 - difficulty * 0.67;
+      if (world.options.asteroids && !world.options.demo) {
+        spawnRock((difficulty + finalStage * .7) * multiplier, final);
+      }
+      rockIn = (final ? .87 - finalStage * .4 : 1.65 - difficulty * .67) / multiplier;
     }
     if ((starIn -= dt) <= 0) {
       spawnStar(null);
@@ -259,5 +305,5 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     }
   }
 
-  return { world, keys, action, step, openMission, closeMission, grant };
+  return { world, keys, action, step, openMission, closeMission, grant, restore, reset, configure };
 }

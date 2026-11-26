@@ -19,9 +19,9 @@ const copy = {
   [State.VICTORY]: ['Settore superato', 'La navicella è al sicuro.'],
 };
 
-export function mountGame({ nextMission, finalReady = world => world.time >= 25, onState = () => {},
-  missionCount = () => 0, sound, onRefresh = () => {} } = {}) {
-  const game = createGame({ nextMission, sound });
+export function mountGame({ nextMission, onState = () => {},
+  missionCount = () => 0, sound, onCheckpoint, initialLight = false, onLight = () => {}, onRefresh = () => {} } = {}) {
+  const game = createGame({ nextMission, sound, onCheckpoint });
   const { world, keys } = game;
   const byId = id => document.getElementById(id);
   const tutorial = createTutorial();
@@ -41,10 +41,10 @@ export function mountGame({ nextMission, finalReady = world => world.time >= 25,
       for (const [state, id] of Object.entries(panels)) byId(id).hidden = state !== world.state;
       byId('pause-button').hidden = !flying.has(world.state);
       if (world.state === State.TUTORIAL) tutorial.start(world);
-      set('flight-status', copy[world.state][0]);
       if (panels[world.state]) byId(panels[world.state]).querySelector('button')?.focus({ preventScroll: true });
       onState(game);
     }
+    set('flight-status', copy[world.state][0] + (world.options.demo && flying.has(world.state) ? ' · Demo' : ''));
     set('flight-note', world.state === State.FINAL_CHALLENGE
       ? `Tempo rimanente: ${Math.max(0, Math.ceil(world.finalLeft))} s`
       : copy[world.state][1]);
@@ -54,7 +54,7 @@ export function mountGame({ nextMission, finalReady = world => world.time >= 25,
     set('mission-count', `${missionCount()} / 4`);
     set('shield', world.shield ? 'Attivo' : world.emergency && world.lives < 3 ? 'Emergenza'
       : world.upgrades.shield ? 'In ricarica' : 'Spento');
-    byId('final-button').hidden = !(world.state === State.PLAYING && finalReady(world));
+    byId('final-button').hidden = world.state !== State.PLAYING;
     if (world.state === State.TUTORIAL) {
       const text = byId('tutorial-text');
       const button = byId('tutorial-next');
@@ -67,7 +67,7 @@ export function mountGame({ nextMission, finalReady = world => world.time >= 25,
 
   byId('tutorial-next').addEventListener('click', () => { tutorial.next(world); refresh(); });
   document.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => {
-    if (button.dataset.action !== 'final' || finalReady(world)) game.action(button.dataset.action);
+    game.action(button.dataset.action);
     refresh();
   }));
   addEventListener('keydown', event => {
@@ -90,11 +90,15 @@ export function mountGame({ nextMission, finalReady = world => world.time >= 25,
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) handleBlur();
   });
-  byId('light').addEventListener('change', event => {
-    world.light = event.target.checked;
+  function setLight(value, save = true) {
+    world.light = value;
+    byId('light').checked = value;
+    byId('settings-light').checked = value;
+    if (save) onLight(value);
     if (world.light) world.particles.length = 0;
     canvas.resize(world.light);
-  });
+  }
+  byId('light').addEventListener('change', event => setLight(event.target.checked));
   const settings = byId('settings');
   const light = byId('light');
   const settingsLight = byId('settings-light');
@@ -105,11 +109,13 @@ export function mountGame({ nextMission, finalReady = world => world.time >= 25,
     settings.showModal();
   });
   settingsLight.addEventListener('change', () => {
-    light.checked = settingsLight.checked;
-    light.dispatchEvent(new Event('change'));
+    setLight(settingsLight.checked);
   });
-  new ResizeObserver(() => canvas.resize(world.light)).observe(byId('space'));
-  canvas.resize(world.light);
+  new ResizeObserver(() => {
+    canvas.resize(world.light);
+    canvas.draw(world);
+  }).observe(byId('space'));
+  setLight(initialLight, false);
   refresh();
   let previous;
   function frame(now) {
@@ -121,5 +127,5 @@ export function mountGame({ nextMission, finalReady = world => world.time >= 25,
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
-  return { game, refresh, tutorial };
+  return { game, refresh, tutorial, setLight };
 }

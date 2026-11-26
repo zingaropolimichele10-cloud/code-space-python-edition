@@ -12,4 +12,6 @@ Il gioco finale comprende schermata iniziale con trama, tutorial interattivo, na
 | 4 | Stringhe | `colore = "blu"` |
 | 5, facoltativa | Condizioni | Attivare lo scudo quando le vite sono inferiori a 3 |
 
-Direzione visiva futura con blu notte, nero, azzurro elettrico e oro, HUD futuristico, animazioni fluide, editor leggibile e tono adatto agli adolescenti. I requisiti tecnici permanenti sono in [AGENTS.md](AGENTS.md).
+Direzione visiva con blu notte, nero, azzurro elettrico e oro, HUD futuristico, animazioni fluide, editor leggibile e tono adatto agli adolescenti. I requisiti tecnici permanenti sono in [AGENTS.md](AGENTS.md).
+
+La sfida finale è disponibile nel percorso libero e nel percorso con tutti i potenziamenti principali. Parte da 60 secondi ed è configurabile localmente dal relatore. Il salvataggio contiene solo dati di gioco e preferenze.

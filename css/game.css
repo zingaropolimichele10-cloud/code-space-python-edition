@@ -132,3 +132,26 @@ kbd { border: 1px solid #446281; border-radius: .25rem; padding: .1rem .3rem; co
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
 }
+.quiet { background: transparent; color: var(--muted); border: 1px solid var(--line); font-size: .85rem; }
+.teacher-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem .8rem; margin-block: .85rem; }
+.teacher-options label { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
+.teacher-options input:not([type=checkbox]), .teacher-options select { font: inherit; max-width: 100%; padding: .35rem; border: 1px solid var(--line); border-radius: .3rem; }
+.teacher-options button { margin-top: 0; }
+#teacher-answer { white-space: pre-wrap; overflow-wrap: anywhere; background: #081529; padding: .7rem; }
+#teacher-status:empty { display: none; }
+#teacher-confirm { border: 1px solid var(--gold); padding: .7rem; border-radius: .35rem; }
+#mission-picker { width: min(32rem, calc(100% - 1.5rem)); color: inherit; background: #0d1c34; border: 1px solid #5283a6; border-radius: .7rem; padding: 1.3rem; }
+#mission-picker::backdrop { background: #030811c9; }
+#picker-list { display: grid; gap: .4rem; margin-bottom: .9rem; }
+#picker-list button { margin: 0; text-align: left; }
+#victory-panel { width: min(36rem, 100%); }
+#victory-panel p:not(.edition) { margin-bottom: .55rem; }
+#final-route { font-size: .83rem; }
+@media (max-width: 33rem) { .teacher-options { grid-template-columns: 1fr; } }
+#line-numbers { white-space: pre; }
+.overlay { align-items: safe center; }
+.viewport[data-state="TUTORIAL"] .overlay { place-items: start; background: none; pointer-events: none; }
+.viewport[data-state="TUTORIAL"] .state-panel { pointer-events: auto; }
+@media (min-width: 96rem) {
+  .shell { width: min(94rem, calc(100% - 3rem)); }
+}
