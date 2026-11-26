@@ -38,7 +38,7 @@ test('Browser: combattimento, segnali del drone e nuova missione if', async t =>
   await click('#teacher-open');
   await evaluate(`(() => {
     const choice = document.getElementById('teacher-mission');
-    choice.value = '5';
+    choice.value = '7';
     choice.dispatchEvent(new Event('change'));
   })()`);
   await click('#teacher-launch');

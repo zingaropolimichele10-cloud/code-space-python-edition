@@ -1,9 +1,8 @@
-const version = '2.0.0-firebase.2';
+const version = '2.1.0';
 const scope = new URL(self.registration.scope);
 const cachePrefix = 'code-space:' + scope.pathname + ':';
 const cacheName = cachePrefix + version;
 const start = new URL('index.html', scope);
-const laboratory = new URL('laboratorio.html', scope);
 const classroom = new URL('classroom.html', scope);
 
 self.addEventListener('install', event => {
@@ -45,7 +44,6 @@ self.addEventListener('fetch', event => {
   let key = request;
   if (request.mode === 'navigate') {
     if (url.pathname === scope.pathname || url.pathname === start.pathname) key = start.href;
-    else if (url.pathname === laboratory.pathname) key = laboratory.href;
     else if (url.pathname === classroom.pathname) key = classroom.href;
     else return;
   }

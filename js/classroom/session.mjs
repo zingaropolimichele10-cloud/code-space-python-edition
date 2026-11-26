@@ -5,12 +5,14 @@ export function sessionService(store, { randomPin = pinNumber, id = () => crypto
     if (!store.uid) throw Error('Accedi come Host prima di creare una sessione.');
     title = title.trim().slice(0, 60);
     if (!title) throw Error('Inserisci un titolo per la sessione.');
+    settings = { ...settings, adventure: true };
     const room = id();
     const created = store.now();
     const expires = created + 3 * 3600000;
     for (let attempt = 0; attempt < 12; attempt++) {
       const pin = randomPin();
-      const reservation = { room, owner: store.uid, expires, capacity: settings.capacity ?? defaults.capacity };
+      const reservation = { room, owner: store.uid, expires, capacity: settings.capacity ?? defaults.capacity,
+        ...(settings.adventure ? { adventure: true } : {}) };
       const path = 'pins/' + pin;
       const existing = await store.get(path);
       if (existing?.expires > store.now()) continue;
@@ -41,6 +43,7 @@ export function sessionService(store, { randomPin = pinNumber, id = () => crypto
     const ticket = await store.get('pins/' + pin);
     if (!ticket) throw Error('PIN inesistente.');
     if (ticket.expires <= store.now()) throw Error('Sessione scaduta.');
+    if (!ticket.adventure) throw Error('Questo PIN appartiene alla 2.0. Chiedi all’Host di creare una sessione 2.1.');
     const room = ticket.room;
     const existing = await store.get(`members/${room}/${uid}`);
     if (existing?.kicked) throw Error('Il comandante ti ha rimosso dalla sessione.');
@@ -52,7 +55,7 @@ export function sessionService(store, { randomPin = pinNumber, id = () => crypto
       const start = Math.floor(Math.random() * capacity);
       for (let offset = 0; offset < capacity; offset++) {
         const seat = (start + offset) % capacity;
-        const member = { name, key, seat, kicked: false, pin };
+        const member = { name, key, seat, kicked: false, pin, adventure: true };
         try {
           await store.update({
             [`members/${room}/${uid}`]: member,

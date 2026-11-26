@@ -12,7 +12,7 @@ const mime = {
   '.js': 'text/javascript', '.svg': 'image/svg+xml',
 };
 
-export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900, staticRoot = root, listenHost = '127.0.0.1', clientHost = listenHost, externalOrigin, externalPrefix = prefix, extraArgs = [] } = {}) {
+export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900, staticRoot = root, listenHost = '127.0.0.1', clientHost = listenHost, externalOrigin, externalPrefix = prefix, extraArgs = [], pages = {} } = {}) {
   const profile = await mkdtemp(`${tmpdir()}/codespace-browser-`);
   const requests = [];
   let serving = true;
@@ -22,6 +22,10 @@ export async function openBrowser(path = '', { beforeLoad, width = 1360, height 
     if (req.url === '/release-test-probe') {
       res.setHeader('Content-Type', 'text/html');
       return res.end('<!doctype html><title>Verifica aggiornamento</title>');
+    }
+    if (Object.hasOwn(pages, req.url)) {
+      res.setHeader('Content-Type', 'text/html');
+      return res.end(pages[req.url]);
     }
     try {
       if (!req.url.startsWith(prefix)) throw new Error('Percorso fuori dal sottosito');
@@ -120,7 +124,7 @@ export async function openBrowser(path = '', { beforeLoad, width = 1360, height 
   try {
     const version = await send('Browser.getVersion');
     const { targetInfos } = await send('Target.getTargets');
-    const targetId = targetInfos.find(target => target.type === 'page').targetId;
+    const targetId = targetInfos.find(target => target.type === 'page')?.targetId ?? (await send('Target.createTarget', { url: 'about:blank' })).targetId;
     const { sessionId } = await send('Target.attachToTarget', {
       targetId, flatten: true,
     });

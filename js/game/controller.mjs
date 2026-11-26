@@ -1,3 +1,4 @@
+import { MAIN_MISSIONS } from '../missions/catalog.mjs';
 import { FIRE_KEY, sectors } from './arcade.mjs';
 import { createTutorial } from './tutorial.mjs';
 import { createCanvas } from './canvas.mjs';
@@ -55,7 +56,7 @@ export function mountGame({ nextMission, onState = () => {},
     set('lives', `${world.lives} / ${world.upgrades.maxLives}`);
     set('score', String(world.score));
     set('speed', String(world.upgrades.speed));
-    set('mission-count', `${missionCount()} / 4`);
+    set('mission-count', `${missionCount()} / ${MAIN_MISSIONS}`);
     set('shield', world.shield ? 'Attivo' : world.emergency && world.lives < 3 ? 'Emergenza'
       : world.upgrades.shield ? 'In ricarica' : 'Spento');
     const inFlight = flying.has(world.state);

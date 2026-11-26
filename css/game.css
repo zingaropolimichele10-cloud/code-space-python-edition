@@ -180,3 +180,31 @@ kbd { border: 1px solid #446281; border-radius: .25rem; padding: .1rem .3rem; co
 #mission-preview[data-mission="1"]::before { background: #ffc573; clip-path: polygon(50% 3%, 100% 58%, 74% 58%, 50% 33%, 26% 58%, 0 58%, 50% 100%, 83% 65%, 62% 65%, 50% 78%, 38% 65%, 17% 65%); }
 #mission-preview[data-mission="2"]::before { background: #ffc573; clip-path: polygon(33% 0, 67% 0, 67% 33%, 100% 33%, 100% 67%, 67% 67%, 67% 100%, 33% 100%, 33% 67%, 0 67%, 0 33%, 33% 33%); }
 #mission-preview[data-mission="4"]::before { background: linear-gradient(135deg, #83dfff, #398bff); clip-path: polygon(25% 0, 75% 0, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0 75%, 0 25%); }
+
+#mission-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  gap: .5rem;
+  padding: .7rem;
+  margin: .65rem 0;
+  border: 1px solid #4181a5;
+  border-radius: .65rem;
+  background: #0a2239;
+}
+#mission-panel > strong { grid-column: 1 / -1; color: #a8e6ff; }
+#mission-panel > div {
+  display: grid;
+  gap: .25rem;
+  padding: .4rem;
+  background: #061628;
+  overflow-wrap: anywhere;
+}
+#mission-panel progress { width: 100%; accent-color: #72dcff; }
+#mission-panel[data-system="segnale"], #mission-panel[data-system="stiva"] { border-color: #cb9d55; }
+#mission-panel[data-system="armi"], #mission-panel[data-system="omega"] { border-color: #cc806d; }
+#mission-panel[data-system="radar"] { background: repeating-linear-gradient(90deg, #0a2435 0 19px, #153546 20px); }
+#mission-panel[data-system="ciclo"] > div { border-bottom: 2px solid #69b4e2; }
+@media (prefers-reduced-motion: no-preference) {
+  #mission-reward:not([hidden]) { animation: adventure-success .4s ease-out; }
+  @keyframes adventure-success { from { opacity: .35; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+}

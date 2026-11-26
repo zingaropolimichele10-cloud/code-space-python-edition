@@ -1,8 +1,10 @@
 # Configurare Firebase per Classroom
 
+Per aggiornare il sito già online segui prima la [sequenza 2.0 → 2.1](RELEASE_2_1.md).
+
 ## Console Firebase del progetto `code-space-classroom`
 
-Il frontend contiene la configurazione Web pubblica, con accesso Host Email/Password e accesso studente anonimo. Il Service Worker usa la revisione `2.0.0-firebase.2`, così una scheda che ha la 2.0.0 può installare la configurazione aggiornata. Le credenziali Host si inseriscono solo nel modulo del gioco.
+Il frontend contiene la configurazione Web pubblica, con accesso Host Email/Password e accesso studente anonimo. Il Service Worker usa la revisione `2.1.0`, così una scheda che ha la 2.0.0 può installare la configurazione aggiornata. Le credenziali Host si inseriscono solo nel modulo del gioco.
 
 1. Apri [Realtime Database del progetto](https://console.firebase.google.com/project/code-space-classroom/database). Seleziona l’istanza `code-space-classroom-default-rtdb` in `europe-west1`. Apri **Regole / Rules**, sostituisci l’intero editor con il contenuto di [database.rules.json](../database.rules.json), poi premi **Pubblica / Publish**. Il file è integrale e identico a quello indicato da `firebase.json`. Lascia il database in modalità bloccata se l’editor rifiuta le regole.
 2. Apri **Authentication → Users** e verifica che la riga dell’account Host abbia l’UID `ixRse6E0cJYSz4BBZAldEq2BTmI2`. Da **Realtime Database → Dati / Data**, se il database è vuoto, usa **⋮ → Importa JSON / Import JSON** alla radice e importa questo intero documento. Se ci sono già dati, aggiungi il figlio `hosts` o, se esiste, modifica solo il figlio identificato dall’UID. Il valore deve avere tipo **booleano**.

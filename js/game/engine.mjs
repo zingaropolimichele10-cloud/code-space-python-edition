@@ -20,9 +20,10 @@ const transitions = {
 
 export const DEFAULT_FLIGHT = Object.freeze({ duration: 60, difficulty: 'standard', asteroids: true, demo: false });
 const difficultyScale = { calm: 0.65, standard: 1, hard: 1.35 };
-const baseUpgrades = { speed: 5, maxLives: 3, shield: false, color: 'rosso', autoShield: false };
+const baseUpgrades = { speed: 5, maxLives: 3, shield: false, color: 'rosso', autoShield: false, cache: false, laser: false, reactor: false, navigator: false,
+  rapid: false, magnet: false, autopilot: false, omega: false };
 const clamp = (value, low, high) => Math.max(low, Math.min(value, high));
-const overlaps = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < (a.radius + b.radius) ** 2;
+const overlaps = (a, b, extra = 0) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < (a.radius + b.radius + extra) ** 2;
 
 export function createGame({ random = Math.random, nextMission = () => null, sound = () => {}, onCheckpoint = () => {} } = {}) {
   const world = {
@@ -73,7 +74,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     serial = shotIn = comboLeft = safeTime = 0;
     world.lives = world.upgrades.maxLives;
     world.shield = world.upgrades.shield;
-    world.emergency = world.upgrades.autoShield;
+    world.emergency = world.upgrades.autoShield || world.upgrades.reactor;
     challengeDuration = duration;
     world.finalLeft = challengeDuration;
     rockIn = 1.4;
@@ -180,10 +181,14 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     Object.assign(world.upgrades, upgrades);
     if (reward === 2) world.lives = world.upgrades.maxLives;
     if (reward === 3) { world.shield = true; sound('shield'); }
-    if (reward === 5) world.emergency = true;
+    if (upgrades.autoShield || upgrades.reactor) world.emergency = true;
+    if (reward === 4 && upgrades.cache) world.score += 150;
+    if (upgrades.reactor && shieldCooling > 10) shieldCooling = 10;
     if (reward) {
       world.rewardFlash = 1.25;
-      announce(['', 'Propulsori turbo', 'Riparazione completata', 'Scudo installato', 'Rivestimento personalizzato', 'Riserva d’emergenza pronta'][reward]);
+      announce(['', 'Propulsori turbo', 'Riparazione completata', 'Scudo installato', 'Coordinate NORD-7 · +150',
+        'Cannoni rinforzati', 'Reattore bilanciato', 'Riserva d’emergenza pronta', 'Rotta sicura',
+        'Ricarica automatica', 'Magnete installato', 'Computer riparato', 'Protocollo Omega attivo'][reward]);
       checkpointNow();
     }
   }
@@ -248,7 +253,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
       }
       if (star.y > HEIGHT + star.radius) {
         world.stars.splice(index, 1);
-      } else if (overlaps(world.ship, star)) {
+      } else if (overlaps(world.ship, star, world.upgrades.magnet && star.mission == null ? 25 : 0)) {
         world.stars.splice(index, 1);
         sound('star');
         world.stats.stars++;
@@ -309,7 +314,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
       world.shieldFlash = .55;
       if (world.shield) {
         world.shield = false;
-        shieldCooling = 18;
+        shieldCooling = world.upgrades.reactor ? 10 : 18;
       } else world.emergency = false;
     } else if (--world.lives === 0) transition(State.GAME_OVER);
   }
@@ -338,8 +343,8 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
   function updateShots(dt) {
     shotIn -= dt;
     if (keys.has(FIRE_KEY) && shotIn <= 0 && world.shots.length < LIMITS.shots) {
-      world.shots.push({ x: world.ship.x, y: world.ship.y - 19, radius: 4 });
-      shotIn = .205;
+      world.shots.push({ x: world.ship.x, y: world.ship.y - 19, radius: world.upgrades.omega ? 7 : 4, power: world.upgrades.laser ? 2 : 1, omega: world.upgrades.omega });
+      shotIn = world.upgrades.rapid ? .145 : .205;
       sound('fire');
     }
     for (let index = world.shots.length - 1; index >= 0; index--) {
@@ -349,11 +354,11 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
       const target = world.rocks.findIndex(rock => shotHits(shot, rock, previousY));
       if (target !== -1) {
         const rock = world.rocks[target];
-        rock.hp = (rock.hp ?? 1) - 1;
+        rock.hp = (rock.hp ?? 1) - (shot.power ?? 1);
         if (rock.hp <= 0) destroyRock(target);
         else { burst(shot.x, shot.y, '#ffd8a0'); sound('ping'); }
       } else if (world.boss && shotHits(shot, world.boss, previousY)) {
-        world.boss.hp = Math.max(0, world.boss.hp - 1);
+        world.boss.hp = Math.max(0, world.boss.hp - (shot.omega ? 5 : shot.power ?? 1));
         burst(shot.x, shot.y, '#87e5ff');
         sound('ping');
       } else if (shot.y > -8) continue;
@@ -372,8 +377,9 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     safeTime += dt;
     if (safeTime >= 18) {
       safeTime -= 18;
-      world.score += 30 * world.multiplier;
-      announce(`Volo pulito · +${30 * world.multiplier} punti`);
+      const bonus = (world.upgrades.autopilot ? 60 : 30) * world.multiplier;
+      world.score += bonus;
+      announce(`Volo pulito · +${bonus} punti`);
       sound('combo');
     }
     if (final) {
@@ -418,7 +424,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
       if (world.options.asteroids && !world.options.demo) {
         spawnRock((difficulty + finalStage * .7) * multiplier, final);
       }
-      rockIn = (final ? .87 - finalStage * .4 : 1.65 - difficulty * .67) * sectors[world.sector].pace / multiplier;
+      rockIn = (final ? .87 - finalStage * .4 : 1.65 - difficulty * .67) * sectors[world.sector].pace * (!final && world.upgrades.navigator ? 1.3 : 1) / multiplier;
     }
     if ((starIn -= dt) <= 0) {
       spawnStar(null);
@@ -440,13 +446,17 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     }
     if (final) {
       world.finalLeft = Math.max(0, world.finalLeft - dt);
-      if (world.finalLeft === 0 || world.boss.hp === 0) {
-        world.score += world.boss.hp === 0 ? 200 : 100;
-        transition(State.VICTORY);
-        sound('victory');
-      }
+      if (world.finalLeft === 0 || world.boss.hp === 0) finishFinal();
     }
   }
 
-  return { world, keys, action, step, openMission, closeMission, grant, restore, reset, configure };
+  function finishFinal() {
+    if (world.state !== State.FINAL_CHALLENGE) return false;
+    world.score += world.boss.hp === 0 ? 200 : 100;
+    transition(State.VICTORY);
+    sound('victory');
+    return true;
+  }
+
+  return { world, keys, action, step, openMission, closeMission, grant, restore, reset, configure, finishFinal };
 }

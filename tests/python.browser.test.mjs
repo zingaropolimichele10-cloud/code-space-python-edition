@@ -3,7 +3,46 @@ import { test } from 'node:test';
 import { openBrowser } from './browser.mjs';
 
 test('Prototipo Python in Chromium', async t => {
-  const browser = await openBrowser('laboratorio.html');
+  const fixture = `<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'">
+  <title>CODE SPACE – Python Edition</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <script type="module" src="./js/python/editor.mjs"></script>
+</head>
+<body>
+  <p id="offline-notice" class="offline-notice" role="status" hidden></p>
+  <main>
+    <header>
+      <h1>CODE SPACE <span>Python Edition</span></h1>
+      <p>Laboratorio Python</p>
+    </header>
+    <div class="laboratorio">
+      <form>
+        <label for="codice">Codice Python</label>
+        <textarea id="codice" rows="12" spellcheck="false" autocapitalize="off" autocomplete="off">velocita = 5 * 2
+print(velocita)</textarea>
+        <button type="submit">Esegui</button>
+      </form>
+      <section aria-label="Risultati">
+        <p id="stato" role="status">Pronto per eseguire.</p>
+        <h2>Output</h2>
+        <pre id="output" tabindex="0"></pre>
+        <h2>Variabili</h2>
+        <pre id="variabili" tabindex="0"></pre>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
+`;
+  const browser = await openBrowser('__python-test.html', { pages: {
+    '/code-space-python-edition/__python-test.html': fixture,
+  } });
+
   t.after(browser.close);
   t.diagnostic(browser.version);
   const { evaluate } = browser;
@@ -111,7 +150,7 @@ test('Prototipo Python in Chromium', async t => {
       return [location.pathname, document.querySelector('#output').textContent,
         document.querySelector('#variabili').textContent];
     })()`);
-    assert.deepEqual(result, [browser.prefix + 'laboratorio.html', '10\n', 'velocita = 10 (intero)']);
+    assert.deepEqual(result, [browser.prefix + '__python-test.html', '10\n', 'velocita = 10 (intero)']);
     assert.ok(browser.requests.includes(browser.prefix + 'workers/python.worker.js'));
     assert.ok(browser.requests.includes(browser.prefix + 'vendor/skulpt/skulpt.min.js'));
   });

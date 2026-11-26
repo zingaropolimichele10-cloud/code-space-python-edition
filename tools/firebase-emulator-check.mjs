@@ -39,13 +39,15 @@ if (!process.argv.includes('--auth-only')) {
     if (!allowed) assert.match(payload.error ?? '', /permission denied/i, path);
     return payload;
   }
+  const adventure = process.argv.includes('--adventure');
+  const marker = adventure ? { adventure: true } : {};
   const now = Date.now();
   const room = crypto.randomUUID();
   const pin = String(100000 + Math.floor(Math.random() * 900000));
-  const ticket = { owner: host.localId, room, expires: now + 600000, capacity: 30 };
+  const ticket = { owner: host.localId, room, expires: now + 600000, capacity: 30, ...marker };
   const control = { owner: host.localId, pin, title: 'Prova locale', created: now, expires: ticket.expires,
     phase: 'lobby', seq: 0, at: now, until: 0, locked: false, view: 'lobby', reveal: 0,
-    settings: { capacity: 30, minutes: 40, difficulty: 'standard', bossSeconds: 60, required: 4,
+    settings: { capacity: 30, minutes: 40, difficulty: 'standard', bossSeconds: 60, required: adventure ? 12 : 4, ...marker,
       audio: false, skip: true, late: true, rocks: true } };
   await db('pins', student, 'GET', undefined, false);
   await db('hosts/' + student.localId, student, 'PUT', true, false);
@@ -68,7 +70,7 @@ if (!process.argv.includes('--auth-only')) {
   await db('names/' + room + '/vega', student, 'PUT', student.localId, false);
   const membership = 'members/' + room + '/' + student.localId;
   const admission = (seat, key = 'vega', code = pin) => ({
-    [membership]: { name: key, key, seat, kicked: false, pin: code },
+    [membership]: { name: key, key, seat, kicked: false, pin: code, ...marker },
     ['seats/' + room + '/' + seat]: student.localId,
     ['names/' + room + '/' + key]: student.localId,
   });
@@ -77,18 +79,26 @@ if (!process.argv.includes('--auth-only')) {
   await db('', student, 'PATCH', admission(0, 'vega', wrongPin), false);
   await db('', student, 'PATCH', { ...admission(0), ['seats/' + room + '/1']: student.localId }, false);
   await db('', student, 'PATCH', { ...admission(0), ['names/' + room + '/nova']: student.localId }, false);
+  if (adventure) {
+    const legacyAdmission = admission(0);
+    delete legacyAdmission[membership].adventure;
+    await db('', student, 'PATCH', legacyAdmission, false);
+  }
   await db('', student, 'PATCH', admission(0));
   await db('rooms/' + room, student, 'GET');
   await db('members/' + room, other, 'GET', undefined, false);
   await db('scores/' + room, other, 'GET', undefined, false);
   await db('rooms/' + room, host, 'PUT', { ...control, seq: 1, phase: 'flight', at: now, until: now + 300000 });
-  const score = { mask: 1, boss: false, arcade: 200, lives: 3, sector: 1, status: 'flying', updated: { '.sv': 'timestamp' } };
+  const score = { ...marker, mask: adventure ? 4095 : 31, boss: false, arcade: 200, lives: 3, sector: 1, status: 'flying', updated: { '.sv': 'timestamp' } };
   const report = 'scores/' + room + '/' + student.localId;
   await db(report, other, 'PUT', score, false);
+  await db(report, student, 'PUT', { ...score, mask: adventure ? 4096 : 32 }, false);
   await db(report, student, 'PUT', score);
   await db(report, student, 'PUT', score, false);
+  await new Promise(resolve => setTimeout(resolve, 700));
+  await db(report, student, 'PUT', { ...score, mask: 1 }, false);
   const privatePath = 'metrics/' + room + '/' + student.localId;
-  await db(privatePath, student, 'PUT', { mission: 1, since: now, attempts: 1, hints: 0, help: true });
+  await db(privatePath, student, 'PUT', { ...marker, ...(adventure ? { errors: 1 } : {}), mission: adventure ? 12 : 5, since: now, attempts: 1, hints: 0, help: true });
   await db(privatePath, other, 'GET', undefined, false);
   await db(privatePath, host, 'GET');
   const spectator = await auth('signUp', {});

@@ -143,7 +143,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await advance(220);
     assert.equal(await state(), 'MISSION');
     assert.equal(await dialog(), true);
-    assert.equal(await text('mission-title'), 'Turbo spaziale');
+    assert.equal(await text('mission-title'), 'Motori fuori controllo');
     const snapshot = await paint();
     const before = await hud();
     await source('velocita = 6');
@@ -182,13 +182,13 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     });
     await click('#mission-skip');
     assert.equal(await state(), 'PLAYING');
-    await advance(220);
+    await advance(30);
     assert.equal(await dialog(), false);
     await click('#mission-retry');
     assert.equal(await evaluate("document.querySelector('#mission-code').value"), 'velocita = 6');
     assert.equal(await evaluate("document.querySelectorAll('#mission-hints li').length"), 3);
     assert.match(await submit('velocita = 5 * 2', 'success'), /intero 10/);
-    assert.equal(await text('mission-count'), '1 / 4');
+    assert.equal(await text('mission-count'), '1 / 5');
     await finish();
     assert.equal(await state(), 'PLAYING');
   });
@@ -201,9 +201,10 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await key('ArrowRight', 'keyUp');
     assert.ok((await paint())[0] - x > 45);
     for (const [title, code, count] of [
-      ['Riparazione di emergenza', 'vite = 2 + 3', '2 / 4'],
-      ['Scudo energetico', 'scudo = 2 < 3', '3 / 4'],
-      ['Camuffamento', 'colore = "b" + "lu"', '4 / 4'],
+      ['Emergenza vitale', 'energia = 2 + 3', '2 / 5'],
+      ['Tempesta di meteoriti', 'scudo = 2 < 3', '3 / 5'],
+      ['Messaggio extraterrestre', 'messaggio = "NORD" + "-7"', '4 / 5'],
+      ['Armi in avaria', 'potenza = 4 * 3', '5 / 5'],
     ]) {
       await advance(220);
       assert.equal(await text('mission-title'), title);
@@ -218,7 +219,10 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     assert.equal((await paint())[2], '64,155,255');
     assert.equal(await evaluate("document.querySelector('#final-button').hidden"), false);
     await advance(220);
-    assert.equal(await text('mission-title'), 'Protezione automatica');
+    assert.equal(await text('mission-title'), 'Energia critica');
+    await click('#mission-skip');
+    await advance(220);
+    assert.equal(await text('mission-title'), 'Difesa intelligente');
     assert.match(await text('mission-id'), /Facoltativa/);
     assert.match(await submit('scudo = True', 'error'), /Con 4 vite/);
     assert.match(await submit('vite = 2\nscudo = True', 'error'), /Lascia invariato/);
@@ -238,15 +242,15 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     for (let index = 0; index < 3; index++) {
       await action('tutorial');
       await action('start');
-      assert.deepEqual((await hud()).slice(0, 3), ['5 / 5', '0', '4 / 4']);
+      assert.deepEqual((await hud()).slice(0, 3), ['5 / 5', '0', '5 / 5']);
       await action('pause');
       await evaluate("document.querySelector('#paused-panel [data-action=menu]').click()");
     }
     assert.equal(await evaluate('peakFrames'), 1);
-    assert.deepEqual(await evaluate("JSON.parse(localStorage.getItem('code-space:progress:v2')).completed"), [1, 2, 3, 4, 5]);
+    assert.deepEqual(await evaluate("JSON.parse(localStorage.getItem('code-space:progress:v3')).completed"), [1, 2, 3, 4, 5, 7]);
     await browser.page('Page.reload');
     await waitForPage(browser);
-    assert.equal(await text('mission-count'), '4 / 4');
+    assert.equal(await text('mission-count'), '5 / 5');
   });
 
   await t.test('Sottopercorso, rete locale ed errori JavaScript', async () => {
@@ -284,10 +288,10 @@ test('Game over nel browser e vittoria senza missione facoltativa', async t => {
   assert.equal(await evaluate("document.querySelector('#mission-retry').hidden"), false);
 
   await evaluate(`
-    const progress = JSON.parse(localStorage.getItem('code-space:progress:v2'));
+    const progress = JSON.parse(localStorage.getItem('code-space:progress:v3'));
     progress.completed = [1,2,3,4];
     progress.skipped = [];
-    localStorage.setItem('code-space:progress:v2', JSON.stringify(progress));
+    localStorage.setItem('code-space:progress:v3', JSON.stringify(progress));
     sessionStorage.setItem('test:checkpoint', '1');
   `);
   await browser.page('Page.reload');
@@ -297,7 +301,7 @@ test('Game over nel browser e vittoria senza missione facoltativa', async t => {
     document.querySelector('[data-action=start]').click();
     document.querySelector('#final-button').click();
     advance(1220);
-    return [document.querySelector('#viewport').dataset.state, JSON.parse(localStorage.getItem('code-space:progress:v2')).completed];
+    return [document.querySelector('#viewport').dataset.state, JSON.parse(localStorage.getItem('code-space:progress:v3')).completed];
   })()`), ['VICTORY', [1, 2, 3, 4]]);
   assert.deepEqual(browser.errors, []);
 });

@@ -1,12 +1,10 @@
 {
-  "version": "2.0.0-firebase.2",
+  "version": "2.1.0",
   "runtime": [
     "index.html",
-    "laboratorio.html",
     "assets/aurora.svg",
     "assets/favicon.svg",
     "css/game.css",
-    "css/prototype.css",
     "js/audio/sound.mjs",
     "js/game/arcade.mjs",
     "js/game/canvas.mjs",
@@ -18,7 +16,6 @@
     "js/missions/center.mjs",
     "js/missions/editor-tools.mjs",
     "js/missions/validate.mjs",
-    "js/python/editor.mjs",
     "js/python/protocol.mjs",
     "js/python/runner.mjs",
     "js/storage/offline.mjs",
@@ -37,6 +34,7 @@
     "js/classroom/game-bridge.mjs",
     "js/classroom/model.mjs",
     "js/classroom/session.mjs",
-    "js/classroom/ui.mjs"
+    "js/classroom/ui.mjs",
+    "js/missions/panels.mjs"
   ]
 }

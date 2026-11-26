@@ -10,7 +10,7 @@
 
 ## A. Offline dopo un primo caricamento completo
 
-Su HTTPS o sull’indirizzo loopback il Service Worker preleva tutte le risorse elencate nel manifest. Per il primo caricamento occorre raggiungere il server. Apri il gioco, attendi l’attivazione del Service Worker e verifica l’offline disconnettendo la rete di prova e ricaricando. Esegui la prima missione e riapri il Laboratorio Python. Usa lo stesso indirizzo e profilo. La modalità privata, la pulizia dei dati e le regole della postazione possono eliminare o impedire la cache.
+Su HTTPS o sull’indirizzo loopback il Service Worker preleva tutte le risorse elencate nel manifest. Per il primo caricamento occorre raggiungere il server. Apri il gioco, attendi l’attivazione del Service Worker e verifica l’offline disconnettendo la rete di prova e ricaricando. Esegui la prima missione nel Centro di controllo. Usa lo stesso indirizzo e profilo. La modalità privata, la pulizia dei dati e le regole della postazione possono eliminare o impedire la cache.
 
 Per pubblicare un aggiornamento, incrementa la stessa versione in `sw.js` e `release-manifest.json`. Aggiorna l’elenco dei file se necessario e distribuisci l’intera versione insieme. Il Service Worker scarica la nuova cache prima di proporla. Quando compare l’avviso, salva il lavoro e chiudi **tutte** le schede di CODE SPACE su quell’origine. Alla riapertura si attiva la nuova versione e viene rimossa la cache precedente di quello scope. Questa procedura conserva LocalStorage. L’uso offline mantiene l’ultima versione installata fino a una successiva connessione.
 

@@ -125,9 +125,9 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore, pausa e mission
   })()`);
   await until(student, "document.querySelector('#flight-frame').contentDocument.querySelector('#mission-status').dataset.result === 'success'");
   await student.evaluate("document.querySelector('#flight-frame').contentDocument.querySelector('#mission-done').click()");
-  await until(student, "document.querySelector('#player-summary').textContent.includes('10') && Number(document.querySelector('#rank-body tr td:nth-child(3)').textContent) >= 1000");
+  await until(student, "document.querySelector('#player-summary').textContent.includes('punti') && Number(document.querySelector('#rank-body tr td:nth-child(3)').textContent) >= 1400");
   await parent.activate();
-  await until(parent, "Number(document.querySelector('#rank-body tr td:nth-child(3)').textContent) >= 1000");
+  await until(parent, "Number(document.querySelector('#rank-body tr td:nth-child(3)').textContent) >= 1400");
   await parent.evaluate("document.querySelector('#rank').scrollIntoView({block:'end'})");
   await capture(parent, '11-classifica');
   await until(parent, "!document.querySelector('[data-command=boss]').disabled");
@@ -141,10 +141,12 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore, pausa e mission
   await until(parent, "document.querySelector('#host-totals').textContent.includes('1 completati')");
   await click(parent, selectors.end);
   await until(parent, "document.querySelector('#phase-label').textContent === 'Sessione terminata'");
+  await until(parent, "!document.querySelector('[data-option=podium]').disabled");
   await click(parent, selectors.podium);
   for (let index = 0; index < 3; index++) {
     await until(parent, "!document.querySelector('[data-option=reveal]').disabled");
     await click(parent, selectors.reveal);
+    await until(parent, `document.querySelector('[data-option=reveal]').textContent.includes('(${index + 1}/3)')`);
   }
   await until(parent, "document.querySelector('#podium-list').textContent.includes('Aurora_42')");
   await parent.evaluate("document.querySelector('#podium').scrollIntoView({block:'center'})");

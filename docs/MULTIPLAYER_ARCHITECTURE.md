@@ -21,3 +21,9 @@ Il client pubblica solo variazioni, con un intervallo minimo operativo di circa 
 Per tre gruppi consecutivi moltiplica per tre. Con 30 giocatori sono circa 76 MB indicativi o 1,38 GB nell’ipotesi intensa. Le cifre sono stime e non misure Firebase. Controlla Usage dopo il collaudo. I listener pubblici usano eventi per riga, mentre i dettagli privati vengono osservati solo dalla dashboard Host.
 
 Nella demo, schede dello stesso profilo condividono un archivio IndexedDB con transazioni e notifiche BroadcastChannel. Con IndexedDB indisponibile restano operazioni in memoria della singola scheda. Se l’Host online perde rete, i client collegati seguono l’ultimo comando accettato fino a fine timer. L’Host può rientrare con la stessa identità e riprendere il controllo.
+
+## Protocollo Adventure 2.1
+
+Il biglietto PIN e le impostazioni della stanza contengono il marcatore immutabile `adventure: true`. Conseguentemente iscrizioni, punteggi e metriche della stessa stanza richiedono il marcatore. Le stanze 2.0 continuano a usare registri privi del campo. Le letture di lobby, classifica e proiettore mantengono i controlli per stanza, ruolo e scadenza.
+
+La maschera Adventure ha 12 bit con limite 4095 e vincolo monotono per ogni bit. Classifica e podio calcolano il punteggio a partire dalla maschera, con un tetto di 1.000 punti arcade. La dashboard riceve a parte il contatore degli errori e le altre metriche didattiche. L’heartbeat al frame allinea il timer del boss all’orologio della stanza anche quando il rendering rallenta. [Procedura di pubblicazione](RELEASE_2_1.md)

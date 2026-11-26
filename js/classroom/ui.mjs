@@ -1,3 +1,4 @@
+import { missions, MISSION_COUNT, MISSION_MASK } from '../missions/catalog.mjs';
 import { gate, ranking } from './model.mjs';
 import { sessionService } from './session.mjs';
 import { demoAdapter } from './demo.mjs';
@@ -12,7 +13,8 @@ const emulator = !demo && params.get('emulator') === '1' && ['localhost', '127.0
 const namespace = 'code-space:classroom:' + (demo ? 'demo' : emulator ? 'emulator' : 'live') + ':' + role;
 const phaseText = { lobby: 'Sala d’attesa', flight: 'In volo', paused: 'Pausa globale', boss: 'Boss finale', ended: 'Sessione terminata' };
 const stateText = { waiting: 'In attesa', flying: 'In gioco', python: 'Missione Python', paused: 'In pausa', gameover: 'Game over', boss: 'Boss finale', finished: 'Missione conclusa' };
-const concepts = ['variabili e velocità', 'variabili e vite', 'booleani', 'stringhe', 'condizioni if'];
+const concepts = missions.map(mission => mission.concept);
+const legacyConcepts = ['variabili e velocità', 'variabili e vite', 'booleani', 'stringhe', 'condizioni if'];
 const texts = { lobby: 'In attesa del comandante', offline: 'Sincronizzazione sospesa', ended: 'Sessione conclusa', expired: 'Sessione scaduta', kicked: 'Il comandante ti ha rimosso' };
 const host = role === 'host';
 const projector = role === 'projector';
@@ -90,7 +92,7 @@ function cell(row, content, tag = 'td') {
   return node;
 }
 function completed(mask) {
-  return concepts.reduce((count, _, index) => count + Number(Boolean(mask & (1 << index))), 0);
+  return (control?.settings.adventure ? concepts : legacyConcepts).reduce((count, _, index) => count + Number(Boolean(mask & (1 << index))), 0);
 }
 function online(uid) {
   return Boolean(presence[uid] && Object.keys(presence[uid]).length);
@@ -108,7 +110,7 @@ function arrange(rows) {
 function draw() {
   if (!room || !control) return;
   const current = policy();
-  const rows = ranking(members, scores);
+  const rows = ranking(members, scores, control.settings.adventure);
   arrange(rows);
   const me = rows.find(row => row.uid === store.uid);
   const count = rows.filter(row => online(row.uid)).length;
@@ -138,13 +140,14 @@ function draw() {
     for (const button of document.querySelectorAll('[data-option]')) {
       button.disabled = !connected || !ready || busy || (button.dataset.option === 'reveal' && (control.view !== 'podium' || control.reveal >= 3));
     }
+    document.querySelector('[data-option=reveal]').textContent = `Rivela posto (${control.reveal}/3)`;
     document.querySelector('[data-option=lock]').textContent = control.locked ? 'Consenti ingressi' : 'Blocca ingressi';
     document.querySelector('[data-option=rocks]').textContent = control.settings.rocks ? 'Sospendi asteroidi' : 'Riattiva asteroidi';
   }
   if (student) {
     const prior = me && [...rows].reverse().find(row => row.rank < me.rank);
     const distance = prior ? ` · ${prior.total - me.total} punti dalla posizione precedente` : '';
-    const learned = me ? concepts.filter((_, index) => me.mask & (1 << index)) : [];
+    const learned = me ? (control.settings.adventure ? concepts : legacyConcepts).filter((_, index) => me.mask & (1 << index)) : [];
     set('player-summary', me ? `${me.name} · posizione ${me.rank} · ${me.total} punti${distance} · obiettivo: ${control.settings.required} missioni${current === 'ended' ? ' · Concetti allenati: ' + (learned.join(', ') || 'puoi continuare a esercitarti in modalità individuale') : ''}` : '');
     get('help').hidden = !me || ['ended', 'expired', 'kicked', 'offline', 'lobby'].includes(current);
     get('help').disabled = help;
@@ -190,7 +193,7 @@ function draw() {
       cell(tr, online(row.uid) ? (current === 'paused' ? 'In pausa' : stateText[row.status ?? 'waiting']) : 'Disconnesso');
       cell(tr, online(row.uid) ? 'Connesso' : 'Disconnesso');
       cell(tr, info.mission ? info.mission + ' · ' + duration((current === 'paused' ? control.at : store.now()) - info.since) : '—');
-      cell(tr, info.attempts ?? 0);
+      cell(tr, control.settings.adventure ? (info.attempts ?? 0) + ' · ' + (info.errors ?? 0) + ' errori' : info.attempts ?? 0);
       cell(tr, info.hints ?? 0);
       const aid = cell(tr, info.help ? 'Aiuto richiesto' : stale ? 'Da seguire' : '—');
       if (info.help || stale) aid.className = 'needs-help';
@@ -343,14 +346,15 @@ function syncFrame(current, now) {
   }
   if (!frameReady || frameRoom !== room) return;
   const key = [current, control.seq, scores[store.uid]?.mask ?? 0].join('/');
+  const bossLeft = current === 'boss' ? Math.max(0, control.bossUntil - now) : null;
   if (key === sentPolicy) {
-    frame.contentWindow.postMessage({ type: 'cs:heartbeat', room, seq: control.seq }, location.origin);
+    frame.contentWindow.postMessage({ type: 'cs:heartbeat', room, seq: control.seq, bossLeft }, location.origin);
     return;
   }
   sentPolicy = key;
   frame.contentWindow.postMessage({
     type: 'cs:policy', room, state: current, seq: control.seq, settings: control.settings,
-    completed: scores[store.uid]?.mask ?? 0, bossSeconds: Math.max(0, Math.ceil((control.bossUntil - now) / 1000)),
+    completed: scores[store.uid]?.mask ?? 0, bossLeft, bossSeconds: bossLeft == null ? 0 : Math.ceil(bossLeft / 1000),
     arcade: scores[store.uid]?.arcade ?? 0, bossWon: scores[store.uid]?.boss ?? false,
   }, location.origin);
 }
@@ -363,12 +367,13 @@ async function report(current, now) {
   const last = scores[uid] ?? {};
   const safeInt = (value, max) => Math.max(0, Math.min(max, Math.trunc(Number(value) || 0)));
   const publicData = {
-    mask: (last.mask ?? 0) | safeInt(latest.mask, 31), arcade: Math.max(last.arcade ?? 0, safeInt(latest.arcade, 1000)),
+    adventure: true,
+    mask: (last.mask ?? 0) | safeInt(latest.mask, MISSION_MASK), arcade: Math.max(last.arcade ?? 0, safeInt(latest.arcade, 1000)),
     boss: last.boss === true || (current === 'boss' && latest.boss === true), lives: safeInt(latest.lives, 5),
     sector: safeInt(latest.sector, 4), status: Object.hasOwn(stateText, latest.status) ? latest.status : 'waiting',
   };
-  const privateData = { mission: safeInt(latest.mission, 5), since: safeInt(latest.since, 9999999999999) || now,
-    attempts: safeInt(latest.attempts, 2000), hints: safeInt(latest.hints, 3), help };
+  const privateData = { adventure: true, mission: safeInt(latest.mission, MISSION_COUNT), since: safeInt(latest.since, 9999999999999) || now,
+    attempts: safeInt(latest.attempts, 2000), errors: safeInt(latest.errors, 2000), hints: safeInt(latest.hints, 3), help };
   privateData.since = privateData.mission ? Math.max(0, privateData.since + now - Date.now()) : 0;
   const publicKey = JSON.stringify(publicData);
   const privateKey = JSON.stringify(privateData);
@@ -436,7 +441,7 @@ async function login(email, password) {
   get('host-email').hidden = true;
   const item = readRemembered();
   const existing = item?.room && await store.get('rooms/' + item.room).catch(() => null);
-  if (existing?.owner === uid && existing.expires > store.now()) attach(item.room);
+  if (existing?.settings.adventure && existing.owner === uid && existing.expires > store.now()) attach(item.room);
 }
 get('host-login').addEventListener('click', event => void run(() => login(), event.currentTarget));
 get('projector-login').addEventListener('click', event => void run(() => login(), event.currentTarget));

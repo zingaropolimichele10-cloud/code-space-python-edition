@@ -34,6 +34,12 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio }
     refresh();
   }
 
+  function syncBoss(left) {
+    if (gate !== 'boss' || world.state !== State.FINAL_CHALLENGE || !Number.isFinite(left)) return;
+    world.finalLeft = Math.max(0, left / 1000);
+    if (left <= 0 && game.finishFinal()) refresh();
+  }
+
   function launch(data) {
     room = data.room;
     seq = data.seq;
@@ -79,6 +85,7 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio }
         bossEntered = false;
       } else if (!['flight', 'boss'].includes(old) && world.state === State.PAUSED) game.action('resume');
     }
+    syncBoss(data.bossLeft);
     refresh();
   }
 
@@ -87,6 +94,7 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio }
     const data = event.data;
     if (data?.type === 'cs:heartbeat' && data.room === room && data.seq === seq) {
       expiry = performance.now() + 2400;
+      syncBoss(data.bossLeft);
       return;
     }
     if (data?.type !== 'cs:policy' || (room && room !== data.room) || data.seq < seq || !data.settings) return;

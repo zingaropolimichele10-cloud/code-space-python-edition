@@ -1,16 +1,14 @@
 import { State } from '../game/engine.mjs';
 import { createPythonRunner } from '../python/runner.mjs';
 import { installEditorTools } from './editor-tools.mjs';
-import { missions } from './catalog.mjs';
+import { renderPanel } from './panels.mjs';
+import { MAIN_MISSIONS, missions } from './catalog.mjs';
 import { validateMission } from './validate.mjs';
 
 export function createCenter({ progress, sound = () => {} }) {
   const completed = new Set(progress.state.completed);
   const pending = new Set(progress.state.skipped);
   const drafts = new Map(Object.entries(progress.state.drafts).map(([id, code]) => [Number(id), code]));
-  if (drafts.get(5) === 'scudo = False\nif vite < 3:\n    pass') {
-    drafts.set(5, missions.find(mission => mission.id === 5).source);
-  }
   const shownHints = new Map();
   const run = createPythonRunner();
   const get = id => document.getElementById(id);
@@ -36,11 +34,12 @@ export function createCenter({ progress, sound = () => {} }) {
   let skipAllowed = true;
   let interrupt = () => {};
   let attempts = 0;
+  let errors = 0;
   let since = 0;
   let pauseSince = 0;
 
   function nextMission() {
-    return missions.find(({ id }) => !completed.has(id));
+    return missions.find(({ id }) => !completed.has(id) && !pending.has(id));
   }
 
   function syncHints() {
@@ -119,12 +118,13 @@ export function createCenter({ progress, sound = () => {} }) {
       const result = await validateMission(mission, source, run, () => current === revision);
       if (!result || current !== revision) return;
       output.textContent = result.output;
+      renderPanel(get('mission-panel'), mission, result.observations);
       status.textContent = result.ok && practice
         ? 'velocita contiene l’intero 10. Python calcola il valore a destra di = prima di assegnarlo.'
         : result.message;
       status.dataset.result = result.ok ? 'success' : 'error';
       if (result.ok) {
-        if (!practice) {
+        if (!practice && !completed.has(mission.id)) {
           completed.add(mission.id);
           pending.delete(mission.id);
           progress.update({ completed: [...completed], skipped: [...pending] });
@@ -140,6 +140,7 @@ export function createCenter({ progress, sound = () => {} }) {
         done.focus();
         refresh();
       } else {
+        errors++;
         button.disabled = false;
       }
     });
@@ -154,7 +155,7 @@ export function createCenter({ progress, sound = () => {} }) {
     if (dialog.open) return;
     practice = demonstration;
     active = mission;
-    attempts = 0;
+    attempts = errors = 0;
     since = Date.now();
     pauseSince = 0;
     if (!practice && !completed.has(active.id)) {
@@ -165,11 +166,12 @@ export function createCenter({ progress, sound = () => {} }) {
     get('mission-title').textContent = active.title;
     get('mission-concept').textContent = active.concept;
     get('mission-goal').textContent = active.goal;
-    get('mission-briefing').textContent = active.briefing;
+    get('mission-briefing').textContent = 'Aurora · ' + active.briefing;
+    renderPanel(get('mission-panel'), active);
     get('mission-edit').textContent = active.edit;
     get('mission-preview').textContent = active.preview;
     get('mission-preview').dataset.mission = active.id;
-    get('mission-scenarios').hidden = active.id !== 5;
+    get('mission-scenarios').hidden = active.id !== 7;
     get('mission-explanation').textContent = active.explanation;
     editor.value = (practice ? undefined : drafts.get(active.id)) ?? active.source;
     editor.readOnly = false;
@@ -193,7 +195,7 @@ export function createCenter({ progress, sound = () => {} }) {
     observe() {
       const mission = active && !practice ? active.id : 0;
       return { mission, since: mission ? since : 0, attempts: mission ? attempts : 0,
-        hints: mission ? (shownHints.get(mission) ?? 0) : 0 };
+        hints: mission ? (shownHints.get(mission) ?? 0) : 0, errors: mission ? errors : 0 };
     },
     classroomPolicy(game, { blocked, skip, mask }) {
       for (const mission of missions) {
@@ -227,12 +229,13 @@ export function createCenter({ progress, sound = () => {} }) {
       const mission = nextMission();
       return mission && !pending.has(mission.id) ? mission.id : null;
     },
-    count: () => [...completed].filter(id => id <= 4).length,
+    total: () => completed.size,
+    count: () => [...completed].filter(id => id <= MAIN_MISSIONS).length,
     onRefresh({ world }) {
       const mission = nextMission();
       const retryable = pending.size > 0;
-      const text = mission ? (retryable ? `In sospeso: ${missions.find(item => item.id === Math.min(...pending)).title}.`
-        : mission.optional ? 'La missione 05 è facoltativa.' : 'Raccogli la stella contrassegnata PYTHON.')
+      const text = retryable ? `In sospeso: ${missions.find(item => item.id === Math.min(...pending)).title}.`
+        : mission ? mission.optional ? 'Segnale bonus rilevato · raccogli la stella PYTHON.' : 'Raccogli la stella contrassegnata PYTHON.'
         : 'Tutte le missioni sono completate.';
       note.hidden = world.state === State.FINAL_CHALLENGE;
       if (note.textContent !== text) note.textContent = text;

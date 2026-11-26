@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'">
-  <title>CODE SPACE – Python Edition</title>
+  <title>CODE SPACE – Mission Adventure Edition</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./css/game.css">
   <link rel="stylesheet" href="./css/classroom.css">
@@ -18,9 +18,9 @@
       <div>
         <p class="edition">Orientamento in ingresso — Ferraris</p>
         <h1>CODE <span>SPACE</span></h1>
-        <p class="subtitle">Python Edition</p>
+        <p class="subtitle">Mission Adventure Edition</p>
       </div>
-      <nav aria-label="Opzioni"><a href="./laboratorio.html">Laboratorio Python</a> <a href="./classroom.html">Unisciti a una sessione</a> <a href="./classroom.html?role=host">Crea una sessione — Host</a> <button id="settings-open" class="secondary" type="button">Impostazioni</button> <button id="teacher-open" class="quiet" type="button">Modalità docente</button></nav>
+      <nav aria-label="Opzioni"><a href="./classroom.html">Unisciti a una sessione</a> <a href="./classroom.html?role=host">Crea una sessione — Host</a> <button id="settings-open" class="secondary" type="button">Impostazioni</button> <button id="teacher-open" class="quiet" type="button">Modalità docente</button></nav>
     </header>
 
     <div class="dashboard">
@@ -28,7 +28,7 @@
         <div class="hud" aria-label="Stato della partita">
           <div><span>Vite</span><strong id="lives">3 / 3</strong></div>
           <div><span>Punteggio</span><strong id="score">0</strong></div>
-          <div><span>Missioni</span><strong id="mission-count">0 / 4</strong></div>
+          <div><span>Missioni</span><strong id="mission-count">0 / 5</strong></div>
           <div><span>Velocità</span><strong id="speed">5</strong></div>
           <div><span>Scudo</span><strong id="shield">Spento</strong></div>
         </div>
@@ -42,7 +42,7 @@
             <div id="menu-panel" class="state-panel">
               <p class="edition">Rotta verso il Ferraris</p>
               <h2>Pronti al decollo?</h2>
-              <p>Comandante, la tua navicella ha perso i sistemi di bordo. Attraversa il campo di asteroidi, raccogli energia e riprogramma i sistemi con Python.</p>
+              <p>Aurora ha perso i sistemi di bordo in una regione sconosciuta. Riprogrammali con Python e segui il segnale intercettato fino alla nave che lo trasmette.</p>
               <img class="hero-ship" src="./assets/aurora.svg" alt="La navicella Aurora in orbita">
               <button type="button" data-action="tutorial">Gioca da solo</button>
               <button type="button" id="continue" class="secondary" hidden>Continua</button>
@@ -93,6 +93,7 @@
         <button type="button" id="final-button" data-action="final" hidden>Avvia sfida finale</button>
         <p id="final-route" hidden></p>
         <p id="mission-note"></p>
+        <details id="flight-systems-panel" hidden><summary>Sistemi sbloccati</summary><p id="flight-systems"></p></details>
         <button type="button" id="open-unlocked" class="secondary" hidden>Scegli missione</button>
         <button type="button" id="mission-retry" class="secondary" hidden>Riprendi missione</button>
         <button type="button" id="mute" class="secondary" aria-pressed="false">Audio disattivato</button>
@@ -154,6 +155,7 @@
       <p id="mission-explanation"></p>
       <p id="mission-edit"></p>
       <p id="mission-preview"></p>
+      <section id="mission-panel" aria-label="Telemetria della missione"></section>
       <div id="mission-scenarios" class="mission-scenarios" aria-label="Risultati da ottenere" hidden>
         <div><span aria-hidden="true">◈</span><strong>2 vite</strong><span>Scudo attivo</span></div>
         <div><span aria-hidden="true">◇</span><strong>4 vite</strong><span>Scudo disattivato</span></div>

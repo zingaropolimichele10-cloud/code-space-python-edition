@@ -100,7 +100,7 @@ test('Ingresso Firebase atomico: riprova il posto senza leggere la stanza o gli 
     live: true, student: async () => uid, now: () => 0,
     async get(path) {
       reads.push(path);
-      return path.startsWith('pins/') ? { room, expires: 100, capacity: 2 } : null;
+      return path.startsWith('pins/') ? { room, expires: 100, capacity: 2, adventure: true } : null;
     },
     async update(patch) {
       writes.push(patch);

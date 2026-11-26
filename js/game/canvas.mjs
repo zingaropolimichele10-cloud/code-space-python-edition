@@ -97,7 +97,8 @@ export function createCanvas(canvas) {
     }
     for (const shot of world.shots) {
       ctx.fillStyle = '#63dfff';
-      ctx.fillRect(shot.x - 2, shot.y, 4, 13);
+      if (shot.omega || shot.power > 1) ctx.fillStyle = shot.omega ? '#e9a8ff' : '#ffd36a';
+      ctx.fillRect(shot.x - shot.radius / 2, shot.y, shot.radius, shot.omega ? 20 : 13);
       ctx.fillStyle = '#e5fbff';
       ctx.fillRect(shot.x - 1, shot.y, 2, 6);
     }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.0 — Mission Adventure Edition
+
+- Dodici missioni Python, con cinque principali e sette bonus, telemetria contestuale e potenziamenti fino al Protocollo Omega.
+- Centro integrato nell’avventura, progressione dopo il salto e migrazione dei progressi locali dalla 2.0.
+- Protocollo Classroom 2.1 con dodici bit, classifica didattica e conteggio errori privato. Regole di transizione compatibili con le stanze 2.0.
+- Cache 2.1.0 e archivio statico per il gioco individuale e la demo locale.
+
 ## 2.0.0 — candidato Classroom
 
 - Accesso Host e anonimo, PIN, lobby, controllo di gruppo, classifica, boss sincronizzato e proiettore.

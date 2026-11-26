@@ -9,14 +9,14 @@ function memory() {
   return { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
 }
 
-test('Salvataggio v2, migrazione, convalida e reset', () => {
+test('Salvataggio v3, migrazione, convalida e reset', () => {
   const storage = memory();
   storage.setItem('code-space:missioni:v1', '[3,1,99]');
   storage.setItem('code-space:audio:v1', '{"enabled":true,"volume":0.4}');
   const store = createProgress(storage);
   assert.deepEqual(store.state.completed, [1,3]);
   assert.deepEqual(store.state.audio, { enabled: true, volume: .4 });
-  store.update({ skipped: [1,2], drafts: { 2: 'vite = 5', 9: 'no' }, upgrades: [4], best: 25,
+  store.update({ skipped: [1,2], drafts: { 2: 'vite = 5', 13: 'no' }, upgrades: [4], best: 25,
     light: true, checkpoint: { mode: 'PLAYING', score: 25, time: 3.4 } });
   const restored = createProgress(storage).state;
   assert.deepEqual(restored.upgrades, [1,3]);

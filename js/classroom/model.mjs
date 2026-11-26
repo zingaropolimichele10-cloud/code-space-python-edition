@@ -1,3 +1,5 @@
+import { MAIN_MISSIONS, missions as catalog, MISSION_MASK } from '../missions/catalog.mjs';
+
 export const defaults = Object.freeze({
   capacity: 30, minutes: 40, difficulty: 'standard', bossSeconds: 60,
   audio: false, required: 4, skip: true, late: true, rocks: true,
@@ -21,17 +23,23 @@ export function pinNumber(random = crypto) {
   return String(words[0] % 1_000_000).padStart(6, '0');
 }
 
-export function score(entry) {
+export function score(entry, adventure = false) {
+  if (adventure) {
+    const mask = Number.isInteger(entry.mask) ? entry.mask & MISSION_MASK : 0;
+    const didactic = catalog.reduce((sum, mission) =>
+      sum + (mask & (1 << (mission.id - 1)) ? (mission.id <= MAIN_MISSIONS ? 1400 : 1100) : 0), 0);
+    return didactic + (entry.boss ? 500 : 0) + Math.max(0, Math.min(1000, Math.trunc(entry.arcade || 0)));
+  }
   const missions = Number.isInteger(entry.mask) ? entry.mask & 31 : 0;
   const main = [1, 2, 4, 8].filter(bit => missions & bit).length;
   return main * 1000 + (missions & 16 ? 500 : 0) + (entry.boss ? 500 : 0)
     + Math.max(0, Math.min(1000, Math.trunc(entry.arcade || 0)));
 }
 
-export function ranking(members, scores) {
+export function ranking(members, scores, adventure = false) {
   const rows = Object.entries(members ?? {}).filter(([, member]) => !member.kicked)
     .map(([uid, member]) => ({ uid, name: member.name, mask: 0, ...scores?.[uid] }))
-    .map(row => ({ ...row, total: score(row) }))
+    .map(row => ({ ...row, total: score(row, adventure) }))
     .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'it') || a.uid.localeCompare(b.uid));
   rows.forEach((row, index) => { row.rank = index && rows[index - 1].total === row.total ? rows[index - 1].rank : index + 1; });
   return rows;

@@ -12,7 +12,7 @@ import { openBrowser } from './browser.mjs';
 const project = fileURLToPath(new URL('../', import.meta.url));
 const { version, runtime } = JSON.parse(await readFile(join(project, 'release-manifest.json')));
 const cachePrefix = 'code-space:/code-space-python-edition/:';
-const baselines = { '1.1.0': '2204764', '2.0.0': 'b15e515' };
+const baselines = { '1.1.0': '2204764', '2.0.0-firebase.2': '8ac2aaf' };
 
 async function unpack(t, previous) {
   const dir = await mkdtemp(join(tmpdir(), 'codespace-release-'));
@@ -58,7 +58,7 @@ async function verifyPython(browser) {
   assert.equal(await browser.evaluate("document.getElementById('speed').textContent"), '10');
 }
 
-test('Cache offline dopo il primo avvio: ricarica, laboratorio e vero Worker senza server', async t => {
+test('Cache offline dopo il primo avvio: ricarica e vero Worker senza server', async t => {
   const browser = await openBrowser();
   t.after(browser.close);
   await waitFor(browser, '!!navigator.serviceWorker.controller');
@@ -69,10 +69,6 @@ test('Cache offline dopo il primo avvio: ricarica, laboratorio e vero Worker sen
   const onlineRequests = browser.requests.length;
   await browser.page('Page.reload');
   await verifyPython(browser);
-  await browser.page('Page.navigate', { url: browser.origin + browser.prefix + 'laboratorio.html' });
-  await waitFor(browser, "document.readyState === 'complete' && !!document.getElementById('codice')");
-  await browser.evaluate("document.querySelector('button[type=submit]').click()");
-  await waitFor(browser, "document.getElementById('output').textContent.trim() === '10'");
   await browser.page('Page.navigate', { url: browser.origin + browser.prefix + 'classroom.html?demo=1&role=host' });
   await waitFor(browser, "document.readyState === 'complete' && !!document.getElementById('host-login')");
   await browser.evaluate("document.getElementById('host-login').click()");
@@ -122,14 +118,15 @@ async function verifyUpdate(t, previous) {
   await page('Page.navigate', { url: browser.origin + browser.prefix });
   await waitFor(replacement, '!!navigator.serviceWorker?.controller');
   if (previous) {
-    await waitFor(replacement, "document.getElementById('mission-count')?.textContent === '2 / 4'");
+    await waitFor(replacement, "document.getElementById('mission-count')?.textContent === '2 / 5'");
     assert.deepEqual(await replacement.evaluate("JSON.parse(localStorage.getItem('code-space:progress:v2'))"), data);
     await replacement.evaluate("document.getElementById('continue').click(); document.getElementById('mission-retry').click();");
     await waitFor(replacement, "document.getElementById('control-center').open");
+    assert.equal(await replacement.evaluate("document.querySelector('#mission-id').textContent.includes('07')"), true);
     assert.equal(await replacement.evaluate("document.getElementById('mission-code').value"),
       'scudo = False\nif vite < 3:\n    scudo = False');
   }
-  if (previous === '2.0.0') {
+  if (previous === '2.0.0-firebase.2') {
     assert.deepEqual(await replacement.evaluate(`import('./js/classroom/config.mjs').then(({default: c}) => ({
       project: c.projectId, auth: c.authDomain, database: c.databaseURL,
       appMatchesSender: c.appId.startsWith('1:' + c.messagingSenderId + ':web:'),
@@ -148,8 +145,8 @@ test('Aggiornamento atomico: cache in attesa, messaggio e rimozione della versio
   t => verifyUpdate(t));
 test('Aggiornamento reale 1.1.0 con recupero del salvataggio',
   t => verifyUpdate(t, '1.1.0'));
-test('Aggiornamento reale da b15e515: nuova configurazione Firebase nella cache e progressi conservati',
-  t => verifyUpdate(t, '2.0.0'));
+test('Aggiornamento reale da 8ac2aaf: nuova configurazione Firebase nella cache e progressi conservati',
+  t => verifyUpdate(t, '2.0.0-firebase.2'));
 
 test('ZIP estratto avviato dal server Python su loopback e sull’indirizzo LAN del container', async t => {
   const directory = await unpack(t);

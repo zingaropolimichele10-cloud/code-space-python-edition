@@ -1,3 +1,4 @@
+import { MAIN_MISSIONS } from '../missions/catalog.mjs';
 import { classroomFrame, connectClassroomGame } from '../classroom/game-bridge.mjs';
 import { bindAudio, createAudio } from '../audio/sound.mjs';
 import { createCenter } from '../missions/center.mjs';
@@ -11,6 +12,7 @@ const frame = classroomFrame();
 const storage = frame ? { getItem: () => null, setItem: () => {} } : undefined;
 const progress = createProgress(storage);
 let bridge;
+let lastSystems = -1;
 const audio = createAudio({
   preferences: progress.state.audio, onChange: preferences => progress.update({ audio: preferences }, true),
 });
@@ -32,7 +34,7 @@ const { game, refresh, tutorial, setLight } = mountGame({
     const { rocks, stars, bestCombo } = world.stats;
     get('victory-stats').textContent = `Asteroidi distrutti: ${rocks} · Stelle raccolte: ${stars} · Combo migliore: ${bestCombo}`;
     get('victory-rank').textContent = `Grado di volo: ${rocks >= 12 && bestCombo >= 3 ? 'Esploratore stellare' : rocks >= 5 || bestCombo >= 3 ? 'Pilota d’orbita' : 'Pioniere Aurora'}`;
-    get('victory-missions').textContent = `Missioni principali: ${center.count()} su 4${completed.some(item => item.optional) ? ' · Missione facoltativa completata' : ''}`;
+    get('victory-missions').textContent = `Missioni principali: ${center.count()} su ${MAIN_MISSIONS}${completed.some(item => item.optional) ? ' · Missione facoltativa completata' : ''}`;
     get('victory-upgrades').textContent = completed.length
       ? `Potenziamenti: ${completed.map(item => item.reward).join(' · ')}`
       : 'Il Centro di controllo resta aperto per provare Python quando vuoi.';
@@ -43,12 +45,18 @@ const { game, refresh, tutorial, setLight } = mountGame({
   onRefresh(game) {
     const { world } = game;
     center.onRefresh(game);
+    const count = center.total();
+    if (count !== lastSystems) {
+      lastSystems = count;
+      get('flight-systems').textContent = center.completedMissions().map(mission => mission.reward).join(' · ');
+      get('flight-systems-panel').hidden = count === 0;
+    }
     bridge?.report();
     if (world.score > progress.state.best) progress.update({ best: world.score });
     get('continue').hidden = !progress.state.checkpoint;
     const route = get('final-route');
     route.hidden = world.state !== State.PLAYING;
-    const label = center.count() === 4 ? 'Percorso completo · Potenziamenti principali a bordo.'
+    const label = center.count() === MAIN_MISSIONS ? 'Percorso completo · Potenziamenti principali a bordo.'
       : 'Percorso libero · Puoi affrontare la sfida anche con missioni incomplete.';
     if (route.textContent !== label) route.textContent = label;
   },
