@@ -42,7 +42,7 @@ if (!process.argv.includes('--auth-only')) {
   const now = Date.now();
   const room = crypto.randomUUID();
   const pin = String(100000 + Math.floor(Math.random() * 900000));
-  const ticket = { owner: host.localId, room, expires: now + 600000 };
+  const ticket = { owner: host.localId, room, expires: now + 600000, capacity: 30 };
   const control = { owner: host.localId, pin, title: 'Prova locale', created: now, expires: ticket.expires,
     phase: 'lobby', seq: 0, at: now, until: 0, locked: false, view: 'lobby', reveal: 0,
     settings: { capacity: 30, minutes: 40, difficulty: 'standard', bossSeconds: 60, required: 4,
@@ -55,7 +55,8 @@ if (!process.argv.includes('--auth-only')) {
   await db('hosts/' + host.localId, 'admin', 'PUT', true);
   await db('pins/' + pin, host, 'PUT', ticket);
   await db('rooms/' + room, host, 'PUT', control);
-  await db('rooms/' + room, student, 'GET');
+  await db('rooms/' + room, student, 'GET', undefined, false);
+  await db('members/' + room, student, 'GET', undefined, false);
   await db('rooms/' + room + '/locked', student, 'PUT', true, false);
   const otherEmail = 'host-second-' + crypto.randomUUID() + '@example.test';
   const unlisted = await auth('signUp', { email: otherEmail, password: crypto.randomUUID() });
@@ -63,11 +64,23 @@ if (!process.argv.includes('--auth-only')) {
   await db('hosts/' + unlisted.localId, 'admin', 'PUT', true);
   await db('rooms/' + room + '/locked', unlisted, 'PUT', true, false);
   await db('rooms/' + room, null, 'PUT', control, false);
-  await db('seats/' + room + '/30', student, 'PUT', student.localId, false);
-  await db('seats/' + room + '/0', student, 'PUT', student.localId);
-  await db('names/' + room + '/vega', student, 'PUT', student.localId);
+  await db('seats/' + room + '/0', student, 'PUT', student.localId, false);
+  await db('names/' + room + '/vega', student, 'PUT', student.localId, false);
   const membership = 'members/' + room + '/' + student.localId;
-  await db(membership, student, 'PUT', { name: 'Vega', key: 'vega', seat: '0', kicked: false });
+  const admission = (seat, key = 'vega', code = pin) => ({
+    [membership]: { name: key, key, seat, kicked: false, pin: code },
+    ['seats/' + room + '/' + seat]: student.localId,
+    ['names/' + room + '/' + key]: student.localId,
+  });
+  await db('', student, 'PATCH', admission(30), false);
+  const wrongPin = pin === '100000' ? '100001' : '100000';
+  await db('', student, 'PATCH', admission(0, 'vega', wrongPin), false);
+  await db('', student, 'PATCH', { ...admission(0), ['seats/' + room + '/1']: student.localId }, false);
+  await db('', student, 'PATCH', { ...admission(0), ['names/' + room + '/nova']: student.localId }, false);
+  await db('', student, 'PATCH', admission(0));
+  await db('rooms/' + room, student, 'GET');
+  await db('members/' + room, other, 'GET', undefined, false);
+  await db('scores/' + room, other, 'GET', undefined, false);
   await db('rooms/' + room, host, 'PUT', { ...control, seq: 1, phase: 'flight', at: now, until: now + 300000 });
   const score = { mask: 1, boss: false, arcade: 200, lives: 3, sector: 1, status: 'flying', updated: { '.sv': 'timestamp' } };
   const report = 'scores/' + room + '/' + student.localId;
@@ -87,6 +100,15 @@ if (!process.argv.includes('--auth-only')) {
   await db('metrics/' + room, spectator, 'GET', undefined, false);
   await db('rooms/' + room + '/locked', spectator, 'PUT', true, false);
   await db('seats/' + room + '/1', spectator, 'PUT', spectator.localId, false);
+  await db('members/' + room, spectator, 'GET');
+  await db('rooms/' + room + '/expires', 'admin', 'PUT', Date.now() - 2000);
+  for (const identity of [student, spectator, host]) {
+    await db('scores/' + room, identity, 'GET', undefined, false);
+  }
+  await db('rooms/' + room, student, 'GET', undefined, false);
+  await db(privatePath, student, 'GET', undefined, false);
+  await db('rooms/' + room, host, 'GET');
+  await db('rooms/' + room + '/expires', 'admin', 'PUT', ticket.expires);
   await db(membership + '/kicked', host, 'PUT', true);
   await db(report, student, 'PUT', score, false);
   await db('hosts/' + host.localId, 'admin', 'DELETE');

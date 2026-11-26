@@ -10,7 +10,7 @@ export function sessionService(store, { randomPin = pinNumber, id = () => crypto
     const expires = created + 3 * 3600000;
     for (let attempt = 0; attempt < 12; attempt++) {
       const pin = randomPin();
-      const reservation = { room, owner: store.uid, expires };
+      const reservation = { room, owner: store.uid, expires, capacity: settings.capacity ?? defaults.capacity };
       const path = 'pins/' + pin;
       const existing = await store.get(path);
       if (existing?.expires > store.now()) continue;
@@ -42,11 +42,35 @@ export function sessionService(store, { randomPin = pinNumber, id = () => crypto
     if (!ticket) throw Error('PIN inesistente.');
     if (ticket.expires <= store.now()) throw Error('Sessione scaduta.');
     const room = ticket.room;
-    const control = await store.get('rooms/' + room);
-    if (!control || control.phase === 'ended') throw Error('Sessione terminata.');
     const existing = await store.get(`members/${room}/${uid}`);
     if (existing?.kicked) throw Error('Il comandante ti ha rimosso dalla sessione.');
     if (existing) return { room, member: existing };
+    if (store.live) {
+      const key = name.toLowerCase();
+      const capacity = ticket.capacity;
+      if (!Number.isInteger(capacity) || capacity < 1 || capacity > 50) throw Error('PIN non ancora disponibile.');
+      const start = Math.floor(Math.random() * capacity);
+      for (let offset = 0; offset < capacity; offset++) {
+        const seat = (start + offset) % capacity;
+        const member = { name, key, seat, kicked: false, pin };
+        try {
+          await store.update({
+            [`members/${room}/${uid}`]: member,
+            [`seats/${room}/${seat}`]: uid,
+            [`names/${room}/${key}`]: uid,
+          });
+          return { room, member };
+        } catch (error) {
+          if (!/permission_denied|permission denied/i.test(error.code ?? error.message)) throw error;
+          const concurrent = await store.get(`members/${room}/${uid}`);
+          if (concurrent?.kicked) throw Error('Il comandante ti ha rimosso dalla sessione.');
+          if (concurrent) return { room, member: concurrent };
+        }
+      }
+      throw Error('Ingresso non disponibile. Controlla il PIN, prova un altro nickname o chiedi all’Host.');
+    }
+    const control = await store.get('rooms/' + room);
+    if (!control || control.phase === 'ended') throw Error('Sessione terminata.');
     if (control.locked || (control.phase !== 'lobby' && !control.settings.late)) throw Error('Nuovi ingressi bloccati.');
     const key = name.toLowerCase();
     const namePath = `names/${room}/${key}`;

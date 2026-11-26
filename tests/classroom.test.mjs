@@ -90,3 +90,34 @@ test('Audit statico delle regole, raccolte isolate e invio privato separato', as
   assert.match(rules.scores.$room['.read'], /viewAccess/);
   assert.doesNotMatch(rules.metrics.$room['.read'], /viewAccess/);
 });
+
+test('Ingresso Firebase atomico: riprova il posto senza leggere la stanza o gli indici', async () => {
+  const uid = 'student';
+  const room = 'room';
+  const reads = [];
+  const writes = [];
+  const api = sessionService({
+    live: true, student: async () => uid, now: () => 0,
+    async get(path) {
+      reads.push(path);
+      return path.startsWith('pins/') ? { room, expires: 100, capacity: 2 } : null;
+    },
+    async update(patch) {
+      writes.push(patch);
+      if (writes.length === 1) throw Object.assign(Error('Permission denied'), { code: 'PERMISSION_DENIED' });
+    },
+  });
+  const { member } = await api.join('123456', 'Vega');
+  assert.equal(member.pin, '123456');
+  assert.equal(writes.length, 2);
+  for (const patch of writes) {
+    const submitted = patch['members/room/student'];
+    assert.deepEqual(patch, {
+      'members/room/student': submitted,
+      [`seats/room/${submitted.seat}`]: uid,
+      'names/room/vega': uid,
+    });
+  }
+  assert.notEqual(writes[0]['members/room/student'].seat, member.seat);
+  assert.deepEqual(reads, ['pins/123456', 'members/room/student', 'members/room/student']);
+});
