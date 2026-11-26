@@ -373,7 +373,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     if (safeTime >= 18) {
       safeTime -= 18;
       world.score += 30 * world.multiplier;
-      announce('Volo pulito · + punti bonus');
+      announce(`Volo pulito · +${30 * world.multiplier} punti`);
       sound('combo');
     }
     if (final) {
@@ -392,6 +392,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
         world.sector = sector;
         announce(`Settore 0${sector + 1} · ${sectors[sector].name}`);
         sound('sector');
+        checkpointNow();
       }
     }
     updateShots(dt);
@@ -408,7 +409,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     const difficulty = Math.min(world.time / 150, 1);
     const finalStage = final ? 1 - world.finalLeft / challengeDuration : 0;
     const multiplier = difficultyScale[world.options.difficulty];
-    world.time += dt;
+    if (!final) world.time += dt;
     moveShip(dt);
     advanceFlight(dt, final);
     if (world.state === State.GAME_OVER) return;

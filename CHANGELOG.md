@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 — candidato
+
+- Combattimento con Spazio, cinque archetipi di asteroide oltre a quelli ordinari, frammenti, combo e bonus di volo.
+- Quattro settori di campagna e drone finale con tre fasi, resistenza, avvisi e difficoltà Assistita.
+- Potenziamenti più leggibili, missioni contestualizzate e esercizio if con i casi 2 e 4 vite.
+- Cache 1.1.0 e recupero verificato del salvataggio v2 da 1.0.0.
+
 ## 1.0.0 — 26 novembre 2026
 
 - Fase 00. Infrastruttura statica, struttura modulare e documentazione del progetto.

@@ -1,4 +1,4 @@
-const version = '1.0.0';
+const version = '1.1.0';
 const scope = new URL(self.registration.scope);
 const cachePrefix = 'code-space:' + scope.pathname + ':';
 const cacheName = cachePrefix + version;

@@ -35,7 +35,6 @@
           <div id="arcade-strip" class="arcade-strip" hidden>
             <div class="arcade-readout"><strong id="sector-label"></strong><span id="combo-label"></span></div>
             <p id="arcade-notice" aria-live="polite"></p>
-            <div id="boss-status" hidden><span id="boss-label"></span><progress id="boss-hp" aria-labelledby="boss-label"></progress></div>
           </div>
           <canvas id="space" tabindex="-1" width="960" height="540" aria-label="Campo di gioco spaziale"></canvas>
           <div class="overlay" id="overlay">
@@ -85,6 +84,8 @@
         <p class="edition">Console di volo</p>
         <h2 id="flight-status" aria-live="polite">In attesa</h2>
         <p id="flight-note">Avvia il tutorial per conoscere i comandi.</p>
+        <div id="boss-status" hidden><span id="boss-label"></span><progress id="boss-hp" aria-labelledby="boss-label"></progress></div>
+
         <div class="keys" aria-label="Frecce direzionali"><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd></div>
         <p class="flight-keys">Premi <kbd>Spazio</kbd> per sparare</p>
         <button type="button" id="pause-button" class="secondary" data-action="pause" hidden>Pausa <kbd>Esc</kbd></button>

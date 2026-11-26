@@ -195,6 +195,7 @@ export function createCenter({ progress, sound = () => {} }) {
       const text = mission ? (retryable ? `In sospeso: ${missions.find(item => item.id === Math.min(...pending)).title}.`
         : mission.optional ? 'La missione 05 è facoltativa.' : 'Raccogli la stella contrassegnata PYTHON.')
         : 'Tutte le missioni sono completate.';
+      note.hidden = world.state === State.FINAL_CHALLENGE;
       if (note.textContent !== text) note.textContent = text;
       retry.hidden = world.state !== State.PLAYING || !retryable;
       get('open-unlocked').hidden = world.state !== State.PLAYING || !unlocked;

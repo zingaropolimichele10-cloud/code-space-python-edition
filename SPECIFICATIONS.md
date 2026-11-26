@@ -16,4 +16,4 @@ Direzione visiva con blu notte, nero, azzurro elettrico e oro, HUD futuristico, 
 
 La sfida finale è disponibile nel percorso libero e nel percorso con tutti i potenziamenti principali. Parte da 60 secondi ed è configurabile localmente dal relatore. Il salvataggio contiene solo dati di gioco e preferenze.
 
-La versione 1.0.0 è in feature freeze. Le risorse statiche vengono distribuite tramite Pages o pacchetto HTTP locale. La cache offline richiede un primo caricamento completo su un’origine sicura.
+La versione 1.0.0 resta la baseline di emergenza. La versione 1.1.0 aggiunge combattimento, settori e un finale con drone. Le risorse statiche vengono distribuite tramite Pages o pacchetto HTTP locale. La cache offline richiede un primo caricamento completo su un’origine sicura.

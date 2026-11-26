@@ -70,7 +70,7 @@ export function mountGame({ nextMission, onState = () => {},
     }
     if (inFlight) {
       set('sector-label', `Settore ${world.sector === 4 ? 'finale' : '0' + (world.sector + 1)} · ${sectors[world.sector].name}`);
-      set('arcade-notice', world.noticeLeft > 0 ? world.notice : fighting && boss.warning.length ? 'Attacco in arrivo: evita le corsie illuminate.' : '');
+      set('arcade-notice', fighting && boss.warning.length ? 'Attacco in arrivo: evita le corsie illuminate.' : world.noticeLeft > 0 ? world.notice : '');
       set('combo-label', world.combo > 1 ? `Combo ${world.combo} · ×${world.multiplier}` : '');
     }
     byId('final-button').hidden = world.state !== State.PLAYING;

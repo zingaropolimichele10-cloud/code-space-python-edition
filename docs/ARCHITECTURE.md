@@ -53,3 +53,13 @@ La modalità docente è locale e ad accesso libero. Permette di scegliere o sblo
 ## Distribuzione e cache
 
 Le risorse restano relative allo scope del sito. Il manifest elenca i file del pacchetto runtime ed è condiviso dal Service Worker e dal generatore ZIP. L’installazione raccoglie tutte le risorse nella cache della versione. L’attivazione avviene dopo la chiusura dei client della versione precedente e rimuove solo le cache obsolete dello stesso scope. Il sito resta accessibile via HTTP locale anche senza Service Worker.
+
+## Arcade nella 1.1.0
+
+Il motore usa un solo ciclo di rendering e distingue il tempo di campagna dal timer del drone. I settori scattano dopo 24, 48 e 72 secondi di volo in campagna, con checkpoint automatici. Ogni settore cambia sfondo, posizione e colore del pianeta, composizione e densità degli ostacoli. Il componente arcade definisce archetipi, preavvisi e tre fasi del drone. Il Canvas mantiene gradienti riutilizzabili. Per schede lente, Grafica leggera esclude pianeti e particelle.
+
+Il fuoco da Spazio ha una cadenza minima di 205 ms. I limiti sono 24 colpi del giocatore, 12 impulsi del drone, 16 asteroidi e frammenti, 8 stelle e 90 particelle. Un asteroide resistente assorbe tre colpi e un asteroide divisibile produce fino a due frammenti entro il limite generale. La combo scade dopo otto secondi senza stelle, il moltiplicatore raggiunge al massimo ×3 e il bonus di volo pulito scatta ogni 18 secondi senza impatto.
+
+Si supera la sfida portando a zero la resistenza del drone o resistendo fino al termine della sua autonomia. Il docente imposta il timer e può usare Assistita, con resistenza ridotta e una corsia per attacco, o Demo, con le minacce sospese. Il checkpoint permette un nuovo tentativo e conserva i completamenti didattici.
+
+Restano chiave e versione v2 del salvataggio. Le statistiche del checkpoint sono facoltative, validate e inizializzate a zero sui checkpoint precedenti. La sola bozza della missione 05 identica al vecchio starter viene sostituita in editor con il nuovo starter. Le bozze personalizzate restano disponibili. Il Service Worker 1.1.0 preleva anche il nuovo modulo arcade e attiva la cache dopo il rilascio delle schede già aperte.

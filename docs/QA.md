@@ -217,3 +217,21 @@ La prova browser avviata sul checkout di riferimento prima delle correzioni ha c
 Il percorso ha incluso movimento tramite frecce, collisioni, stelle, tentativi Python riusciti e falliti, pause, riprese e sfide. Sono stati effettuati **63 recuperi dal checkpoint** e **15 riavvii dopo la vittoria**. Creati 11 Worker Python, con picco di **uno** attivo e **zero** attivi alla fine. Nessuna eccezione JavaScript rilevata. Il numero di oggetti attivi è stato misurato separatamente dalla simulazione Node. La prova da 120,43 secondi, la suite di regressione e le verifiche di distribuzione hanno riguardato il candidato 1.0.0.
 
 Una verifica separata ha attivato una seconda scheda Chromium. La pagina del gioco è passata da visibile a nascosta e da PLAYING a PAUSED. Al ritorno è rimasta in pausa in attesa di ripresa esplicita. Il contrasto calcolato per quattro coppie testo/sfondo campione è risultato fra 9,82:1 e 12,16:1. Una nuova generazione del pacchetto ZIP ha prodotto lo stesso file byte per byte.
+
+# Verifica della 1.1.0
+
+La suite completa ha prodotto **59 esiti positivi, 0 falliti e 0 saltati** in Node.js 24 e Chromium 156. I 52 esiti di 1.0.0 sono stati rieseguiti. Le asserzioni sulla cache e sullo ZIP seguono la versione del manifest. Si aggiungono sei esiti arcade e una prova di aggiornamento dalla vera 1.0.0.
+
+| Area | Evidenza |
+| --- | --- |
+| Combattimento | Spazio da input Chromium, proiettili e punteggio osservati. Le prove unit verificano corazzatura, frammentazione, cadenza, tetto dei proiettili, bonus e scadenza della combo. |
+| Settori e drone | Verificati progressione, checkpoint, recupero delle statistiche, tre fasi, preavviso, modalità Assistita, sconfitta del drone colpendolo e vittoria per esaurimento dell’autonomia. |
+| Didattica | Il Centro mostra lo starter senza pass e i due scenari. Skulpt rifiuta lo scudo sempre acceso e accetta una condizione equivalente. I test precedenti verificano le altre missioni e i premi. |
+| Compatibilità | La prova installa sullo stesso indirizzo il pacchetto rigenerato dal commit 864825b, quindi aggiorna alla 1.1.0. Verificati avviso, sostituzione della cache, conservazione dei dati v2 e aggiornamento della vecchia bozza intatta. Verificate anche esecuzione dalla cache a server indisponibile e dall’archivio estratto. |
+| Prestazioni | La prova con 108.000 passi e fuoco attivo osserva 4 proiettili contemporanei su un tetto di 24. Nel finale Chromium a 1360 × 900, con Spazio premuto e circa 6 secondi per profilo, misurati 59,84 FPS standard e 60,00 FPS in Grafica leggera. p95 rispettivi 16,8 e 16,7 ms. Zero eccezioni in questi campioni. |
+
+La revisione delle catture ha rilevato che l’indicatore di resistenza copriva parte del drone. L’indicatore è stato spostato nella console laterale. Il timer del drone è separato dal tempo di campagna, così il ritorno dal finale riparte dal settore raggiunto. Il test delle combo usa un generatore riproducibile per distinguere le stelle raccolte durante la prova. Le correzioni sono state seguite dalla suite completa.
+
+Le misure della 1.1.0 sono campioni brevi del container e una simulazione veloce del motore. La prova di 40 minuti documentata sopra riguarda la 1.0.0. Restano la prova su PC reali e la taratura della difficoltà con studenti. Il manifest del main remoto indica 1.0.0. Il proxy dell’ambiente ha risposto 403 tentando di raggiungere l’URL Pages pubblico.
+
+[Combattimento](screenshots/v1.1.0/01-combattimento.png) · [Missione if](screenshots/v1.1.0/02-condizioni.png) · [Drone](screenshots/v1.1.0/03-drone.png).

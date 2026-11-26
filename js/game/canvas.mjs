@@ -60,6 +60,7 @@ export function createCanvas(canvas) {
 
   function draw(world) {
     ctx.setTransform(canvas.width / WIDTH, 0, 0, canvas.height / HEIGHT, 0, 0);
+    const flightTime = world.time + (world.boss?.clock ?? 0);
     const sector = sectors[world.sector];
     const { planet, backdrop } = backgrounds[world.sector];
     ctx.fillStyle = world.light ? sector.glow : backdrop;
@@ -75,7 +76,7 @@ export function createCanvas(canvas) {
       const star = sky[index];
       ctx.fillStyle = star.bright ? '#92bbdf' : '#365677';
       const size = star.bright ? 2 : 1;
-      ctx.fillRect(star.x, (star.y + (reduced.matches ? 0 : world.time * sector.drift * (star.bright ? 11 : index % 2 ? 5 : 2))) % HEIGHT, size, size);
+      ctx.fillRect(star.x, (star.y + (reduced.matches ? 0 : flightTime * sector.drift * (star.bright ? 11 : index % 2 ? 5 : 2))) % HEIGHT, size, size);
     }
     if (world.boss) {
       const boss = world.boss;
@@ -151,7 +152,7 @@ export function createCanvas(canvas) {
     }
     if (!reduced.matches && ship.invulnerable > 0 && Math.sin(ship.invulnerable * 27) < 0) ctx.globalAlpha = 0.48;
     const turbo = world.upgrades.speed > 5;
-    const flame = 26 + (turbo ? 14 : 0) + (reduced.matches ? 0 : Math.sin(world.time * 30) * 4);
+    const flame = 26 + (turbo ? 14 : 0) + (reduced.matches ? 0 : Math.sin(flightTime * 30) * 4);
     const trail = world.upgrades.color === 'blu' ? '#7eebff' : turbo ? '#ffca79' : '#57d8ff';
     polygon([[-5, 11], [0, flame], [5, 11]], trail);
     if (turbo && !world.light) {

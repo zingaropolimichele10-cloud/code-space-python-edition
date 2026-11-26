@@ -12,9 +12,9 @@ Il laboratorio autonomo è adatto a mostrare una singola istruzione senza inizia
 
 ## Sessione con le missioni integrate
 
-Apri la pagina del gioco, scegli **Inizia missione** e lascia provare le frecce durante il tutorial. Dopo **Salta e decolla**, le stelle dorate con la scritta PYTHON aprono il Centro di controllo. Se una stella è difficile da raggiungere, attendere che si avvicini.
+Apri la pagina del gioco, scegli **Inizia missione** e lascia provare le frecce durante il tutorial. In volo, mostra come sparare con Spazio. Dopo **Salta e decolla**, le stelle dorate con la scritta PYTHON aprono il Centro di controllo. Se una stella è difficile da raggiungere, attendere che si avvicini.
 
-Nel Centro il gioco è fermo. Invita gli studenti a confrontare il codice iniziale con l’obiettivo e a chiedere un indizio se necessario. **Salta per ora** conserva la bozza e permette di continuare a volare. **Riprendi missione** riapre la stessa missione con gli indizi già consultati. Chi perde le vite può ripartire dal checkpoint. Ogni studente può avviare la sfida di 60 secondi anche con missioni incomplete e riprendere gli esercizi dalla schermata conclusiva. La quinta è un esercizio facoltativo sulle condizioni.
+Nel Centro il gioco è fermo. Invita gli studenti a confrontare il codice iniziale con l’obiettivo e a chiedere un indizio se necessario. **Salta per ora** conserva la bozza e permette di continuare a volare. **Riprendi missione** riapre la stessa missione con gli indizi già consultati. Chi perde le vite può ripartire dal checkpoint. Ogni studente può avviare la sfida con il drone di circa 60 secondi anche con missioni incomplete e riprendere gli esercizi dalla schermata conclusiva. La quinta è un esercizio facoltativo sulle condizioni.
 
 ## Comandi del relatore
 
@@ -38,3 +38,9 @@ Se una postazione viene ricaricata, **Continua** riparte dal checkpoint. Le bozz
 | 34–38 | Confronta due soluzioni equivalenti, chiedi che cosa memorizza una variabile e usa il riepilogo per riconoscere i risultati individuali. |
 
 Prima dell’ingresso verifica la [checklist](LAB_CHECKLIST.md) e prepara lo ZIP. Per un gruppo nuovo, chiudi eventuali esercizi aperti, scegli **Modalità docente → Avvia nuova sessione → Conferma azzeramento** e lascia aperto il tutorial. Controlla il mute e le preferenze grafiche conservate. Per problemi comuni usa la [scheda di risoluzione](TROUBLESHOOTING.md).
+
+### Novità della 1.1.0
+
+Mostra un colpo con Spazio e spiega che gli ostacoli corazzati richiedono più colpi. Le ricompense arcade migliorano il punteggio e lasciano accessibili le missioni. Nel finale invita a lasciare le corsie illuminate prima dell’arrivo degli impulsi. Il drone si ferma anche quando finisce la sua autonomia. Per una classe alle prime armi puoi scegliere Assistita o Demo.
+
+Nella missione facoltativa chiedi prima cosa succede con 2 vite e con 4. Fai leggere soltanto la riga rientrata quando il confronto è vero. Il computer di bordo fornisce vite e il pulsante **Esegui** prova entrambi gli scenari.

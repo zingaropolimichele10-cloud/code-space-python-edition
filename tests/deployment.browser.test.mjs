@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { networkInterfaces } from 'node:os';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -10,15 +10,25 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { openBrowser } from './browser.mjs';
 
 const project = fileURLToPath(new URL('../', import.meta.url));
-const zipName = 'code-space-python-edition-1.0.0';
+const { version, runtime } = JSON.parse(await readFile(join(project, 'release-manifest.json')));
+const cachePrefix = 'code-space:/code-space-python-edition/:';
+const baseline = '864825b30368fca477bed3040deb7caeb706da04';
 
-async function unpack(t) {
+async function unpack(t, previous = false) {
   const dir = await mkdtemp(join(tmpdir(), 'codespace-release-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const archive = join(dir, 'release.zip');
-  execFileSync('python3', ['tools/build-offline.py', archive], { cwd: project });
+  let source = project;
+  if (previous) {
+    source = join(dir, 'baseline');
+    await mkdir(source);
+    const snapshot = join(dir, 'baseline.tar');
+    execFileSync('git', ['archive', '--output=' + snapshot, baseline], { cwd: project });
+    execFileSync('tar', ['-xf', snapshot, '-C', source]);
+  }
+  execFileSync('python3', ['tools/build-offline.py', archive], { cwd: source });
   execFileSync('python3', ['-m', 'zipfile', '-e', archive, dir]);
-  return join(dir, zipName);
+  return join(dir, 'code-space-python-edition-' + (previous ? '1.0.0' : version));
 }
 
 async function waitFor(browser, expression) {
@@ -52,8 +62,7 @@ test('Cache offline dopo il primo avvio: ricarica, laboratorio e vero Worker sen
   const browser = await openBrowser();
   t.after(browser.close);
   await waitFor(browser, '!!navigator.serviceWorker.controller');
-  const cached = await browser.evaluate(`caches.open('code-space:/code-space-python-edition/:1.0.0').then(c => c.keys()).then(k => k.length)`);
-  const { runtime } = JSON.parse(await readFile(join(project, 'release-manifest.json')));
+  const cached = await browser.evaluate(`caches.open(${JSON.stringify(cachePrefix + version)}).then(c => c.keys()).then(k => k.length)`);
   assert.equal(cached, runtime.length);
   await browser.page('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });
   browser.setServing(false);
@@ -68,19 +77,28 @@ test('Cache offline dopo il primo avvio: ricarica, laboratorio e vero Worker sen
   assert.deepEqual(browser.errors, []);
 });
 
-test('Aggiornamento atomico: cache in attesa, messaggio e rimozione della versione precedente', async t => {
-  const directory = await unpack(t);
+async function verifyUpdate(t, previous) {
+  const directory = await unpack(t, previous);
   const browser = await openBrowser('', { staticRoot: pathToFileURL(directory + '/') });
   t.after(browser.close);
   await waitFor(browser, '!!navigator.serviceWorker.controller');
-  const worker = join(directory, 'sw.js');
-  const manifest = join(directory, 'release-manifest.json');
-  await writeFile(worker, (await readFile(worker, 'utf8')).replace("'1.0.0'", "'1.0.1'"));
-  await writeFile(manifest, (await readFile(manifest, 'utf8')).replace('"1.0.0"', '"1.0.1"'));
+  const data = { version: 2, completed: [1, 3], skipped: [5], best: 123,
+    drafts: { 5: 'scudo = False\nif vite < 3:\n    pass' }, light: true,
+    audio: { enabled: false, volume: .2 }, checkpoint: { mode: 'PLAYING', time: 25, score: 123 } };
+  if (previous) {
+    await browser.evaluate(`localStorage.setItem('code-space:progress:v2', ${JSON.stringify(JSON.stringify(data))})`);
+    await cp(await unpack(t), directory, { recursive: true });
+  } else {
+    const worker = join(directory, 'sw.js');
+    const manifest = join(directory, 'release-manifest.json');
+    const fixture = version.replace(/\d+$/, patch => String(Number(patch) + 1));
+    await writeFile(worker, (await readFile(worker, 'utf8')).replace(version, fixture));
+    await writeFile(manifest, (await readFile(manifest, 'utf8')).replace(version, fixture));
+  }
   await browser.evaluate('navigator.serviceWorker.getRegistration().then(r => r.update()).then(() => true)');
   await waitFor(browser, "!document.getElementById('offline-notice').hidden");
-  const old = 'code-space:/code-space-python-edition/:1.0.0';
-  const next = old.replace('1.0.0', '1.0.1');
+  const old = cachePrefix + (previous ? '1.0.0' : version);
+  const next = cachePrefix + (previous ? version : version.replace(/\d+$/, patch => String(Number(patch) + 1)));
   assert.deepEqual((await browser.evaluate('caches.keys()')).sort(), [old, next]);
   const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await browser.send('Target.attachToTarget', { targetId, flatten: true });
@@ -97,8 +115,21 @@ test('Aggiornamento atomico: cache in attesa, messaggio e rimozione della versio
   await waitFor(replacement, `globalThis.caches?.keys().then(names => names.length === 1 && names[0] === ${JSON.stringify(next)})`);
   await page('Page.navigate', { url: browser.origin + browser.prefix });
   await waitFor(replacement, '!!navigator.serviceWorker?.controller');
+  if (previous) {
+    await waitFor(replacement, "document.getElementById('mission-count')?.textContent === '2 / 4'");
+    assert.deepEqual(await replacement.evaluate("JSON.parse(localStorage.getItem('code-space:progress:v2'))"), data);
+    await replacement.evaluate("document.getElementById('continue').click(); document.getElementById('mission-retry').click();");
+    await waitFor(replacement, "document.getElementById('control-center').open");
+    assert.equal(await replacement.evaluate("document.getElementById('mission-code').value"),
+      'scudo = False\nif vite < 3:\n    scudo = False');
+  }
   assert.deepEqual(browser.errors, []);
-});
+}
+
+test('Aggiornamento atomico: cache in attesa, messaggio e rimozione della versione precedente',
+  t => verifyUpdate(t, false));
+test('Aggiornamento reale 1.0.0 → 1.1.0 con recupero del salvataggio',
+  t => verifyUpdate(t, true));
 
 test('ZIP estratto avviato dal server Python su loopback e sull’indirizzo LAN del container', async t => {
   const directory = await unpack(t);

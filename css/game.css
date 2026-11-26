@@ -165,7 +165,7 @@ kbd { border: 1px solid #446281; border-radius: .25rem; padding: .1rem .3rem; co
 #combo-label { color: #ffdb87; font-weight: 700; }
 #arcade-notice { width: fit-content; margin: .25rem 0; color: #ffe3ad; }
 #arcade-notice:empty { display: none; }
-#boss-status { width: min(58%, 23rem); margin: .25rem auto 0; }
+#boss-status { width: 100%; margin: .25rem 0 .75rem; font-size: .83rem; }
 #boss-hp { display: block; width: 100%; height: .48rem; accent-color: #ffaf79; }
 .flight-keys { font-size: .85rem; margin: .45rem 0; }
 #mission-briefing, #mission-edit { margin: .35rem 0; }
@@ -175,3 +175,8 @@ kbd { border: 1px solid #446281; border-radius: .25rem; padding: .1rem .3rem; co
 .mission-scenarios { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; margin-bottom: .65rem; }
 .mission-scenarios > div { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .55rem; padding: .4rem .6rem; border: 1px solid #446380; border-radius: .35rem; background: #0a1b30; }
 .mission-scenarios > div:first-child > span:first-child { color: #7ce9ff; }
+#mission-preview { display: flex; align-items: center; gap: .55rem; }
+#mission-preview::before { content: ""; flex: 0 0 1rem; height: 1rem; background: #84d9ff; clip-path: polygon(12% 16%, 50% 3%, 88% 16%, 86% 58%, 70% 80%, 50% 97%, 30% 80%, 14% 58%); }
+#mission-preview[data-mission="1"]::before { background: #ffc573; clip-path: polygon(50% 3%, 100% 58%, 74% 58%, 50% 33%, 26% 58%, 0 58%, 50% 100%, 83% 65%, 62% 65%, 50% 78%, 38% 65%, 17% 65%); }
+#mission-preview[data-mission="2"]::before { background: #ffc573; clip-path: polygon(33% 0, 67% 0, 67% 33%, 100% 33%, 100% 67%, 67% 67%, 67% 100%, 33% 100%, 33% 67%, 0 67%, 0 33%, 33% 33%); }
+#mission-preview[data-mission="4"]::before { background: linear-gradient(135deg, #83dfff, #398bff); clip-path: polygon(25% 0, 75% 0, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0 75%, 0 25%); }
