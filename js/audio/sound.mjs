@@ -1,4 +1,5 @@
 const tones = {
+  fire: [520], ping: [740], destroy: [150, 95], combo: [620, 820], sector: [440, 660], warning: [260, 260],
   star: [660, 990], impact: [155, 72], shield: [310, 610], mission: [440, 554, 660],
   success: [523, 659, 784], victory: [523, 659, 784, 1047],
 };

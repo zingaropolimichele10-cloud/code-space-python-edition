@@ -26,6 +26,8 @@ export function normalizeProgress(input) {
       && validScore(point.score) && Number.isFinite(point.time) && point.time >= 0 && point.time <= 86_400
       ? {
         mode: point.mode, score: point.score, time: point.time,
+        ...(point.stats && ['rocks', 'stars', 'bestCombo'].every(key => validScore(point.stats[key]))
+          ? { stats: { rocks: point.stats.rocks, stars: point.stats.stars, bestCombo: point.stats.bestCombo } } : {}),
         ...(point.mode === 'FINAL_CHALLENGE' && Number.isInteger(point.duration) && point.duration >= 10 && point.duration <= 180
           ? { duration: point.duration } : {}),
       } : null,

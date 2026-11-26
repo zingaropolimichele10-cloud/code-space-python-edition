@@ -21,9 +21,12 @@ const { game, refresh, tutorial, setLight } = mountGame({
     center.onState(game);
     const { world } = game;
     if (world.state !== State.VICTORY) return;
-    progress.update({ checkpoint: { mode: State.PLAYING, time: world.time, score: world.score } });
+    progress.update({ checkpoint: { mode: State.PLAYING, time: world.time, score: world.score, stats: world.stats } });
     const completed = center.completedMissions();
-    get('victory-score').textContent = `Punteggio: ${world.score} · Record locale: ${progress.state.best}`;
+    get('victory-score').textContent = `Punteggio: ${world.score} · Record locale: ${Math.max(world.score, progress.state.best)}`;
+    const { rocks, stars, bestCombo } = world.stats;
+    get('victory-stats').textContent = `Asteroidi distrutti: ${rocks} · Stelle raccolte: ${stars} · Combo migliore: ${bestCombo}`;
+    get('victory-rank').textContent = `Grado di volo: ${rocks >= 12 && bestCombo >= 3 ? 'Esploratore stellare' : rocks >= 5 || bestCombo >= 3 ? 'Pilota d’orbita' : 'Pioniere Aurora'}`;
     get('victory-missions').textContent = `Missioni principali: ${center.count()} su 4${completed.some(item => item.optional) ? ' · Missione facoltativa completata' : ''}`;
     get('victory-upgrades').textContent = completed.length
       ? `Potenziamenti: ${completed.map(item => item.reward).join(' · ')}`
@@ -49,13 +52,14 @@ tutorial.bindCenter(center.demo);
 bindTeacher({ game, refresh, setLight, audio, syncAudio, center, progress });
 
 get('continue').addEventListener('click', () => {
-  game.restore(progress.state.checkpoint);
+  if (game.restore(progress.state.checkpoint)) get('space').focus({ preventScroll: true });
   refresh();
 });
 get('victory-recover').addEventListener('click', () => {
   game.action('recover');
   const id = progress.state.skipped[0];
   if (id) game.openMission(id);
+  else get('space').focus({ preventScroll: true });
   refresh();
 });
 refresh();

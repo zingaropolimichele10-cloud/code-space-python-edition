@@ -1,3 +1,4 @@
+import { FIRE_KEY, sectors } from './arcade.mjs';
 import { createTutorial } from './tutorial.mjs';
 import { createCanvas } from './canvas.mjs';
 import { createGame, State } from './engine.mjs';
@@ -11,11 +12,11 @@ const panels = {
 const copy = {
   [State.MENU]: ['In attesa', 'Avvia il tutorial per conoscere i comandi.'],
   [State.TUTORIAL]: ['Pronti a partire', 'Prova le quattro frecce prima del decollo.'],
-  [State.PLAYING]: ['In volo', 'Raccogli stelle dorate ed evita gli asteroidi.'],
+  [State.PLAYING]: ['In volo', 'Raccogli stelle. Usa Spazio per sparare.'],
   [State.PAUSED]: ['Volo sospeso', 'Riprendi quando sei pronto.'],
   [State.MISSION]: ['Centro di controllo', 'Il volo riprenderà quando chiuderai la missione.'],
   [State.GAME_OVER]: ['Checkpoint disponibile', 'Riparti con tutte le vite.'],
-  [State.FINAL_CHALLENGE]: ['Sfida finale', 'Sopravvivi a un settore con più asteroidi.'],
+  [State.FINAL_CHALLENGE]: ['Sfida finale', 'Colpisci il drone ed evita le corsie segnalate.'],
   [State.VICTORY]: ['Settore superato', 'La navicella è al sicuro.'],
 };
 
@@ -26,7 +27,7 @@ export function mountGame({ nextMission, onState = () => {},
   const byId = id => document.getElementById(id);
   const tutorial = createTutorial();
   const canvas = createCanvas(byId('space'));
-  const hud = Object.fromEntries(['lives', 'score', 'mission-count', 'speed', 'shield', 'flight-status', 'flight-note']
+  const hud = Object.fromEntries(['lives', 'score', 'mission-count', 'speed', 'shield', 'flight-status', 'flight-note', 'sector-label', 'arcade-notice', 'combo-label', 'boss-label']
     .map(id => [id, byId(id)]));
   const set = (id, value) => {
     if (hud[id].textContent !== value) hud[id].textContent = value;
@@ -54,6 +55,21 @@ export function mountGame({ nextMission, onState = () => {},
     set('mission-count', `${missionCount()} / 4`);
     set('shield', world.shield ? 'Attivo' : world.emergency && world.lives < 3 ? 'Emergenza'
       : world.upgrades.shield ? 'In ricarica' : 'Spento');
+    const inFlight = flying.has(world.state);
+    byId('arcade-strip').hidden = !inFlight;
+    const boss = world.boss;
+    const fighting = world.state === State.FINAL_CHALLENGE && Boolean(boss);
+    byId('boss-status').hidden = !fighting;
+    if (fighting) {
+      set('boss-label', `Drone ostile · Fase ${boss.phase} · ${boss.hp}/${boss.max}`);
+      byId('boss-hp').max = boss.max;
+      byId('boss-hp').value = boss.hp;
+    }
+    if (inFlight) {
+      set('sector-label', `Settore ${world.sector === 4 ? 'finale' : '0' + (world.sector + 1)} · ${sectors[world.sector].name}`);
+      set('arcade-notice', world.noticeLeft > 0 ? world.notice : fighting && boss.warning.length ? 'Attacco in arrivo: evita le corsie illuminate.' : '');
+      set('combo-label', world.combo > 1 ? `Combo ${world.combo} · ×${world.multiplier}` : '');
+    }
     byId('final-button').hidden = world.state !== State.PLAYING;
     if (world.state === State.TUTORIAL) {
       const text = byId('tutorial-text');
@@ -67,7 +83,7 @@ export function mountGame({ nextMission, onState = () => {},
 
   byId('tutorial-next').addEventListener('click', () => { tutorial.next(world); refresh(); });
   document.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => {
-    game.action(button.dataset.action);
+    if (game.action(button.dataset.action) && flying.has(world.state)) byId('space').focus({ preventScroll: true });
     refresh();
   }));
   addEventListener('keydown', event => {
@@ -75,12 +91,16 @@ export function mountGame({ nextMission, onState = () => {},
     if (event.key === 'Escape' && !event.repeat) {
       if (game.action(world.state === State.PAUSED ? 'resume' : 'pause')) event.preventDefault();
       refresh();
+    } else if (event.code === FIRE_KEY && flying.has(world.state)) {
+      if (event.target.closest?.('button, a, input, select')) return;
+      event.preventDefault();
+      keys.add(FIRE_KEY);
     } else if (arrows.has(event.key) && (flying.has(world.state) || world.state === State.TUTORIAL)) {
       event.preventDefault();
       keys.add(event.key);
     }
   });
-  addEventListener('keyup', event => keys.delete(event.key));
+  addEventListener('keyup', event => keys.delete(event.code === FIRE_KEY ? FIRE_KEY : event.key));
   const handleBlur = () => {
     keys.clear();
     game.action('pause');

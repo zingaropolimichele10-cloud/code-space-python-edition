@@ -32,6 +32,11 @@
           <div><span>Scudo</span><strong id="shield">Spento</strong></div>
         </div>
         <div class="viewport" id="viewport" data-state="MENU">
+          <div id="arcade-strip" class="arcade-strip" hidden>
+            <div class="arcade-readout"><strong id="sector-label"></strong><span id="combo-label"></span></div>
+            <p id="arcade-notice" aria-live="polite"></p>
+            <div id="boss-status" hidden><span id="boss-label"></span><progress id="boss-hp" aria-labelledby="boss-label"></progress></div>
+          </div>
           <canvas id="space" tabindex="-1" width="960" height="540" aria-label="Campo di gioco spaziale"></canvas>
           <div class="overlay" id="overlay">
             <div id="menu-panel" class="state-panel">
@@ -65,6 +70,8 @@
               <h2>Missione compiuta!</h2>
               <p id="victory-score"></p>
               <p id="victory-missions"></p>
+              <p id="victory-stats"></p>
+              <p id="victory-rank"></p>
               <p id="victory-upgrades"></p>
               <p id="victory-concepts"></p>
               <button type="button" data-action="start">Rigioca</button>
@@ -79,6 +86,7 @@
         <h2 id="flight-status" aria-live="polite">In attesa</h2>
         <p id="flight-note">Avvia il tutorial per conoscere i comandi.</p>
         <div class="keys" aria-label="Frecce direzionali"><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd></div>
+        <p class="flight-keys">Premi <kbd>Spazio</kbd> per sparare</p>
         <button type="button" id="pause-button" class="secondary" data-action="pause" hidden>Pausa <kbd>Esc</kbd></button>
         <button type="button" id="final-button" data-action="final" hidden>Avvia sfida finale</button>
         <p id="final-route" hidden></p>
