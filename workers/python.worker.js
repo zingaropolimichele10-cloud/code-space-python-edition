@@ -82,10 +82,40 @@ function classifyPythonError(error, source, line) {
   return block && indent(current) <= indent(previous) ? 'INDENTATION' : code;
 }
 
+// Intercetta le operazioni prima che Skulpt allochi il risultato. Il browser
+// conserva il watchdog per le altre operazioni, senza una quota di memoria.
+function guardOperations(limits, reject) {
+  let budget = limits.sequenceBudget;
+  const sequenceTypes = new Set([Sk.builtin.str, Sk.builtin.list, Sk.builtin.tuple]);
+  const sequenceLength = value => sequenceTypes.has(value?.ob$type) ? value.v.length : undefined;
+  const integer = value => [Sk.builtin.int_, Sk.builtin.bool].includes(value?.ob$type)
+    ? Number(Sk.builtin.asnum$(value)) : undefined;
+  for (const name of ['numberBinOp', 'numberInplaceBinOp']) {
+    const original = Sk.abstr[name];
+    Sk.abstr[name] = (left, right, operator) => {
+      const lhs = sequenceLength(left);
+      const rhs = sequenceLength(right);
+      let size;
+      if (operator === 'Mult') {
+        if (lhs !== undefined && lhs > 0) size = lhs * Math.max(0, integer(right));
+        if (rhs !== undefined && rhs > 0) size = rhs * Math.max(0, integer(left));
+      } else if (operator === 'Add' && lhs !== undefined && rhs !== undefined) {
+        size = lhs + rhs;
+      } else if ((operator === 'LShift' || operator === 'Pow') &&
+          integer(left) !== undefined && integer(right) > limits.integerExpansion) {
+        reject();
+      }
+      if (size > limits.sequence || (size > 0 && (budget -= size) < 0)) reject();
+      return original(left, right, operator);
+    };
+  }
+}
+
 self.onmessage = async ({ data: { id, source } }) => {
   const { limits, failure } = await protocol;
   let output = '';
   let outputLimitReached = false;
+  let resourceLimitReached = false;
 
   try {
     if (typeof source !== 'string' || source.length > limits.source) {
@@ -113,14 +143,19 @@ self.onmessage = async ({ data: { id, source } }) => {
     Sk.builtin.__import__ = denyImport;
     Sk.builtins.__import__ = new Sk.builtin.func(denyImport);
     for (const name of ['jseval', 'execfile', 'open', 'file']) delete Sk.builtins[name];
+    guardOperations(limits, () => {
+      resourceLimitReached = true;
+      throw new ExecutionError('RESOURCE_LIMIT');
+    });
     const module = await Sk.misceval.asyncToPromise(
       () => Sk.importMainWithBody('programma', false, source, true),
     );
+    if (resourceLimitReached) throw new ExecutionError('RESOURCE_LIMIT');
     if (outputLimitReached) throw new ExecutionError('OUTPUT_LIMIT');
     self.postMessage({ id, ok: true, output, variables: extractVariables(module.$d, limits) });
   } catch (error) {
     const line = error?.traceback?.find(frame => Number.isInteger(frame.lineno) && frame.lineno > 0)?.lineno;
-    const code = outputLimitReached ? 'OUTPUT_LIMIT' : error instanceof ExecutionError
+    const code = resourceLimitReached ? 'RESOURCE_LIMIT' : outputLimitReached ? 'OUTPUT_LIMIT' : error instanceof ExecutionError
       ? error.message
       : classifyPythonError(error, source, line);
     const details = error instanceof ExecutionError ? error.details : { line };

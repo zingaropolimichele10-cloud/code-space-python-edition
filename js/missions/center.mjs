@@ -52,7 +52,15 @@ export function createCenter({ progress, sound = () => {} }) {
   }
 
   function bind(game, refresh) {
-    editor.addEventListener('input', () => saveDraft(true));
+    editor.addEventListener('input', () => {
+      saveDraft(true);
+      if (status.dataset.result !== 'pending') return;
+      revision++;
+      run.cancel();
+      button.disabled = false;
+      status.dataset.result = '';
+      status.textContent = 'Codice modificato. Premi Esegui per verificare questa versione.';
+    });
     for (const { id, upgrade } of missions) {
       if (completed.has(id)) game.grant(upgrade);
     }

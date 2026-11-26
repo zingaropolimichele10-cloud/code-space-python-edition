@@ -151,3 +151,23 @@ Le misure sono del container di sviluppo. La durata didattica con studenti, le p
 | Mediana e 95º percentile RAF | 16,7 / 16,8 ms | 16,7 / 16,7 ms |
 
 La misura Chromium riguarda circa due secondi di volo iniziale con grafica standard. I valori sono campioni del container, senza ripetizioni sufficienti per stimare una differenza prestazionale stabile.
+
+# Revisione e distribuzione 1.0.0
+
+## Revisione del codice
+
+| Priorità | Rilievo | Disposizione |
+| --- | --- | --- |
+| Importante | Modificare l’editor durante una prova poteva lasciare valida una risposta relativa al testo precedente. | Modificare l’input invalida l’ID logico della prova e termina il Worker in corso. Testata anche la chiusura durante l’esecuzione. |
+| Importante | Le operazioni native che producono successioni molto grandi potevano superare l’output massimo prima che intervenisse il watchdog. | Controlli preventivi per moltiplicazione e concatenazione di stringhe, liste e tuple e per le espansioni di interi tramite operatori di potenza e shift. |
+| Secondario | Un avvio diretto docente poteva lasciare sospeso l’audio precedentemente abilitato. | I pulsanti di avvio docente possono sbloccare il contesto durante l’interazione. |
+
+È stato controllato il percorso degli eventi e degli errori tra editor, runner, Worker e macchina a stati. Il runner libera timer e Worker anche in caso di sostituzione o errore. Il loop Canvas resta unico e i limiti di oggetti, risoluzione e delta time sono espliciti. Cache, asset e dipendenze sono locali. I file distribuiti di Skulpt, la mappa e la licenza coincidono con i file della distribuzione npm fissata alla versione 1.2.0. La ricerca dei principali formati di chiavi private, token e file di credenziali nel checkout tracciato non ha segnalato corrispondenze. L’identità pubblica degli autori Git appartiene alla cronologia dei commit.
+
+Il budget riduce il rischio di allocazioni nelle operazioni intercettate. Restano superfici di allocazione in built-in, conversioni e collezioni create per altre vie. Il watchdog non limita direttamente la memoria e il Worker non è una sandbox assoluta. Usare programmi didattici e ricaricare la scheda in caso di arresto del renderer.
+
+Il riesame delle cinque missioni ha verificato starter, progressione degli indizi, messaggi italiani e corrispondenza fra valore convalidato e premio. Le prove precedenti coprono soluzioni equivalenti e casi errati per la condizione sulle vite. Il tutorial presenta i comandi e l’esecuzione di prova prima della campagna.
+
+## Catture aggiornate
+
+Controllate a 1366 × 768 per leggibilità e sovrapposizioni. [Menu](screenshots/v1.0.0/01-menu.png) · [Tutorial](screenshots/v1.0.0/02-tutorial.png) · [Volo](screenshots/v1.0.0/03-volo.png) · [Centro](screenshots/v1.0.0/04-centro.png) · [Indizi](screenshots/v1.0.0/05-indizi.png) · [Errore](screenshots/v1.0.0/06-errore.png) · [Premio](screenshots/v1.0.0/07-premio.png) · [Game over](screenshots/v1.0.0/08-game-over.png) · [Docente](screenshots/v1.0.0/09-docente.png) · [Sfida](screenshots/v1.0.0/10-finale.png) · [Vittoria](screenshots/v1.0.0/11-vittoria.png).

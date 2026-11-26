@@ -12,24 +12,26 @@ const mime = {
   '.js': 'text/javascript', '.svg': 'image/svg+xml',
 };
 
-export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900 } = {}) {
+export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900, staticRoot = root, listenHost = '127.0.0.1', clientHost = listenHost } = {}) {
   const profile = await mkdtemp(`${tmpdir()}/codespace-browser-`);
   const requests = [];
+  let serving = true;
   const server = createServer(async (req, res) => {
     requests.push(req.url);
+    if (!serving) return res.writeHead(503).end();
     try {
       if (!req.url.startsWith(prefix)) throw new Error('Percorso fuori dal sottosito');
-      const target = new URL(req.url.slice(prefix.length) || 'index.html', root);
-      if (!target.href.startsWith(root.href)) throw new Error('Percorso non valido');
+      const target = new URL(req.url.slice(prefix.length) || 'index.html', staticRoot);
+      if (!target.href.startsWith(staticRoot.href)) throw new Error('Percorso non valido');
       res.setHeader('Content-Type', mime[extname(target.pathname)] ?? 'application/octet-stream');
       res.end(await readFile(target));
     } catch {
       res.writeHead(404).end();
     }
   });
-  server.listen(0, '127.0.0.1');
+  server.listen(0, listenHost);
   await once(server, 'listening');
-  const origin = `http://127.0.0.1:${server.address().port}`;
+  const origin = `http://${clientHost}:${server.address().port}`;
   const args = [
     '--headless', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking',
     '--no-first-run', '--no-default-browser-check', `--user-data-dir=${profile}`,
@@ -137,7 +139,11 @@ export async function openBrowser(path = '', { beforeLoad, width = 1360, height 
       const { data } = await page('Page.captureScreenshot', { format: 'png' });
       return Buffer.from(data, 'base64');
     }
-    return { evaluate, page, screenshot, close, requests, network, errors, origin, prefix, version: version.product };
+    return {
+      evaluate, page, screenshot, close, requests, network, errors, origin, prefix, send,
+      setServing(value) { serving = value; },
+      version: version.product,
+    };
   } catch (error) {
     await close();
     throw error;

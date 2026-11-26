@@ -5,6 +5,9 @@ export const limits = Object.freeze({
   variables: 32,
   interpreterMs: 400,
   workerMs: 3000,
+  sequence: 65536,
+  sequenceBudget: 1048576,
+  integerExpansion: 4096,
 });
 
 const messages = {
@@ -17,6 +20,7 @@ const messages = {
   INPUT: 'L’input interattivo è disattivato in questo prototipo.',
   SOURCE_LIMIT: 'Il codice supera il limite di 8.192 caratteri.',
   OUTPUT_LIMIT: 'L’output supera il limite di 4.096 caratteri.',
+  RESOURCE_LIMIT: 'L’operazione richiede troppe risorse. Riduci le dimensioni dei valori.',
   VARIABLE_LIMIT: 'Una variabile supera il limite previsto per l’esportazione.',
   VARIABLE_TYPE: 'Il tipo della variabile non corrisponde a quello richiesto.',
   INTERPRETER_TIMEOUT: 'Il programma ha superato il tempo di esecuzione. Controlla i cicli.',

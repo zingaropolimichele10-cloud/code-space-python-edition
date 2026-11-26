@@ -77,7 +77,7 @@ export function bindAudio(audio) {
   });
   slider.addEventListener('input', () => audio.configure(!audio.enabled, Number(slider.value) / 100));
   document.addEventListener('click', event => {
-    if (event.target.closest('[data-action="tutorial"], [data-action="start"], #continue')) void unlock();
+    if (event.target.closest('[data-action="tutorial"], [data-action="start"], #continue, #teacher-final, #teacher-launch')) void unlock();
   });
   return sync;
 }
