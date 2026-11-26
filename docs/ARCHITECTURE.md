@@ -49,3 +49,7 @@ Web Audio sintetizza brevi sequenze al verificarsi degli eventi di gioco. Il con
 Lo schema `code-space:progress:v2` valida stato, record, preferenze, bozze e checkpoint, importando i vecchi ID e le preferenze audio quando lo schema v2 è assente. Gli ID dei potenziamenti sono derivati dalle missioni completate. Il checkpoint salva il settore, il tempo, il punteggio e la durata di una sfida già avviata. Al ripristino il settore viene rigenerato con vite piene e i premi ottenuti. Il volume e le bozze vengono scritti con un breve ritardo, con una scrittura finale su pagehide. Se LocalStorage è bloccato, i cambiamenti restano utilizzabili in memoria.
 
 La modalità docente è locale e ad accesso libero. Permette di scegliere o sbloccare le missioni, mostrare soluzioni e avviare la sfida. La demo sospende gli asteroidi preservando stelle ed esercizi. Difficoltà, demo, sblocco e asteroidi sono impostazioni temporanee. La durata già associata a un checkpoint finale segue quel checkpoint. Una nuova sessione richiede conferma e azzera record, missioni, bozze e checkpoint, conservando le preferenze audio e grafiche.
+
+## Distribuzione e cache
+
+Le risorse restano relative allo scope del sito. Il manifest elenca i file del pacchetto runtime ed è condiviso dal Service Worker e dal generatore ZIP. L’installazione raccoglie tutte le risorse nella cache della versione. L’attivazione avviene dopo la chiusura dei client della versione precedente e rimuove solo le cache obsolete dello stesso scope. Il sito resta accessibile via HTTP locale anche senza Service Worker.

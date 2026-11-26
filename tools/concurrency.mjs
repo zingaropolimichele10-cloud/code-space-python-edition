@@ -16,7 +16,7 @@ async function launch(index) {
   await page('Page.enable');
   await page('Network.enable');
   await page('Runtime.enable');
-  await page('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: true, flatten: true });
+  await page('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: true, flatten: true, filter: [{ type: 'worker' }, { exclude: true }] });
   await page('Page.addScriptToEvaluateOnNewDocument', { source: `
     addEventListener('load', () => {
       document.querySelector('#teacher-open').click();

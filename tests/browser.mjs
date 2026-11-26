@@ -12,13 +12,17 @@ const mime = {
   '.js': 'text/javascript', '.svg': 'image/svg+xml',
 };
 
-export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900, staticRoot = root, listenHost = '127.0.0.1', clientHost = listenHost } = {}) {
+export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900, staticRoot = root, listenHost = '127.0.0.1', clientHost = listenHost, externalOrigin, externalPrefix = prefix } = {}) {
   const profile = await mkdtemp(`${tmpdir()}/codespace-browser-`);
   const requests = [];
   let serving = true;
   const server = createServer(async (req, res) => {
     requests.push(req.url);
     if (!serving) return res.writeHead(503).end();
+    if (req.url === '/release-test-probe') {
+      res.setHeader('Content-Type', 'text/html');
+      return res.end('<!doctype html><title>Verifica aggiornamento</title>');
+    }
     try {
       if (!req.url.startsWith(prefix)) throw new Error('Percorso fuori dal sottosito');
       const target = new URL(req.url.slice(prefix.length) || 'index.html', staticRoot);
@@ -31,10 +35,11 @@ export async function openBrowser(path = '', { beforeLoad, width = 1360, height 
   });
   server.listen(0, listenHost);
   await once(server, 'listening');
-  const origin = `http://${clientHost}:${server.address().port}`;
+  const origin = externalOrigin ?? `http://${clientHost}:${server.address().port}`;
+  const sitePath = externalOrigin ? externalPrefix : prefix;
   const args = [
     '--headless', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking',
-    '--no-first-run', '--no-default-browser-check', `--user-data-dir=${profile}`,
+    '--no-first-run', '--no-default-browser-check', '--no-proxy-server', `--user-data-dir=${profile}`,
     '--remote-debugging-pipe', 'about:blank',
   ];
   if (process.env.CODESPACE_NO_SANDBOX === '1') args.unshift('--no-sandbox');
@@ -115,8 +120,9 @@ export async function openBrowser(path = '', { beforeLoad, width = 1360, height 
   try {
     const version = await send('Browser.getVersion');
     const { targetInfos } = await send('Target.getTargets');
+    const targetId = targetInfos.find(target => target.type === 'page').targetId;
     const { sessionId } = await send('Target.attachToTarget', {
-      targetId: targetInfos.find(target => target.type === 'page').targetId, flatten: true,
+      targetId, flatten: true,
     });
     const page = (method, params) => send(method, params, sessionId);
     await page('Network.enable');
@@ -126,8 +132,9 @@ export async function openBrowser(path = '', { beforeLoad, width = 1360, height 
     if (beforeLoad) await page('Page.addScriptToEvaluateOnNewDocument', { source: beforeLoad });
     await page('Target.setAutoAttach', {
       autoAttach: true, waitForDebuggerOnStart: true, flatten: true,
+      filter: [{ type: 'worker' }, { exclude: true }],
     });
-    await page('Page.navigate', { url: origin + prefix + path });
+    await page('Page.navigate', { url: origin + sitePath + path });
     async function evaluate(expression) {
       const response = await page('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
       if (response.exceptionDetails) {
@@ -140,7 +147,7 @@ export async function openBrowser(path = '', { beforeLoad, width = 1360, height 
       return Buffer.from(data, 'base64');
     }
     return {
-      evaluate, page, screenshot, close, requests, network, errors, origin, prefix, send,
+      evaluate, page, screenshot, close, requests, network, errors, origin, prefix: sitePath, send, targetId,
       setServing(value) { serving = value; },
       version: version.product,
     };

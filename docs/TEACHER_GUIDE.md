@@ -25,3 +25,16 @@ Apri **Modalità docente** in alto. L’apertura mette in pausa il volo. **Apri 
 Prima di cambiare studente, usa **Avvia nuova sessione** e conferma. Il comando riparte dal tutorial. **Azzera progressi** applica lo stesso azzeramento e lascia aperto il pannello. Le preferenze audio e grafiche restano disponibili. Per la sessione di gruppo mantieni il volume disattivato o contenuto. Su una postazione lenta attiva **Grafica leggera**.
 
 Se una postazione viene ricaricata, **Continua** riparte dal checkpoint. Le bozze e le missioni lasciate in sospeso restano recuperabili quando lo storage è disponibile.
+
+## Scaletta operativa da 38 minuti
+
+| Minuti | Attività |
+| --- | --- |
+| 0–4 | Apri il gioco su tutte le postazioni, controlla audio e frecce. Presenta Aurora e il compito di riparare i sistemi con codice. |
+| 4–9 | Guida il tutorial. Spiega che una variabile dà un nome a un valore usato dal gioco. Mostra la differenza tra stella normale e stella Python. |
+| 9–14 | Proietta la prima missione. Chiedi di prevedere cosa succede con `velocita = 10`, poi esegui anche `velocita = 5 * 2` e osserva il valore nell’HUD. |
+| 14–30 | Lavoro individuale. Incoraggia un tentativo e l’uso del primo indizio. Per chi ha difficoltà, usa la modalità Assistita, il selettore docente o la demo senza asteroidi. La quinta missione è facoltativa. |
+| 30–34 | Avvia la sfida finale. Il percorso libero è disponibile anche con esercizi in sospeso. Il docente può abbreviare il timer se serve. |
+| 34–38 | Confronta due soluzioni equivalenti, chiedi che cosa memorizza una variabile e usa il riepilogo per riconoscere i risultati individuali. |
+
+Prima dell’ingresso verifica la [checklist](LAB_CHECKLIST.md) e prepara lo ZIP. Per un gruppo nuovo, chiudi eventuali esercizi aperti, scegli **Modalità docente → Avvia nuova sessione → Conferma azzeramento** e lascia aperto il tutorial. Controlla il mute e le preferenze grafiche conservate. Per problemi comuni usa la [scheda di risoluzione](TROUBLESHOOTING.md).

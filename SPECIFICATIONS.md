@@ -15,3 +15,5 @@ Il gioco finale comprende schermata iniziale con trama, tutorial interattivo, na
 Direzione visiva con blu notte, nero, azzurro elettrico e oro, HUD futuristico, animazioni fluide, editor leggibile e tono adatto agli adolescenti. I requisiti tecnici permanenti sono in [AGENTS.md](AGENTS.md).
 
 La sfida finale è disponibile nel percorso libero e nel percorso con tutti i potenziamenti principali. Parte da 60 secondi ed è configurabile localmente dal relatore. Il salvataggio contiene solo dati di gioco e preferenze.
+
+La versione 1.0.0 è in feature freeze. Le risorse statiche vengono distribuite tramite Pages o pacchetto HTTP locale. La cache offline richiede un primo caricamento completo su un’origine sicura.

@@ -1,4 +1,4 @@
-# code-space-python-edition
+# CODE SPACE – Python Edition 1.0.0
 Educational Python space game – Ferraris Orientation 2026
 
 ## Sviluppo locale
@@ -16,3 +16,7 @@ Per eseguire le verifiche usa `node --test tests/*.test.mjs` con Chromium instal
 Scegli **Inizia missione**, prova le frecce e decolla quando sei pronto. Le stelle PYTHON aprono il Centro di controllo. Puoi iniziare la sfida finale di 60 secondi anche con missioni incomplete. La quinta è sempre facoltativa. **Continua** ripristina il checkpoint locale. **Grafica leggera** riduce il carico del Canvas e l’audio parte disattivato.
 
 Vedi la [guida docente](docs/TEACHER_GUIDE.md), le [verifiche](docs/QA.md) e le [schermate](docs/screenshots/).
+
+## Distribuzione
+
+Consulta [GitHub Pages e pacchetto offline](docs/DEPLOYMENT.md), la [checklist](docs/LAB_CHECKLIST.md) e la [risoluzione dei problemi](docs/TROUBLESHOOTING.md). Il sito è statico.

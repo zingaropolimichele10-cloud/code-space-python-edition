@@ -171,3 +171,49 @@ Il riesame delle cinque missioni ha verificato starter, progressione degli indiz
 ## Catture aggiornate
 
 Controllate a 1366 × 768 per leggibilità e sovrapposizioni. [Menu](screenshots/v1.0.0/01-menu.png) · [Tutorial](screenshots/v1.0.0/02-tutorial.png) · [Volo](screenshots/v1.0.0/03-volo.png) · [Centro](screenshots/v1.0.0/04-centro.png) · [Indizi](screenshots/v1.0.0/05-indizi.png) · [Errore](screenshots/v1.0.0/06-errore.png) · [Premio](screenshots/v1.0.0/07-premio.png) · [Game over](screenshots/v1.0.0/08-game-over.png) · [Docente](screenshots/v1.0.0/09-docente.png) · [Sfida](screenshots/v1.0.0/10-finale.png) · [Vittoria](screenshots/v1.0.0/11-vittoria.png).
+
+## Suite finale e distribuzione
+
+**52 esiti positivi, 0 falliti e 0 saltati** in Node.js 24.22.3 e Chromium 156.0.8078.79. Il totale comprende i 48 esiti precedenti, la nuova prova di robustezza e tre prove di distribuzione.
+
+| Modalità | Verifica |
+| --- | --- |
+| Pages simulato | Gioco e laboratorio caricati sotto `/code-space-python-edition/`. Controllati la radice del progetto, `.nojekyll` e gli indirizzi relativi. |
+| Service Worker | 25 elementi della cache dopo la prima apertura. Rete emulata offline e server reso indisponibile. Ricarica, prima missione e Laboratorio Python eseguiti dalla cache. Aggiornamento sintetico 1.0.0 → 1.0.1 in attesa durante l’uso, avviso visibile, cache vecchia rimossa dopo la chiusura dell’ultimo client. |
+| ZIP e LAN | ZIP rigenerato, estratto e servito da Python 3. Missione eseguita sia su loopback sia su IPv4 non-loopback del container, con richieste solo all’origine locale. La prova LAN usa un secondo indirizzo dello stesso container. |
+| Caricamento | Caricamento iniziale 18 entrate di navigazione e risorsa misurate prima del riempimento della cache, 79.475 byte di contenuto e 84.875 byte riportati come trasferimento da Chromium sul server HTTP di prova. Worker e bundle Skulpt aggiungono 973.471 byte di file grezzi. |
+| Dimensioni | Manifest di 25 risorse, 1.057.566 byte prima della compressione HTTP. ZIP 274.714 byte. La mappa sorgente di Skulpt rimane nel repository per debug e non è necessaria al pacchetto. |
+
+Il test delle **30 sessioni concorrenti** ha usato contesti Chromium indipendenti, con avvio simultaneo, esecuzione di una missione per contesto, risultati e bozze distinti, zero errori JavaScript e traffico limitato al server statico. Il campione sulla configurazione di release ha osservato 709 richieste in 5,52 s. Il container Linux ha una quota CPU equivalente a quattro core e un limite di memoria di 32 GiB. La misura è condivisa da un solo host e non rappresenta trenta PC fisici.
+
+### Classificazione residua
+
+| Priorità | Stato |
+| --- | --- |
+| Bloccante | Nessun blocco osservato nei flussi verificati. L’apertura al pubblico e il collaudo fisico restano distinti dalla preparazione locale. |
+| Importante | Richiesta prova sulle postazioni Ferraris e sui relativi Chrome, Edge e Firefox. Verificato Chromium 156.0.8078.79. Firefox e WebKit non erano installati, e il tentativo di scaricare Firefox per una verifica aggiuntiva non è riuscito. |
+| Importante | La memoria del Worker non ha una quota rigida. Le mitigazioni limitano le operazioni native esplicitamente intercettate. |
+| Secondario | Confermare acustica e durata della lezione con un gruppo reale. |
+
+Vedi [pubblicazione e offline](DEPLOYMENT.md) e [collaudo fisico](LAB_CHECKLIST.md).
+
+## Misure di stress
+
+La suite accelerata del motore ha eseguito 108.000 passi per 1.800 secondi simulati, in 175,0 ms a parete nell’ultima suite. I picchi sono stati 7 asteroidi, 7 stelle e 20 particelle rispetto ai limiti di 16, 8 e 90. Sono stati effettuati 43 recuperi. Questa è una misura Node senza rendering e con orologio accelerato.
+
+Sul candidato 1.0.0 una prova Chromium separata di 120,43 secondi reali ha osservato 5.930 frame durante il volo, 59,82 frame/s, p50 16,7 ms, p95 16,7 ms, p99 16,8 ms. Sono stati creati 8 Worker, al massimo uno attivo e nessuno attivo alla fine. Il test ha effettuato cinque recuperi e ha rilevato zero eccezioni JavaScript.
+
+```sh
+CODESPACE_NO_SANDBOX=1 node tools/soak.mjs
+CODESPACE_NO_SANDBOX=1 node tools/concurrency.mjs
+```
+
+Il primo comando usa 2.400 secondi reali per impostazione predefinita. I frame sono campionati solo durante PLAYING e l’heap proviene da Runtime.getHeapUsage su DevTools per la pagina. I campioni dell’heap JavaScript non includono i buffer grafici o l’intera memoria residente di Chromium. Il conteggio dei Worker riguarda gli interpreti Python. I contatori di stato riportano osservazioni a circa un secondo di distanza.
+
+### Sessione continuativa
+
+La prova browser avviata sul checkout di riferimento prima delle correzioni ha completato **2.400,02 secondi reali** in Chromium headless, senza accelerare requestAnimationFrame. Sono stati osservati 127.452 frame durante il volo, a **59,63 frame/s**. I percentili p50, p95 e p99 sono stati rispettivamente **16,7 ms, 16,8 ms e 16,8 ms**. L’heap JavaScript della pagina, campionato a intervalli di circa un minuto, è variato fra **1,22 e 2,39 MB**. L’ultimo campione era 1,57 MB.
+
+Il percorso ha incluso movimento tramite frecce, collisioni, stelle, tentativi Python riusciti e falliti, pause, riprese e sfide. Sono stati effettuati **63 recuperi dal checkpoint** e **15 riavvii dopo la vittoria**. Creati 11 Worker Python, con picco di **uno** attivo e **zero** attivi alla fine. Nessuna eccezione JavaScript rilevata. Il numero di oggetti attivi è stato misurato separatamente dalla simulazione Node. La prova da 120,43 secondi, la suite di regressione e le verifiche di distribuzione hanno riguardato il candidato 1.0.0.
+
+Una verifica separata ha attivato una seconda scheda Chromium. La pagina del gioco è passata da visibile a nascosta e da PLAYING a PAUSED. Al ritorno è rimasta in pausa in attesa di ripresa esplicita. Il contrasto calcolato per quattro coppie testo/sfondo campione è risultato fra 9,82:1 e 12,16:1. Una nuova generazione del pacchetto ZIP ha prodotto lo stesso file byte per byte.
