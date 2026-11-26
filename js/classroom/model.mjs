@@ -55,6 +55,9 @@ export function command(control, mode, now) {
     return { ...next, phase: 'boss', at: now + 5000,
       bossUntil: Math.min(until, now + 5000 + control.settings.bossSeconds * 1000) };
   }
+  if (mode === 'debrief' && phase === 'boss' && now >= bossUntil) {
+    return { ...next, phase: 'flight', at: now, bossUntil: 0, bossRemaining: 0 };
+  }
   if (mode === 'end' && phase !== 'ended') return { ...next, phase: 'ended', at: now, locked: true };
   throw Error('Questo comando non è disponibile nello stato attuale.');
 }
