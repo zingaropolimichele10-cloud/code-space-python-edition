@@ -35,7 +35,6 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio }
   }
 
   function launch(data) {
-    const first = !room;
     room = data.room;
     seq = data.seq;
     const old = gate;
@@ -61,7 +60,7 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio }
     } else {
       if (world.state === State.MENU) {
         game.action('start');
-        if (first) world.score = Math.max(0, data.arcade);
+        world.score = Math.max(0, data.arcade);
       }
       if (gate === 'boss' && !bossEntered && data.bossSeconds > 0 && !bossWon) {
         center.interrupt();

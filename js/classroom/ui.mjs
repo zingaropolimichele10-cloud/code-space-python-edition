@@ -64,7 +64,7 @@ function link(extra = {}) {
 }
 function boot() {
   if (!demo && navigator.onLine === false) return Promise.reject(Error('Connessione assente. Puoi giocare da solo.'));
-  if (!boot.pending) boot.pending = (demo ? Promise.resolve(demoAdapter(role)) : firebaseAdapter(emulator))
+  if (!boot.pending) boot.pending = (demo ? Promise.resolve(demoAdapter(role)) : firebaseAdapter(emulator, projector ? 'projection' : 'player'))
     .then(adapter => { store = adapter; service = sessionService(adapter); return adapter; })
     .catch(error => { boot.pending = undefined; throw error; });
   return boot.pending;
@@ -267,6 +267,7 @@ function stopRoom() {
   frameRoom = undefined; sentPolicy = '';
   get('flight-frame').src = 'about:blank';
   get('flight-frame').hidden = true;
+  get('projector-link').removeAttribute('href');
   get('room-panel').hidden = true;
   get('entry').hidden = false;
 }
@@ -287,7 +288,17 @@ function attach(id) {
     const join = link({ pin: next.pin });
     if (get('join-link').href !== join && !student) {
       get('join-link').href = join;
-      get('projector-link').href = link({ role: 'projector', room: id });
+      if (host) {
+        const path = 'projectors/' + id;
+        store.get(path).then(async key => {
+          if (!key) {
+            const candidate = crypto.randomUUID();
+            await store.transaction(path, current => current || candidate);
+            key = await store.get(path);
+          }
+          if (room === id) get('projector-link').href = link({ role: 'projector', room: id, key });
+        }).catch(fail);
+      }
       import('../../vendor/classroom/sdk.mjs').then(({ QRCode }) => QRCode.toDataURL(join, { width: 148, margin: 2 }))
         .then(url => { if (id === room) get('join-qr').src = url; }).catch(fail);
     }
@@ -407,14 +418,18 @@ if (demo) get('projector-login').textContent = 'Apri proiettore dimostrativo';
 
 async function login(email, password) {
   const adapter = await boot();
-  const uid = await adapter.host(email, password);
   if (projector) {
-    const id = params.get('room');
-    const existing = id && await store.get('rooms/' + id);
-    if (!existing || (!demo && existing.owner !== uid)) throw Error('Questo proiettore è riservato all’Host della sessione.');
+    const id = params.get('room') ?? '';
+    const key = params.get('key') ?? '';
+    const token = /^[a-z0-9-]{36}$/;
+    if (!token.test(id) || !token.test(key)) throw Error('Apri il collegamento proiettore generato dall’Host.');
+    const uid = await adapter.student();
+    if (demo && await store.get('projectors/' + id) !== key) throw Error('Collegamento proiettore non autorizzato.');
+    await store.set(`viewAccess/${id}/${uid}`, key);
     attach(id);
     return;
   }
+  const uid = await adapter.host(email, password);
   get('create-form').hidden = false;
   get('host-login').hidden = true;
   get('host-email').hidden = true;
@@ -459,10 +474,7 @@ if (student) {
   const prior = readRemembered();
   if (prior && (!params.has('pin') || prior.pin === params.get('pin'))) void run(() => join(prior.pin, prior.name));
 }
-if (projector && demo) void run(() => login());
-if (projector && !demo && !emulator) {
-  void boot().then(adapter => { if (adapter.uid && !adapter.anonymous) return run(() => login()); }).catch(fail);
-}
+if (projector && params.has('room')) void run(() => login());
 for (const button of document.querySelectorAll('[data-command]')) {
   button.addEventListener('click', () => {
     const action = button.dataset.command;

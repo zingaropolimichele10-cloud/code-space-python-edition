@@ -110,7 +110,7 @@ export function sessionService(store, { randomPin = pinNumber, id = () => crypto
     },
     async remove(room, pin) {
       const ticket = await store.get('pins/' + pin);
-      const patch = Object.fromEntries(['rooms', 'members', 'scores', 'metrics', 'presence', 'seats', 'names']
+      const patch = Object.fromEntries(['rooms', 'members', 'scores', 'metrics', 'presence', 'seats', 'names', 'projectors', 'viewAccess']
         .map(path => [path + '/' + room, null]));
       if (ticket?.room === room) patch['pins/' + pin] = null;
       await store.update(patch);

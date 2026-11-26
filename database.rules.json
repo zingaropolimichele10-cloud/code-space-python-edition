@@ -124,7 +124,7 @@
       "$room": {
         ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) && !newData.exists()",
         "$seat": {
-          ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (((((auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val()) && root.child('rooms').child($room).child('phase').val() !== 'ended') && root.child('rooms').child($room).child('locked').val() === false && (root.child('rooms').child($room).child('phase').val() === 'lobby' || root.child('rooms').child($room).child('settings/late').val() === true)) && auth.token.firebase.sign_in_provider === 'anonymous') && !root.child('members').child($room).child(auth.uid).exists() && ((!data.exists() && newData.val() === auth.uid) || (data.val() === auth.uid && !newData.exists())) && $seat.matches(/^(0|[1-9][0-9]?)$/) && $seat * 1 < root.child('rooms').child($room).child('settings/capacity').val())",
+          ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (((((auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val()) && root.child('rooms').child($room).child('phase').val() !== 'ended') && root.child('rooms').child($room).child('locked').val() === false && (root.child('rooms').child($room).child('phase').val() === 'lobby' || root.child('rooms').child($room).child('settings/late').val() === true)) && auth.token.firebase.sign_in_provider === 'anonymous' && !root.child('viewAccess').child($room).child(auth.uid).exists()) && !root.child('members').child($room).child(auth.uid).exists() && ((!data.exists() && newData.val() === auth.uid) || (data.val() === auth.uid && !newData.exists())) && $seat.matches(/^(0|[1-9][0-9]?)$/) && $seat * 1 < root.child('rooms').child($room).child('settings/capacity').val())",
           ".validate": "newData.isString()"
         },
         ".read": "(auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val())"
@@ -135,7 +135,7 @@
         ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) && !newData.exists()",
         "$name": {
           ".read": "(auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val())",
-          ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (((((auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val()) && root.child('rooms').child($room).child('phase').val() !== 'ended') && root.child('rooms').child($room).child('locked').val() === false && (root.child('rooms').child($room).child('phase').val() === 'lobby' || root.child('rooms').child($room).child('settings/late').val() === true)) && auth.token.firebase.sign_in_provider === 'anonymous') && !root.child('members').child($room).child(auth.uid).exists() && ((!data.exists() && newData.val() === auth.uid) || (data.val() === auth.uid && !newData.exists())))",
+          ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (((((auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val()) && root.child('rooms').child($room).child('phase').val() !== 'ended') && root.child('rooms').child($room).child('locked').val() === false && (root.child('rooms').child($room).child('phase').val() === 'lobby' || root.child('rooms').child($room).child('settings/late').val() === true)) && auth.token.firebase.sign_in_provider === 'anonymous' && !root.child('viewAccess').child($room).child(auth.uid).exists()) && !root.child('members').child($room).child(auth.uid).exists() && ((!data.exists() && newData.val() === auth.uid) || (data.val() === auth.uid && !newData.exists())))",
           ".validate": "newData.isString() && newData.val() === auth.uid && $name.matches(/^[a-z][a-z0-9_-]{1,15}$/)"
         }
       }
@@ -161,14 +161,14 @@
           "$other": {
             ".validate": false
           },
-          ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (((((auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val()) && root.child('rooms').child($room).child('phase').val() !== 'ended') && root.child('rooms').child($room).child('locked').val() === false && (root.child('rooms').child($room).child('phase').val() === 'lobby' || root.child('rooms').child($room).child('settings/late').val() === true)) && auth.token.firebase.sign_in_provider === 'anonymous') && $uid === auth.uid && !data.exists() && newData.child('kicked').val() === false && root.child('seats').child($room).child(newData.child('seat').val()).val() === auth.uid && root.child('names').child($room).child(newData.child('key').val()).val() === auth.uid)"
+          ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (((((auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val()) && root.child('rooms').child($room).child('phase').val() !== 'ended') && root.child('rooms').child($room).child('locked').val() === false && (root.child('rooms').child($room).child('phase').val() === 'lobby' || root.child('rooms').child($room).child('settings/late').val() === true)) && auth.token.firebase.sign_in_provider === 'anonymous' && !root.child('viewAccess').child($room).child(auth.uid).exists()) && $uid === auth.uid && !data.exists() && newData.child('kicked').val() === false && root.child('seats').child($room).child(newData.child('seat').val()).val() === auth.uid && root.child('names').child($room).child(newData.child('key').val()).val() === auth.uid)"
         }
       }
     },
     "scores": {
       "$room": {
         ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) && !newData.exists()",
-        ".read": "((auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (auth != null && root.child('members').child($room).child(auth.uid).exists() && root.child('members').child($room).child(auth.uid).child('kicked').val() === false))",
+        ".read": "((auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (auth != null && root.child('members').child($room).child(auth.uid).exists() && root.child('members').child($room).child(auth.uid).child('kicked').val() === false)) || (auth != null && root.child('viewAccess').child($room).child(auth.uid).exists() && root.child('viewAccess').child($room).child(auth.uid).val() === root.child('projectors').child($room).val() && now < root.child('rooms').child($room).child('expires').val())",
         "$uid": {
           ".validate": "newData.hasChildren(['arcade', 'mask', 'boss', 'lives', 'sector', 'status', 'updated'])",
           "arcade": {
@@ -231,12 +231,28 @@
     "presence": {
       "$room": {
         ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) && !newData.exists()",
-        ".read": "((auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (auth != null && root.child('members').child($room).child(auth.uid).exists() && root.child('members').child($room).child(auth.uid).child('kicked').val() === false))",
+        ".read": "((auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (auth != null && root.child('members').child($room).child(auth.uid).exists() && root.child('members').child($room).child(auth.uid).child('kicked').val() === false)) || (auth != null && root.child('viewAccess').child($room).child(auth.uid).exists() && root.child('viewAccess').child($room).child(auth.uid).val() === root.child('projectors').child($room).val() && now < root.child('rooms').child($room).child('expires').val())",
         "$uid": {
           "$connection": {
             ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (auth != null && auth.uid === $uid && (!newData.exists() || (((auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val()) && root.child('rooms').child($room).child('phase').val() !== 'ended') && auth.uid === $uid && root.child('members').child($room).child(auth.uid).exists() && root.child('members').child($room).child(auth.uid).child('kicked').val() === false)))",
             ".validate": "newData.val() === true && $connection.matches(/^[a-z0-9-]{36}$/)"
           }
+        }
+      }
+    },
+    "projectors": {
+      "$room": {
+        ".read": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true)",
+        ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true)",
+        ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{36}$/)"
+      }
+    },
+    "viewAccess": {
+      "$room": {
+        ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) && !newData.exists()",
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider === 'anonymous' && !root.child('members').child($room).child(auth.uid).exists() && now < root.child('rooms').child($room).child('expires').val() && newData.val() === root.child('projectors').child($room).val()",
+          ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{36}$/)"
         }
       }
     }

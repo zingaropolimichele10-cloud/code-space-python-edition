@@ -1,6 +1,6 @@
 import config from './config.mjs';
 
-export async function firebaseAdapter(useEmulator = false) {
+export async function firebaseAdapter(useEmulator = false, role = 'player') {
   const settings = useEmulator ? (await import('../../emulator/config.mjs')).default : config;
   if (!settings?.projectId || !settings.databaseURL) {
     throw Error('Firebase non è configurato. La modalità individuale e la dimostrazione locale sono disponibili.');
@@ -10,7 +10,7 @@ export async function firebaseAdapter(useEmulator = false) {
     throw Error('Configura gli indirizzi Firebase ufficiali del progetto.');
   }
   const sdk = await import('../../vendor/classroom/sdk.mjs');
-  const app = sdk.initializeApp(settings, useEmulator ? 'classroom-emulator' : 'classroom');
+  const app = sdk.initializeApp(settings, (useEmulator ? 'classroom-emulator' : 'classroom') + '-' + role);
   const auth = sdk.getAuth(app);
   const db = sdk.getDatabase(app);
   if (settings.emulator) {
