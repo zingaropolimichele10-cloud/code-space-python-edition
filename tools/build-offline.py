@@ -15,6 +15,7 @@ EXTRA = (
     ".nojekyll", "sw.js", "release-manifest.json", "LICENSE",
     "vendor/skulpt/LICENSE", "vendor/skulpt/README.md",
     "docs/OFFLINE_QUICKSTART.md",
+    "vendor/classroom/LICENSE-FIREBASE", "vendor/classroom/LICENSE-QRCODE", "vendor/classroom/README.md",
 )
 
 

@@ -13,7 +13,7 @@ const namespace = 'code-space:classroom:' + (demo ? 'demo' : emulator ? 'emulato
 const phaseText = { lobby: 'Sala d’attesa', flight: 'In volo', paused: 'Pausa globale', boss: 'Boss finale', ended: 'Sessione terminata' };
 const stateText = { waiting: 'In attesa', flying: 'In gioco', python: 'Missione Python', paused: 'In pausa', gameover: 'Game over', boss: 'Boss finale', finished: 'Missione conclusa' };
 const concepts = ['variabili e velocità', 'variabili e vite', 'booleani', 'stringhe', 'condizioni if'];
-const texts = { lobby: 'In attesa del comandante', offline: 'Sincronizzazione sospesa', ended: 'Sessione conclusa' };
+const texts = { lobby: 'In attesa del comandante', offline: 'Sincronizzazione sospesa', ended: 'Sessione conclusa', expired: 'Sessione scaduta', kicked: 'Il comandante ti ha rimosso' };
 const host = role === 'host';
 const projector = role === 'projector';
 const student = role === 'student';
@@ -63,6 +63,7 @@ function link(extra = {}) {
   return url.href;
 }
 function boot() {
+  if (!demo && navigator.onLine === false) return Promise.reject(Error('Connessione assente. Puoi giocare da solo.'));
   if (!boot.pending) boot.pending = (demo ? Promise.resolve(demoAdapter(role)) : firebaseAdapter(emulator))
     .then(adapter => { store = adapter; service = sessionService(adapter); return adapter; })
     .catch(error => { boot.pending = undefined; throw error; });
@@ -145,7 +146,7 @@ function draw() {
     const distance = prior ? ` · ${prior.total - me.total} punti dalla posizione precedente` : '';
     const learned = me ? concepts.filter((_, index) => me.mask & (1 << index)) : [];
     set('player-summary', me ? `${me.name} · posizione ${me.rank} · ${me.total} punti${distance} · obiettivo: ${control.settings.required} missioni${current === 'ended' ? ' · Concetti allenati: ' + (learned.join(', ') || 'puoi continuare a esercitarti in modalità individuale') : ''}` : '');
-    get('help').hidden = !me || ['ended', 'kicked', 'offline', 'lobby'].includes(current);
+    get('help').hidden = !me || ['ended', 'expired', 'kicked', 'offline', 'lobby'].includes(current);
     get('help').disabled = help;
     set('help', help ? 'Aiuto richiesto' : 'Chiedi aiuto');
   }
@@ -186,7 +187,7 @@ function draw() {
       cell(tr, move ? (move > 0 ? '+' : '−') + Math.abs(move) : '—');
       cell(tr, row.lives ?? '—');
       cell(tr, row.sector === 4 ? 'Finale' : row.sector != null ? row.sector + 1 : '—');
-      cell(tr, online(row.uid) ? stateText[row.status ?? 'waiting'] : 'Disconnesso');
+      cell(tr, online(row.uid) ? (current === 'paused' ? 'In pausa' : stateText[row.status ?? 'waiting']) : 'Disconnesso');
       cell(tr, online(row.uid) ? 'Connesso' : 'Disconnesso');
       cell(tr, info.mission ? info.mission + ' · ' + duration((current === 'paused' ? control.at : store.now()) - info.since) : '—');
       cell(tr, info.attempts ?? 0);
@@ -345,7 +346,8 @@ function syncFrame(current, now) {
 
 async function report(current, now) {
   if (!student || !latest || writing || !ready || !connected || now - lastWrite < 1100) return;
-  if (!['flight', 'boss'].includes(current)) return;
+  const publicAllowed = ['flight', 'boss'].includes(current);
+  if (!publicAllowed && current !== 'paused') return;
   const uid = store.uid;
   const last = scores[uid] ?? {};
   const safeInt = (value, max) => Math.max(0, Math.min(max, Math.trunc(Number(value) || 0)));
@@ -356,7 +358,7 @@ async function report(current, now) {
   };
   const privateData = { mission: safeInt(latest.mission, 5), since: safeInt(latest.since, 9999999999999) || now,
     attempts: safeInt(latest.attempts, 2000), hints: safeInt(latest.hints, 3), help };
-  if (!privateData.mission) privateData.since = 0;
+  privateData.since = privateData.mission ? Math.max(0, privateData.since + now - Date.now()) : 0;
   const publicKey = JSON.stringify(publicData);
   const privateKey = JSON.stringify(privateData);
   if (publicKey === lastReport && privateKey === privateReport) return;
@@ -364,13 +366,13 @@ async function report(current, now) {
   lastWrite = now;
   try {
     const patch = {};
-    if (publicKey !== lastReport) patch[`scores/${room}/${uid}`] = { ...publicData, updated: store.timestamp() };
+    if (publicAllowed && publicKey !== lastReport) patch[`scores/${room}/${uid}`] = { ...publicData, updated: store.timestamp() };
     if (privateKey !== privateReport) patch[`metrics/${room}/${uid}`] = privateData;
-    await store.update(patch);
-    lastReport = publicKey;
+    if (Object.keys(patch).length) await store.update(patch);
+    if (publicAllowed) lastReport = publicKey;
     privateReport = privateKey;
   } catch (error) {
-    if (['flight', 'boss'].includes(policy())) fail(error);
+    if (['flight', 'boss', 'paused'].includes(policy())) fail(error);
   } finally { writing = false; }
 }
 
@@ -393,6 +395,8 @@ get('projector-entry').hidden = !projector;
 get('host-email').hidden = !host || !(emulator || config?.hostEmail);
 get('join-pin').value = /^\d{6}$/.test(params.get('pin') ?? '') ? params.get('pin') : '';
 get('demo-link').hidden = demo;
+get('switch-role').href = link({ role: host ? 'student' : 'host' });
+get('switch-role').textContent = host ? 'Accesso studente' : 'Accesso Host';
 get('demo-link').href = demo ? link() : new URL('./classroom.html?demo=1&role=' + (host ? 'host' : 'student'), location.href).href;
 if (demo) set('connection', 'Dimostrazione locale · apri Host e studente in schede dello stesso browser.');
 if (emulator) set('connection', 'Firebase Emulator Suite · ambiente di prova.');

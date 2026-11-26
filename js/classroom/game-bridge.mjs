@@ -17,6 +17,7 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio }
   let bossEntered = false;
   let bossWon = false;
   let previous;
+  let previousMilestone;
   let lastTime = 0;
   let lastAudio;
   let expiry = 0;
@@ -49,14 +50,14 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio }
     }
     const duration = gate === 'boss' ? Math.max(1, Math.min(180, data.bossSeconds)) : settings.bossSeconds;
     game.configure({ difficulty: settings.difficulty, asteroids: settings.rocks, duration });
-    const skip = settings.skip || center.count() >= Math.min(4, settings.required);
+    const skip = settings.skip || center.completedMissions().length >= settings.required;
     center.classroomPolicy(game, { blocked: !flying(), skip, mask: data.completed });
     bossWon ||= data.bossWon === true;
     resume.disabled = !flying();
     if (!flying()) {
       game.action('pause');
       game.keys.clear();
-      if (['ended', 'kicked'].includes(gate)) center.interrupt();
+      if (['ended', 'kicked', 'expired'].includes(gate)) center.interrupt();
     } else {
       if (world.state === State.MENU) {
         game.action('start');
@@ -106,7 +107,9 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio }
         boss: bossWon, lives: world.lives, sector: world.sector, status: playerStates[world.state], ...center.observe() };
       const snapshot = JSON.stringify(data);
       const now = performance.now();
-      if (snapshot !== previous && now - lastTime >= 160) {
+      const milestone = [data.mask, data.boss, data.status].join('/');
+      if (snapshot !== previous && (milestone !== previousMilestone || now - lastTime >= 160)) {
+        previousMilestone = milestone;
         previous = snapshot;
         lastTime = now;
         send(data);

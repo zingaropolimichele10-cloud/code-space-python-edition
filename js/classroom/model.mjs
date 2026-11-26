@@ -63,7 +63,8 @@ export function command(control, mode, now) {
 }
 
 export function gate(control, connected, now) {
-  if (!connected || !control || now >= control.expires) return 'offline';
+  if (!connected || !control) return 'offline';
+  if (now >= control.expires) return 'expired';
   if (control.phase === 'ended' || (['flight', 'boss'].includes(control.phase) && now >= control.until)) return 'ended';
   if (control.phase === 'lobby' || control.phase === 'paused') return control.phase;
   return now < control.at ? 'countdown' : control.phase;

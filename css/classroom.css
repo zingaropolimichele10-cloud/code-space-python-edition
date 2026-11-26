@@ -37,3 +37,4 @@ body[data-role=projector] td { font-size: clamp(.95rem, 3vw, 1.65rem); }
 .classroom-game #victory-panel [data-action=start], .classroom-game #paused-panel [data-action=resume][disabled] { display: none; }
 @media (max-width: 700px) { .class-grid { grid-template-columns: minmax(0, 1fr); } }
 .classroom tr.selected-player { background: #173657; }
+.classroom-game .masthead nav { display: none; }

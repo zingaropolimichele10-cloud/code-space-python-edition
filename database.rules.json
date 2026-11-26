@@ -153,7 +153,7 @@
             ".validate": "newData.isString() && newData.val() === newData.parent().child(\"name\").val().toLowerCase()"
           },
           "seat": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 49 && newData.val() % 1 === 0"
+            ".validate": "newData.isString() && newData.val().matches(/^(0|[1-9][0-9]?)$/) && newData.val() * 1 < 50"
           },
           "kicked": {
             ".validate": "newData.isBoolean()"
@@ -161,7 +161,7 @@
           "$other": {
             ".validate": false
           },
-          ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (((((auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val()) && root.child('rooms').child($room).child('phase').val() !== 'ended') && root.child('rooms').child($room).child('locked').val() === false && (root.child('rooms').child($room).child('phase').val() === 'lobby' || root.child('rooms').child($room).child('settings/late').val() === true)) && auth.token.firebase.sign_in_provider === 'anonymous') && $uid === auth.uid && !data.exists() && newData.child('kicked').val() === false && root.child('seats').child($room).child(newData.child('seat').val() + '').val() === auth.uid && root.child('names').child($room).child(newData.child('key').val()).val() === auth.uid)"
+          ".write": "(auth != null && root.child('rooms').child($room).child('owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) || (((((auth != null && root.child('rooms').child($room).exists() && now < root.child('rooms').child($room).child('expires').val()) && root.child('rooms').child($room).child('phase').val() !== 'ended') && root.child('rooms').child($room).child('locked').val() === false && (root.child('rooms').child($room).child('phase').val() === 'lobby' || root.child('rooms').child($room).child('settings/late').val() === true)) && auth.token.firebase.sign_in_provider === 'anonymous') && $uid === auth.uid && !data.exists() && newData.child('kicked').val() === false && root.child('seats').child($room).child(newData.child('seat').val()).val() === auth.uid && root.child('names').child($room).child(newData.child('key').val()).val() === auth.uid)"
         }
       }
     },

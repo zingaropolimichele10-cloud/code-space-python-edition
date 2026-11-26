@@ -11,8 +11,15 @@ export function sessionService(store, { randomPin = pinNumber, id = () => crypto
     for (let attempt = 0; attempt < 12; attempt++) {
       const pin = randomPin();
       const reservation = { room, owner: store.uid, expires };
-      const ok = await store.transaction('pins/' + pin,
-        value => !value || value.expires <= store.now() ? reservation : undefined);
+      const path = 'pins/' + pin;
+      const existing = await store.get(path);
+      if (existing?.expires > store.now()) continue;
+      const ok = await store.transaction(path,
+        value => !value || value.expires <= store.now() ? reservation : undefined)
+        .catch(async error => {
+          if ((await store.get(path))?.expires > store.now()) return false;
+          throw error;
+        });
       if (!ok) continue;
       const data = { owner: store.uid, title, pin, created, expires, phase: 'lobby', seq: 0,
         at: created, until: 0, locked: false, view: 'lobby', reveal: 0, settings: { ...defaults, ...settings } };
@@ -67,7 +74,7 @@ export function sessionService(store, { randomPin = pinNumber, id = () => crypto
         }
       }
       if (seat < 0) throw Error('Sessione piena.');
-      const member = { name, key, seat, kicked: false };
+      const member = { name, key, seat: String(seat), kicked: false };
       await store.set(`members/${room}/${uid}`, member);
       return { room, member };
     } catch (error) {

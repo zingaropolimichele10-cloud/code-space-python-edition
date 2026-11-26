@@ -3,14 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://apis.google.com https://www.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com http://127.0.0.1:9000 ws://127.0.0.1:9000 http://127.0.0.1:9099; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://*.firebaseio.com https://*.firebasedatabase.app; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://apis.google.com https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app;  connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com http://127.0.0.1:9000 ws://127.0.0.1:9000 http://127.0.0.1:9099; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://*.firebaseio.com https://*.firebasedatabase.app; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>CODE SPACE · Classroom Edition</title>
   <link rel="icon" href="./assets/favicon.svg">
   <link rel="stylesheet" href="./css/game.css">
   <link rel="stylesheet" href="./css/classroom.css">
   <script type="module" src="./js/classroom/ui.mjs"></script>
+  <script type="module" src="./js/storage/offline.mjs"></script>
 </head>
 <body>
+<p id="offline-notice" class="offline-notice" role="status" hidden></p>
 <main class="shell classroom">
   <header class="class-header">
     <div><p class="edition">Orientamento in ingresso · Ferraris</p><h1>CODE <span>SPACE</span></h1><p class="subtitle">Classroom Edition</p></div>
@@ -50,7 +52,7 @@
       </form>
     </div>
     <div id="projector-entry" hidden><h2>Modalità proiettore</h2><button type="button" id="projector-login">Accedi con l’account Host</button></div>
-    <p class="class-links"><a id="demo-link" href="./classroom.html?demo=1">Prova la dimostrazione locale</a> <a href="./classroom.html?role=host">Accesso Host</a></p>
+    <p class="class-links"><a id="demo-link" href="./classroom.html?demo=1">Prova la dimostrazione locale</a> <a id="switch-role" href="./classroom.html?role=host">Accesso Host</a></p>
   </section>
 
   <section id="room-panel" hidden>

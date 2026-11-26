@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "2.0.0",
   "runtime": [
     "index.html",
     "laboratorio.html",
@@ -26,6 +26,17 @@
     "js/teacher/panel.mjs",
     "workers/python.worker.js",
     "vendor/skulpt/skulpt.min.js",
-    "vendor/skulpt/skulpt-stdlib.js"
+    "vendor/skulpt/skulpt-stdlib.js",
+    "classroom.html",
+    "css/classroom.css",
+    "emulator/config.mjs",
+    "vendor/classroom/sdk.mjs",
+    "js/classroom/config.mjs",
+    "js/classroom/demo.mjs",
+    "js/classroom/firebase.mjs",
+    "js/classroom/game-bridge.mjs",
+    "js/classroom/model.mjs",
+    "js/classroom/session.mjs",
+    "js/classroom/ui.mjs"
   ]
 }

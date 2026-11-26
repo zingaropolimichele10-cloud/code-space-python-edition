@@ -37,6 +37,7 @@ export function createCenter({ progress, sound = () => {} }) {
   let interrupt = () => {};
   let attempts = 0;
   let since = 0;
+  let pauseSince = 0;
 
   function nextMission() {
     return missions.find(({ id }) => !completed.has(id));
@@ -155,6 +156,7 @@ export function createCenter({ progress, sound = () => {} }) {
     active = mission;
     attempts = 0;
     since = Date.now();
+    pauseSince = 0;
     if (!practice && !completed.has(active.id)) {
       pending.add(active.id);
       progress.update({ skipped: [...pending] });
@@ -203,6 +205,8 @@ export function createCenter({ progress, sound = () => {} }) {
       }
       skipAllowed = skip;
       if (!active) { locked = blocked; return; }
+      if (!locked && blocked) pauseSince = Date.now();
+      if (locked && !blocked && pauseSince) { since += Date.now() - pauseSince; pauseSince = 0; }
       if (locked !== blocked && blocked && status.dataset.result === 'pending') {
         revision++;
         run.cancel();
