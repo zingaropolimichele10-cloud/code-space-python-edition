@@ -42,6 +42,6 @@ Dai PC apri `http://IP_DEL_SERVER:8000/`. I client richiedono solo un browser e 
 
 ## Riserva 1.0.0
 
-Conserva separatamente il pacchetto precedente e il suo checksum. Il commit 864825b permette di rigenerarlo con il medesimo generatore. Per provare entrambe le versioni sulla stessa macchina, estrai i pacchetti in cartelle diverse e usa porte HTTP differenti. Aggiornare sullo stesso indirizzo conserva il salvataggio e attiva la nuova cache alla chiusura dell’ultima scheda della versione precedente.
+Conserva separatamente il pacchetto precedente e il suo checksum. Il commit 864825b permette di rigenerarlo con il medesimo generatore. Per provare entrambe le versioni sulla stessa macchina, estrai i pacchetti in cartelle diverse e usa porte HTTP differenti. Aggiornare sullo stesso indirizzo conserva il salvataggio. Premi **Aggiorna ora** per attivare la nuova cache. Durante una partita o una sessione Classroom il gioco chiede conferma prima di ricaricare. Se una scheda rimane bloccata sul vecchio avviso, termina o metti in pausa la partita e apri `aggiorna.html` sullo stesso indirizzo. Premi **Aggiorna ora** e il gioco si riaprirà automaticamente. Se l’aggiornamento è già attivo, usa **Apri il gioco**.
 
 Classroom online richiede la [configurazione Firebase](FIREBASE_SETUP.md). La modalità individuale e la demo locale sono comprese nel pacchetto. Per una riserva senza Classroom usa gli ZIP 1.0.0 o 1.1.0 su una porta distinta.

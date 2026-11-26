@@ -76,5 +76,6 @@ export function createProgress(storage) {
     update({ ...normalizeProgress(null), audio: state.audio, light: state.light });
   }
   globalThis.addEventListener?.('pagehide', flush);
+  globalThis.addEventListener?.('codespace:before-update', flush);
   return { state, update, reset, flush };
 }

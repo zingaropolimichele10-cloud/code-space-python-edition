@@ -1,4 +1,4 @@
-const version = '2.1.0';
+const version = '2.1.1';
 const scope = new URL(self.registration.scope);
 const cachePrefix = 'code-space:' + scope.pathname + ':';
 const cacheName = cachePrefix + version;
@@ -25,6 +25,10 @@ self.addEventListener('install', event => {
       throw error;
     }
   })());
+});
+
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', event => {

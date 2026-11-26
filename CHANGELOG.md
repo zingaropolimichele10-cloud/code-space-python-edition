@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.1 — Aggiornamento della cache
+
+- **Aggiorna ora** attiva il Service Worker in attesa e ricarica la scheda che ha richiesto l’aggiornamento. Le partite aperte richiedono conferma.
+- La pagina `aggiorna.html` consente di passare alla nuova versione quando il vecchio avviso è già in cache.
+
 ## 2.1.0 — Mission Adventure Edition
 
 - Dodici missioni Python, con cinque principali e sette bonus, telemetria contestuale e potenziamenti fino al Protocollo Omega.

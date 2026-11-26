@@ -1,7 +1,8 @@
 {
-  "version": "2.1.0",
+  "version": "2.1.1",
   "runtime": [
     "index.html",
+    "aggiorna.html",
     "assets/aurora.svg",
     "assets/favicon.svg",
     "css/game.css",

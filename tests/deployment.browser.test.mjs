@@ -12,7 +12,7 @@ import { openBrowser } from './browser.mjs';
 const project = fileURLToPath(new URL('../', import.meta.url));
 const { version, runtime } = JSON.parse(await readFile(join(project, 'release-manifest.json')));
 const cachePrefix = 'code-space:/code-space-python-edition/:';
-const baselines = { '1.1.0': '2204764', '2.0.0-firebase.2': '8ac2aaf' };
+const baselines = { '1.1.0': '2204764', '2.0.0-firebase.2': '8ac2aaf', '2.1.0': '3ad25f3' };
 
 async function unpack(t, previous) {
   const dir = await mkdtemp(join(tmpdir(), 'codespace-release-'));
@@ -79,6 +79,15 @@ test('Cache offline dopo il primo avvio: ricarica e vero Worker senza server', a
   assert.deepEqual(browser.errors, []);
 });
 
+async function stageNext(directory) {
+  const worker = join(directory, 'sw.js');
+  const manifest = join(directory, 'release-manifest.json');
+  const fixture = version.replace(/\d+$/, patch => String(Number(patch) + 1));
+  await writeFile(worker, (await readFile(worker, 'utf8')).replace(version, fixture));
+  await writeFile(manifest, (await readFile(manifest, 'utf8')).replace(version, fixture));
+  return fixture;
+}
+
 async function verifyUpdate(t, previous) {
   const directory = await unpack(t, previous);
   const browser = await openBrowser('', { staticRoot: pathToFileURL(directory + '/') });
@@ -91,11 +100,7 @@ async function verifyUpdate(t, previous) {
     await browser.evaluate(`localStorage.setItem('code-space:progress:v2', ${JSON.stringify(JSON.stringify(data))})`);
     await cp(await unpack(t), directory, { recursive: true });
   } else {
-    const worker = join(directory, 'sw.js');
-    const manifest = join(directory, 'release-manifest.json');
-    const fixture = version.replace(/\d+$/, patch => String(Number(patch) + 1));
-    await writeFile(worker, (await readFile(worker, 'utf8')).replace(version, fixture));
-    await writeFile(manifest, (await readFile(manifest, 'utf8')).replace(version, fixture));
+    await stageNext(directory);
   }
   await browser.evaluate('navigator.serviceWorker.getRegistration().then(r => r.update()).then(() => true)');
   await waitFor(browser, "!document.getElementById('offline-notice').hidden");
@@ -180,4 +185,74 @@ test('ZIP estratto avviato dal server Python su loopback e sull’indirizzo LAN 
     } finally { await browser.close(); }
   }
   if (!outsideLoopback) t.diagnostic('Nessun indirizzo IPv4 non-loopback disponibile');
+});
+
+async function afterUpdateNavigation(browser, condition) {
+  const end = Date.now() + 8000;
+  do {
+    try {
+      if (await browser.evaluate(condition)) return;
+    } catch (error) {
+      if (!/target navigated|execution context/i.test(error.message)) throw error;
+    }
+    await new Promise(resolve => setTimeout(resolve, 50));
+  } while (Date.now() < end);
+  assert.fail('Ricarica dell’aggiornamento non osservata');
+}
+
+test('Aggiorna ora chiede conferma, conserva bozze e ricarica una volta sola', async t => {
+  const directory = await unpack(t);
+  const browser = await openBrowser('', {
+    staticRoot: pathToFileURL(directory + '/'),
+    beforeLoad: `
+      sessionStorage.testLoads = Number(sessionStorage.testLoads || 0) + 1;
+      window.confirm = () => {
+        sessionStorage.testConfirmations = Number(sessionStorage.testConfirmations || 0) + 1;
+        return sessionStorage.testAccept === 'yes';
+      };
+    `,
+  });
+  t.after(browser.close);
+  await waitFor(browser, '!!navigator.serviceWorker.controller');
+  const newVersion = await stageNext(directory);
+  await browser.evaluate(`navigator.serviceWorker.getRegistration().then(r => r.update())`);
+  await waitFor(browser, "!document.querySelector('#offline-notice').hidden");
+  await browser.evaluate(`
+    document.querySelector('#teacher-open').click();
+    document.querySelector('#teacher-launch').click();
+    document.querySelector('#offline-notice button').click();
+  `);
+  assert.equal(await browser.evaluate("sessionStorage.testConfirmations"), '1');
+  assert.equal(await browser.evaluate("sessionStorage.testLoads"), '1');
+  assert.equal(await browser.evaluate("navigator.serviceWorker.getRegistration().then(r => r.waiting.state)"), 'installed');
+  await browser.evaluate(`
+    const editor = document.querySelector('#mission-code');
+    editor.value = 'velocita = 7';
+    editor.dispatchEvent(new Event('input'));
+    sessionStorage.testAccept = 'yes';
+    setTimeout(() => document.querySelector('#offline-notice button').click(), 0);
+  `);
+  await afterUpdateNavigation(browser, "sessionStorage.testLoads === '2' && document.readyState === 'complete' && !!navigator.serviceWorker.controller");
+  await waitFor(browser, `caches.keys().then(keys => keys.length === 1 && keys[0] === '${cachePrefix}${newVersion}')`);
+  assert.equal(await browser.evaluate("JSON.parse(localStorage.getItem('code-space:progress:v3')).drafts[1]"), 'velocita = 7');
+  assert.equal(await browser.evaluate("sessionStorage.testConfirmations"), '2');
+  await browser.evaluate("navigator.serviceWorker.dispatchEvent(new Event('controllerchange'))");
+  assert.equal(await browser.evaluate("sessionStorage.testLoads"), '2');
+  assert.deepEqual(browser.errors, []);
+});
+
+test('Pagina di recupero attiva l’aggiornamento dalla cache 2.1.0 già bloccata', async t => {
+  const directory = await unpack(t, '2.1.0');
+  const browser = await openBrowser('', { staticRoot: pathToFileURL(directory + '/') });
+  t.after(browser.close);
+  await waitFor(browser, '!!navigator.serviceWorker.controller');
+  await cp(await unpack(t), directory, { recursive: true });
+  await browser.evaluate(`navigator.serviceWorker.getRegistration().then(r => r.update())`);
+  await waitFor(browser, "document.querySelector('#offline-notice').textContent.includes('Chiudi tutte le schede')");
+  await browser.page('Page.navigate', { url: browser.origin + browser.prefix + 'aggiorna.html' });
+  await waitFor(browser, "!document.querySelector('#offline-notice')?.hidden && !!document.querySelector('#offline-notice button')");
+  await browser.evaluate("setTimeout(() => document.querySelector('#offline-notice button').click(), 0)");
+  await afterUpdateNavigation(browser, "location.pathname.endsWith('/index.html') && !!navigator.serviceWorker.controller");
+  assert.deepEqual(await browser.evaluate('caches.keys()'), [cachePrefix + version]);
+  assert.deepEqual(browser.errors, []);
 });

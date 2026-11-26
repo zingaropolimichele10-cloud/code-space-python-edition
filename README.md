@@ -1,4 +1,4 @@
-# CODE SPACE – Mission Adventure Edition 2.1.0
+# CODE SPACE – Mission Adventure Edition 2.1.1
 Educational Python space game – Ferraris Orientation 2026
 
 ## Sviluppo locale
