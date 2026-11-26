@@ -475,6 +475,11 @@ if (student) {
   if (prior && (!params.has('pin') || prior.pin === params.get('pin'))) void run(() => join(prior.pin, prior.name));
 }
 if (projector && params.has('room')) void run(() => login());
+if (host && !demo && (config || emulator)) {
+  const button = get('host-login');
+  button.disabled = true;
+  void boot().catch(fail).finally(() => { button.disabled = false; });
+}
 for (const button of document.querySelectorAll('[data-command]')) {
   button.addEventListener('click', () => {
     const action = button.dataset.command;

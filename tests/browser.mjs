@@ -12,7 +12,7 @@ const mime = {
   '.js': 'text/javascript', '.svg': 'image/svg+xml',
 };
 
-export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900, staticRoot = root, listenHost = '127.0.0.1', clientHost = listenHost, externalOrigin, externalPrefix = prefix } = {}) {
+export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900, staticRoot = root, listenHost = '127.0.0.1', clientHost = listenHost, externalOrigin, externalPrefix = prefix, extraArgs = [] } = {}) {
   const profile = await mkdtemp(`${tmpdir()}/codespace-browser-`);
   const requests = [];
   let serving = true;
@@ -40,7 +40,7 @@ export async function openBrowser(path = '', { beforeLoad, width = 1360, height 
   const args = [
     '--headless', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking',
     '--no-first-run', '--no-default-browser-check', '--no-proxy-server', `--user-data-dir=${profile}`,
-    '--remote-debugging-pipe', 'about:blank',
+    ...extraArgs, '--remote-debugging-pipe', 'about:blank',
   ];
   if (process.env.CODESPACE_NO_SANDBOX === '1') args.unshift('--no-sandbox');
   const browser = spawn(process.env.CHROMIUM_BIN || 'chromium', args, {
