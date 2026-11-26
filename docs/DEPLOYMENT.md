@@ -1,4 +1,4 @@
-# Distribuzione di CODE SPACE 1.1.0
+# Distribuzione di CODE SPACE 2.0.0
 
 ## GitHub Pages
 
@@ -19,7 +19,7 @@ Per pubblicare un aggiornamento, incrementa la stessa versione in `sw.js` e `rel
 Usa il pacchetto consegnato oppure ricrealo dalla radice del checkout con Python 3:
 
 ```sh
-python3 tools/build-offline.py ../code-space-python-edition-1.1.0.zip
+python3 tools/build-offline.py ../code-space-python-edition-2.0.0.zip
 ```
 
 Estrai l’intera cartella. Entra nella directory con `index.html` ed esegui:
@@ -43,3 +43,5 @@ Dai PC apri `http://IP_DEL_SERVER:8000/`. I client richiedono solo un browser e 
 ## Riserva 1.0.0
 
 Conserva separatamente il pacchetto precedente e il suo checksum. Il commit 864825b permette di rigenerarlo con il medesimo generatore. Per provare entrambe le versioni sulla stessa macchina, estrai i pacchetti in cartelle diverse e usa porte HTTP differenti. Aggiornare sullo stesso indirizzo conserva il salvataggio e attiva la nuova cache alla chiusura dell’ultima scheda della versione precedente.
+
+Classroom online richiede la [configurazione Firebase](FIREBASE_SETUP.md). La modalità individuale e la demo locale sono comprese nel pacchetto. Per una riserva senza Classroom usa gli ZIP 1.0.0 o 1.1.0 su una porta distinta.

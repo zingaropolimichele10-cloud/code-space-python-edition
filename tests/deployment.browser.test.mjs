@@ -12,7 +12,7 @@ import { openBrowser } from './browser.mjs';
 const project = fileURLToPath(new URL('../', import.meta.url));
 const { version, runtime } = JSON.parse(await readFile(join(project, 'release-manifest.json')));
 const cachePrefix = 'code-space:/code-space-python-edition/:';
-const baseline = '864825b30368fca477bed3040deb7caeb706da04';
+const baseline = '2204764';
 
 async function unpack(t, previous = false) {
   const dir = await mkdtemp(join(tmpdir(), 'codespace-release-'));
@@ -28,7 +28,7 @@ async function unpack(t, previous = false) {
   }
   execFileSync('python3', ['tools/build-offline.py', archive], { cwd: source });
   execFileSync('python3', ['-m', 'zipfile', '-e', archive, dir]);
-  return join(dir, 'code-space-python-edition-' + (previous ? '1.0.0' : version));
+  return join(dir, 'code-space-python-edition-' + (previous ? '1.1.0' : version));
 }
 
 async function waitFor(browser, expression) {
@@ -73,6 +73,12 @@ test('Cache offline dopo il primo avvio: ricarica, laboratorio e vero Worker sen
   await waitFor(browser, "document.readyState === 'complete' && !!document.getElementById('codice')");
   await browser.evaluate("document.querySelector('button[type=submit]').click()");
   await waitFor(browser, "document.getElementById('output').textContent.trim() === '10'");
+  await browser.page('Page.navigate', { url: browser.origin + browser.prefix + 'classroom.html?demo=1&role=host' });
+  await waitFor(browser, "document.readyState === 'complete' && !!document.getElementById('host-login')");
+  await browser.evaluate("document.getElementById('host-login').click()");
+  await waitFor(browser, "!document.getElementById('create-form').hidden");
+  await browser.evaluate("document.getElementById('create-form').requestSubmit()");
+  await waitFor(browser, "document.getElementById('join-qr').naturalWidth > 0");
   assert.equal(browser.requests.length, onlineRequests);
   assert.deepEqual(browser.errors, []);
 });
@@ -97,7 +103,7 @@ async function verifyUpdate(t, previous) {
   }
   await browser.evaluate('navigator.serviceWorker.getRegistration().then(r => r.update()).then(() => true)');
   await waitFor(browser, "!document.getElementById('offline-notice').hidden");
-  const old = cachePrefix + (previous ? '1.0.0' : version);
+  const old = cachePrefix + (previous ? '1.1.0' : version);
   const next = cachePrefix + (previous ? version : version.replace(/\d+$/, patch => String(Number(patch) + 1)));
   assert.deepEqual((await browser.evaluate('caches.keys()')).sort(), [old, next]);
   const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' });
@@ -128,7 +134,7 @@ async function verifyUpdate(t, previous) {
 
 test('Aggiornamento atomico: cache in attesa, messaggio e rimozione della versione precedente',
   t => verifyUpdate(t, false));
-test('Aggiornamento reale 1.0.0 → 1.1.0 con recupero del salvataggio',
+test('Aggiornamento reale 1.1.0 → 2.0.0 con recupero del salvataggio',
   t => verifyUpdate(t, true));
 
 test('ZIP estratto avviato dal server Python su loopback e sull’indirizzo LAN del container', async t => {

@@ -235,3 +235,7 @@ La revisione delle catture ha rilevato che l’indicatore di resistenza copriva 
 Le misure della 1.1.0 sono campioni brevi del container e una simulazione veloce del motore. La prova di 40 minuti documentata sopra riguarda la 1.0.0. Restano la prova su PC reali e la taratura della difficoltà con studenti. Il manifest del main remoto indica 1.0.0. Il proxy dell’ambiente ha risposto 403 tentando di raggiungere l’URL Pages pubblico.
 
 [Combattimento](screenshots/v1.1.0/01-combattimento.png) · [Missione if](screenshots/v1.1.0/02-condizioni.png) · [Drone](screenshots/v1.1.0/03-drone.png).
+
+## Classroom 2.0.0
+
+Vedi [verifiche Classroom](CLASSROOM_QA.md) per esiti reali, evidenze e limiti del collaudo.

@@ -17,3 +17,5 @@ Direzione visiva con blu notte, nero, azzurro elettrico e oro, HUD futuristico, 
 La sfida finale è disponibile nel percorso libero e nel percorso con tutti i potenziamenti principali. Parte da 60 secondi ed è configurabile localmente dal relatore. Il salvataggio contiene solo dati di gioco e preferenze.
 
 La versione 1.0.0 resta la baseline di emergenza. La versione 1.1.0 aggiunge combattimento, settori e un finale con drone. Le risorse statiche vengono distribuite tramite Pages o pacchetto HTTP locale. La cache offline richiede un primo caricamento completo su un’origine sicura.
+
+La modalità Classroom 2.0.0 aggiunge una sessione coordinata da Host. La simulazione e Python restano locali. Gli studenti accedono con PIN e pseudonimo, mentre le funzioni del responsabile richiedono autorizzazione Firebase. La demo è locale e la modalità individuale resta disponibile senza rete.

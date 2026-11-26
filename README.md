@@ -1,4 +1,4 @@
-# CODE SPACE – Python Edition 1.1.0
+# CODE SPACE – Python Edition 2.0.0
 Educational Python space game – Ferraris Orientation 2026
 
 ## Sviluppo locale
@@ -20,3 +20,7 @@ Vedi la [guida docente](docs/TEACHER_GUIDE.md), le [verifiche](docs/QA.md) e le 
 ## Distribuzione
 
 Consulta [GitHub Pages e pacchetto offline](docs/DEPLOYMENT.md), la [checklist](docs/LAB_CHECKLIST.md) e la [risoluzione dei problemi](docs/TROUBLESHOOTING.md). Il sito è statico.
+
+## Classroom
+
+Dal menu scegli **Gioca da solo**, **Unisciti a una sessione** o **Crea una sessione — Host**. Il gioco individuale resta offline. La demo locale usa solo schede dello stesso profilo di browser. La modalità online richiede la configurazione Firebase pubblica e l’autorizzazione dell’Host. [Configurazione](docs/FIREBASE_SETUP.md) · [Guida Host](docs/HOST_GUIDE.md) · [Guida studente](docs/STUDENT_GUIDE.md) · [Privacy](docs/PRIVACY.md) · [Verifiche](docs/CLASSROOM_QA.md).

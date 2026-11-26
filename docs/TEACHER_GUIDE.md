@@ -44,3 +44,5 @@ Prima dell’ingresso verifica la [checklist](LAB_CHECKLIST.md) e prepara lo ZIP
 Mostra un colpo con Spazio e spiega che gli ostacoli corazzati richiedono più colpi. Le ricompense arcade migliorano il punteggio e lasciano accessibili le missioni. Nel finale invita a lasciare le corsie illuminate prima dell’arrivo degli impulsi. Il drone si ferma anche quando finisce la sua autonomia. Per una classe alle prime armi puoi scegliere Assistita o Demo.
 
 Nella missione facoltativa chiedi prima cosa succede con 2 vite e con 4. Fai leggere soltanto la riga rientrata quando il confronto è vero. Il computer di bordo fornisce vite e il pulsante **Esegui** prova entrambi gli scenari.
+
+Per una sessione Classroom usa la [guida Host](HOST_GUIDE.md) e tieni aperta la [guida studente](STUDENT_GUIDE.md) sulle postazioni. Mantieni disponibile lo ZIP individuale di riserva.

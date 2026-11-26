@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.0 — candidato Classroom
+
+- Accesso Host e anonimo, PIN, lobby, controllo di gruppo, classifica, boss sincronizzato e proiettore.
+- Punteggio didattico, presenza, aiuto privato, demo locale, config e regole Firebase.
+- Aggiornamento della cache mantenendo il gioco individuale e il salvataggio.
+
 ## 1.1.0 — candidato
 
 - Combattimento con Spazio, cinque archetipi di asteroide oltre a quelli ordinari, frammenti, combo e bonus di volo.

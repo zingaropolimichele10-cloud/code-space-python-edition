@@ -63,3 +63,7 @@ Il fuoco da Spazio ha una cadenza minima di 205 ms. I limiti sono 24 colpi del g
 Si supera la sfida portando a zero la resistenza del drone o resistendo fino al termine della sua autonomia. Il docente imposta il timer e può usare Assistita, con resistenza ridotta e una corsia per attacco, o Demo, con le minacce sospese. Il checkpoint permette un nuovo tentativo e conserva i completamenti didattici.
 
 Restano chiave e versione v2 del salvataggio. Le statistiche del checkpoint sono facoltative, validate e inizializzate a zero sui checkpoint precedenti. La sola bozza della missione 05 identica al vecchio starter viene sostituita in editor con il nuovo starter. Le bozze personalizzate restano disponibili. Il Service Worker 1.1.0 preleva anche il nuovo modulo arcade e attiva la cache dopo il rilascio delle schede già aperte.
+
+## Classroom 2.0.0
+
+Il flusso Classroom usa uno stato di stanza condiviso, un bridge di stessa origine per il gioco locale e raccolte separate per classifica e monitoraggio didattico. Vedi [architettura multiplayer](MULTIPLAYER_ARCHITECTURE.md) e [regole di sicurezza](FIREBASE_SECURITY.md).

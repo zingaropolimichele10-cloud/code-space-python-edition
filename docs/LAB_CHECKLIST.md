@@ -21,3 +21,10 @@
 - [ ] Preparare la cache sul profilo effettivo e disconnettere una macchina campione per la prova. Tenere una copia dello ZIP su un supporto disponibile e verificare Python 3 sulla macchina ospitante.
 - [ ] Se si userà la LAN, ottenere l’autorizzazione, verificare porta e firewall, poi aprire URL e prima missione da un secondo PC con Internet non disponibile.
 - [ ] Tra due gruppi avviare una nuova sessione, confermare e ricontrollare audio e grafica.
+
+## Classroom
+
+- [ ] Provare Firebase reale, login iPad, PIN e QR su profili separati.
+- [ ] Verificare su più postazioni decollo, pausa, ripresa, aiuto, finale e proiettore.
+- [ ] Controllare quote, rete scolastica e accesso anonimo dalla stessa rete.
+- [ ] Preparare la riserva offline e verificare la procedura di eliminazione. [Guida Host](HOST_GUIDE.md)
