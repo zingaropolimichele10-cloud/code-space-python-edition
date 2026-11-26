@@ -1,25 +1,27 @@
 const key = 'code-space:classroom:demo:v1';
 
-export function demoAdapter(role, { getStorage = () => localStorage, tabStorage = () => sessionStorage } = {}) {
+function openStore() {
+  if (!globalThis.indexedDB) return Promise.resolve(null);
+  return new Promise(resolve => {
+    const request = indexedDB.open(key, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('session');
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => resolve(null);
+    request.onblocked = () => resolve(null);
+  });
+}
+
+export function demoAdapter(role, { getStorage, tabStorage = () => sessionStorage } = {}) {
   let uid;
   let fallback = {};
+  let closed = false;
+  let notification;
   const watchers = new Set();
+  const database = getStorage ? Promise.resolve(null) : openStore();
   const channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel(key) : null;
-  function state() {
-    try { return JSON.parse(getStorage().getItem(key)) ?? {}; } catch { return fallback; }
-  }
+
   function at(root, path) {
     return path.split('/').reduce((part, segment) => part?.[segment], root) ?? null;
-  }
-  function notify() {
-    const root = state();
-    for (const watch of watchers) watch(root);
-  }
-  function write(root) {
-    fallback = root;
-    try { getStorage().setItem(key, JSON.stringify(root)); } catch { /* Demo in memoria. */ }
-    notify();
-    channel?.postMessage(true);
   }
   function assign(root, path, value) {
     const parts = path.split('/');
@@ -28,7 +30,54 @@ export function demoAdapter(role, { getStorage = () => localStorage, tabStorage 
     if (value === null) delete parent[parts.at(-1)];
     else parent[parts.at(-1)] = structuredClone(value);
   }
-  const protect = work => globalThis.navigator?.locks?.request(key, work) ?? Promise.resolve().then(work);
+  function readFallback() {
+    if (!getStorage) return fallback;
+    try { return JSON.parse(getStorage().getItem(key)) ?? {}; } catch { return fallback; }
+  }
+  async function transact(write, operation) {
+    const db = await database;
+    if (!db) {
+      const root = readFallback();
+      const result = operation(root);
+      if (write && result !== undefined) {
+        fallback = root;
+        try { getStorage?.().setItem(key, JSON.stringify(root)); } catch { /* Mock o demo limitata. */ }
+      }
+      return result;
+    }
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('session', write ? 'readwrite' : 'readonly');
+      const table = tx.objectStore('session');
+      const request = table.get('root');
+      let result;
+      tx.oncomplete = () => resolve(result);
+      tx.onabort = tx.onerror = () => reject(tx.error ?? Error('Archivio demo indisponibile.'));
+      request.onsuccess = () => {
+        try {
+          const root = request.result ?? {};
+          result = operation(root);
+          if (write && result !== undefined) table.put(root, 'root');
+        } catch (error) { reject(error); tx.abort(); }
+      };
+    });
+  }
+  function notify() {
+    if (closed || !watchers.size || notification) return;
+    notification = setTimeout(() => {
+      notification = undefined;
+      void transact(false, root => root).then(root => {
+        for (const watch of watchers) watch(root);
+      }).catch(() => {});
+    }, 12);
+  }
+  async function change(operation) {
+    const result = await transact(true, operation);
+    if (result !== undefined && !closed) {
+      notify();
+      channel?.postMessage(true);
+    }
+    return result;
+  }
   function listen(path, fn) {
     let prior;
     const watch = root => {
@@ -37,7 +86,7 @@ export function demoAdapter(role, { getStorage = () => localStorage, tabStorage 
       if (json !== prior) { prior = json; fn(value); }
     };
     watchers.add(watch);
-    watch(state());
+    notify();
     return () => watchers.delete(watch);
   }
   function who() {
@@ -49,12 +98,10 @@ export function demoAdapter(role, { getStorage = () => localStorage, tabStorage 
     return uid;
   }
   if (channel) channel.onmessage = notify;
-  globalThis.addEventListener?.('storage', notify);
   function update(patch) {
-    return protect(() => {
-      const root = state();
+    return change(root => {
       for (const [path, value] of Object.entries(patch)) assign(root, path, value);
-      write(root);
+      return true;
     });
   }
   return {
@@ -62,40 +109,38 @@ export function demoAdapter(role, { getStorage = () => localStorage, tabStorage 
     get uid() { return uid; },
     now: Date.now, timestamp: Date.now,
     student: async () => who(), host: async () => who(),
-    get: async path => at(state(), path),
+    get: path => transact(false, root => at(root, path)),
     set: (path, value) => update({ [path]: value }),
     update,
-    transaction: (path, change) => protect(() => {
-      const root = state();
-      const result = change(at(root, path));
-      if (result === undefined) return false;
-      assign(root, path, result);
-      write(root);
-      return true;
-    }),
+    async transaction(path, modify) {
+      return Boolean(await change(root => {
+        const result = modify(at(root, path));
+        if (result === undefined) return undefined;
+        assign(root, path, result);
+        return true;
+      }));
+    },
     listen,
-    children(path, table, change) {
+    children(path, table, redraw) {
       return listen(path, next => {
         for (const item of Object.keys(table)) delete table[item];
         Object.assign(table, next);
-        change();
+        redraw();
       });
     },
     async presence(path) {
       await update({ [path]: true });
-      const release = () => {
-        const root = state();
-        assign(root, path, null);
-        write(root);
-      };
+      const release = () => { void update({ [path]: null }).catch(() => {}); };
       globalThis.addEventListener?.('pagehide', release, { once: true });
-      return () => { globalThis.removeEventListener?.('pagehide', release); release(); };
+      return () => { globalThis.removeEventListener?.('pagehide', release); return update({ [path]: null }); };
     },
     connection: fn => { fn(true); return () => {}; },
     dispose() {
+      closed = true;
+      clearTimeout(notification);
       channel?.close();
-      globalThis.removeEventListener?.('storage', notify);
       watchers.clear();
+      void database.then(db => db?.close());
     },
   };
 }
