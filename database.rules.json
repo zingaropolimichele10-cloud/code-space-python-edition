@@ -226,6 +226,26 @@
         }
       }
     },
+    "helpRequests": {
+      "$room": {
+        ".read": "auth != null && root.child('hosts').child(auth.uid).val() === true && root.child('rooms/' + $room + '/owner').val() === auth.uid && now < root.child('rooms/' + $room + '/expires').val()",
+        ".write": "auth != null && root.child('hosts').child(auth.uid).val() === true && root.child('rooms/' + $room + '/owner').val() === auth.uid && !newData.exists()",
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid && root.child('members/' + $room).child($uid).child('kicked').val() === false && now < root.child('rooms/' + $room + '/expires').val()",
+          ".write": "now < root.child('rooms/' + $room + '/expires').val() && root.child('rooms/' + $room + '/phase').val() !== 'ended' && newData.exists() && ((auth != null && auth.uid === $uid && root.child('members/' + $room).child($uid).child('kicked').val() === false && ((data.child('status').val() !== 'open' && newData.child('status').val() === 'open' && newData.child('id').val() !== data.child('id').val()) || (data.child('status').val() === 'open' && newData.child('id').val() === data.child('id').val() && newData.child('status').val() === 'cancelled'))) || (auth != null && root.child('hosts').child(auth.uid).val() === true && root.child('rooms/' + $room + '/owner').val() === auth.uid && data.child('status').val() === 'open' && newData.child('id').val() === data.child('id').val() && newData.child('status').val() === 'resolved'))",
+          ".validate": "newData.hasChildren(['id', 'status'])",
+          "id": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f-]{36}$/)"
+          },
+          "status": {
+            ".validate": "newData.val() === 'open' || newData.val() === 'cancelled' || newData.val() === 'resolved'"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
     "metrics": {
       "$room": {
         ".write": "(auth != null && root.child('rooms/' + $room + '/owner').val() === auth.uid && root.child('hosts').child(auth.uid).val() === true) && !newData.exists()",

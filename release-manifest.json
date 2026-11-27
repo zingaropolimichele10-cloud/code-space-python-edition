@@ -38,6 +38,7 @@
     "js/classroom/game-bridge.mjs",
     "js/classroom/model.mjs",
     "js/classroom/recovery.mjs",
+    "js/classroom/help.mjs",
     "js/classroom/session.mjs",
     "js/classroom/ui.mjs",
     "js/missions/panels.mjs",

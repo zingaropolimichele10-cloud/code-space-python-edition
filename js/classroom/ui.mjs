@@ -1,3 +1,4 @@
+import { applyHelp, validHelp } from './help.mjs';
 import { missionPolicy } from '../missions/policy.mjs';
 import { downloadFile, readJson } from '../storage/files.mjs';
 import { archiveCsv, archiveEntry, importArchive, localValue, mergeReports, privateReportFields, saveLocal, studentRecovery } from './recovery.mjs';
@@ -28,9 +29,62 @@ const host = role === 'host';
 const projector = role === 'projector';
 const student = role === 'student';
 let store, service, room, control, connected, ready, stops = [], endPresence, presenceEpoch = 0;
-let members = {}, scores = {}, metrics = {}, presence = {}, previousRank = {}, rowMoves = {};
+let members = {}, scores = {}, metrics = {}, helpRequests = {}, presence = {}, previousRank = {}, rowMoves = {};
 let selected, renderPending = false, frameReady = false, sentPolicy = '', frameRoom, busy = false;
-let latest, lastReport = '', privateReport = '', lastWrite = 0, writing = false, help = false, forcedEnd = false;
+let latest, lastReport = '', privateReport = '', lastWrite = 0, writing = false, forcedEnd = false;
+let helpState = null, helpReady = false, helpWrite, helpEpoch = 0;
+const activeHelp = () => (localFlight?.helpPending?.next ?? helpState)?.status === 'open';
+const rowHelp = uid => helpRequests[uid] ? helpRequests[uid].status === 'open' : metrics[uid]?.help === true;
+
+function syncHelpButton() {
+  get('help').disabled = !helpReady || Boolean(localFlight?.helpPending);
+  set('help', activeHelp() ? 'Annulla richiesta di aiuto' : 'Chiedi aiuto');
+}
+
+function observeHelp(value) {
+  const previous = helpState;
+  helpState = validHelp(value);
+  helpReady = true;
+  helpEpoch++;
+  if (helpState?.status === 'resolved' && (previous?.id !== helpState.id || previous?.status !== 'resolved')) {
+    announceHelp('L’Host ha risolto la richiesta di aiuto.');
+  } else if (helpState?.status === 'open' && previous?.id !== helpState.id) {
+    announceHelp('L’Host può vedere la richiesta di aiuto.');
+  } else if (helpState?.status === 'cancelled' && previous?.status !== 'cancelled') {
+    announceHelp('Richiesta di aiuto annullata.');
+  }
+  syncHelpButton();
+}
+
+function announceHelp(message) {
+  get('help').setAttribute('title', message);
+  set('help-status', message);
+  get('help-status').hidden = !message;
+}
+
+async function flushHelp() {
+  const flight = localFlight;
+  const operation = flight?.helpPending;
+  if (!student || !operation || helpWrite === flight || !helpReady || !ready || !connected ||
+      !['flight', 'boss', 'paused', 'countdown'].includes(policy())) return;
+  const path = `helpRequests/${room}/${store.uid}`;
+  const epoch = helpEpoch;
+  helpWrite = flight;
+  try {
+    const { current } = await applyHelp(store, path, operation);
+    if (localFlight !== flight || flight.helpPending !== operation) return;
+    // Un ACK può precedere il listener e non deve sostituire uno snapshot più recente.
+    if (epoch === helpEpoch) observeHelp(current);
+    flight.helpPending = null;
+    saveFlight(true);
+  } catch (error) {
+    if (localFlight === flight && ready && connected) fail(error);
+  } finally {
+    if (helpWrite === flight) helpWrite = undefined;
+    if (localFlight === flight) syncHelpButton();
+  }
+}
+
 let expiresAction = '';
 
 function set(id, value) {
@@ -214,8 +268,7 @@ function draw() {
       : '';
     set('player-summary', me ? `${me.name} · posizione ${me.rank} · ${me.total} punti${distance}${totals} · disponibili: ${missionPolicy(control.settings).missionLimit}/${MISSION_COUNT} · obiettivo: ${control.settings.required} missioni${current === 'ended' ? ' · Concetti allenati: ' + (learned.join(', ') || 'puoi continuare a esercitarti in modalità individuale') : ''}` : '');
     get('help').hidden = !me || ['ended', 'expired', 'kicked', 'offline', 'lobby'].includes(current);
-    get('help').disabled = false;
-    set('help', help ? 'Annulla richiesta di aiuto' : 'Chiedi aiuto');
+    syncHelpButton();
   }
   get('rank').hidden = projector && control.view === 'lobby';
   get('podium').hidden = control.view !== 'podium';
@@ -223,7 +276,7 @@ function draw() {
     : student ? rows.filter(row => row.rank <= 3 || row.uid === store.uid) : rows;
   const order = get('rank-order').value;
   if (host && order === 'name') display.sort((a, b) => a.name.localeCompare(b.name, 'it'));
-  if (host && order === 'help') display.sort((a, b) => Number(metrics[b.uid]?.help ?? false) - Number(metrics[a.uid]?.help ?? false) || a.rank - b.rank);
+  if (host && order === 'help') display.sort((a, b) => Number(rowHelp(b.uid)) - Number(rowHelp(a.uid)) || a.rank - b.rank);
   const head = document.createElement('tr');
   const headers = ['Pos.', 'Nickname', 'Punti', 'Python'];
   if (host) headers.push('Variazione', 'Vite', 'Settore', 'Stato', 'Connessione', 'Missione / tempo', 'Tentativi', 'Indizi', 'Aiuto', 'Azioni');
@@ -259,18 +312,26 @@ function draw() {
       cell(tr, info.mission ? info.mission + ' · ' + duration((current === 'paused' ? control.at : store.now()) - info.since) : '—');
       cell(tr, control.settings.adventure ? (info.attempts ?? 0) + ' · ' + (info.errors ?? 0) + ' errori' : info.attempts ?? 0);
       cell(tr, info.hints ?? 0);
-      const aid = cell(tr, info.help ? 'Aiuto richiesto' : stale ? 'Da seguire' : '—');
-      if (info.help || stale) aid.className = 'needs-help';
-      if (info.help) {
+      const requested = rowHelp(row.uid);
+      const aid = cell(tr, requested ? 'Aiuto richiesto' : stale ? 'Da seguire' : '—');
+      if (requested || stale) aid.className = 'needs-help';
+      if (requested) {
         const resolve = document.createElement('button');
         resolve.type = 'button';
         resolve.className = 'secondary';
         resolve.textContent = 'Risolvi richiesta';
         resolve.disabled = !connected || !ready || current === 'ended';
         resolve.setAttribute('aria-label', 'Risolvi richiesta di ' + row.name);
+        const request = validHelp(helpRequests[row.uid]);
         resolve.addEventListener('click', () => {
           void run(async () => {
-            await store.set(`metrics/${room}/${row.uid}/help`, false);
+            if (request) {
+              await applyHelp(store, `helpRequests/${room}/${row.uid}`, {
+                previous: request, next: { id: request.id, status: 'resolved' },
+              });
+            } else {
+              await store.set(`metrics/${room}/${row.uid}/help`, false);
+            }
           }, resolve);
         });
         aid.append(document.createElement('br'), resolve);
@@ -336,6 +397,7 @@ function clock() {
   }
   syncFrame(current, now);
   void report(current, now);
+  void flushHelp();
 }
 function stopRoom() {
   stops.forEach(stop => stop());
@@ -347,7 +409,9 @@ function stopRoom() {
   room = control = undefined;
   members = {}; scores = {}; metrics = {}; presence = {}; previousRank = {}; rowMoves = {};
   localFlight = undefined; lastLocalWrite = 0;
-  latest = undefined; lastReport = privateReport = ''; help = forcedEnd = frameReady = ready = false;
+  latest = undefined; lastReport = privateReport = ''; forcedEnd = frameReady = ready = false;
+  helpState = null; helpReady = false; helpEpoch++;
+  announceHelp('');
   frameRoom = undefined; sentPolicy = '';
   get('flight-frame').src = 'about:blank';
   get('flight-telemetry').setAttribute('aria-expanded', 'false');
@@ -363,10 +427,10 @@ function attach(id) {
   if (student) {
     const saved = localValue(studentKey(id), rememberedStorage());
     localFlight = { schema: 1, recovery: studentRecovery(saved?.schema === 1 ? saved.recovery : null),
-      queue: saved?.schema === 1 ? saved.queue : null };
+      queue: saved?.schema === 1 ? saved.queue : null,
+      helpPending: saved?.schema === 1 && validHelp(saved.helpPending?.next) ? saved.helpPending : null };
     if (localFlight.queue?.room === id) {
       latest = mergeReports(null, localFlight.queue, localFlight.queue.phase);
-      help = latest.help === true;
     }
   }
   get('entry').hidden = true;
@@ -404,28 +468,8 @@ function attach(id) {
     stops.push(store.children(path + '/' + id, target, drawSoon, failSync));
   }
 
-  if (student) {
-    stops.push(store.listen(`metrics/${id}/${store.uid}/help`, value => {
-      if (value === false && help) {
-        const sent = privateReport ? JSON.parse(privateReport) : null;
-        if (sent?.help === true) {
-          help = false;
-          sent.help = false;
-          privateReport = JSON.stringify(sent);
-          if (latest) latest = { ...latest, help: false };
-          if (localFlight) {
-            localFlight.queue = latest;
-            saveFlight(true);
-          }
-          get('flight-frame').contentWindow?.postMessage({
-            type: 'cs:help-resolved', room
-          }, location.origin);
-          drawSoon();
-          clock();
-        }
-      }
-    }, failSync));
-  }
+  if (host) stops.push(store.children('helpRequests/' + id, helpRequests, drawSoon, fail));
+  if (student) stops.push(store.listen(`helpRequests/${id}/${store.uid}`, observeHelp, fail));
   stops.push(store.connection(on => {
     connected = on;
     ready = false;
@@ -495,7 +539,7 @@ async function report(current, now) {
     boss: last.boss === true || (current === 'boss' && pendingBoss === true), lives: safeInt(latest.lives, 5),
     sector: safeInt(latest.sector, 4), status: Object.hasOwn(stateText, latest.status) ? latest.status : 'waiting',
   };
-  const privateData = { adventure: true, ...privateReportFields({ ...latest, help }) };
+  const privateData = { adventure: true, ...privateReportFields({ ...latest, help: false }) };
   privateData.since = privateData.mission ? Math.max(0, privateData.since + now - Date.now()) : 0;
   const publicKey = JSON.stringify(publicData);
   const privateKey = JSON.stringify(privateData);
@@ -529,11 +573,10 @@ addEventListener('message', event => {
     localFlight.recovery = studentRecovery(event.data.recovery);
     saveFlight(true);
   } else if (event.data?.type === 'cs:report' && event.data.room === room && localFlight) {
-    if (latest?.mission !== event.data.mission) help = false;
     const phase = control?.phase;
     const old = latest;
     const oldForBoss = old?.bossAt === control?.at ? old : { ...old, boss: false };
-    latest = mergeReports(oldForBoss, { ...event.data, help, phase, bossAt: control?.at }, phase);
+    latest = mergeReports(oldForBoss, { ...event.data, phase, bossAt: control?.at }, phase);
     localFlight.queue = latest;
     saveFlight(old?.mask !== latest.mask || old?.boss !== latest.boss || old?.mission !== latest.mission);
     clock();
@@ -763,9 +806,18 @@ get('sign-out').addEventListener('click', () => void run(async () => {
   await store.signOut?.();
   location.reload();
 }));
+// Un clic sul comando esterno non deve spostare il focus dal simulatore.
+get('help').addEventListener('pointerdown', event => { if (event.button === 0) event.preventDefault(); });
 get('help').addEventListener('click', () => {
-  help = !help;
-  if (localFlight && latest) { localFlight.queue = { ...latest, help }; saveFlight(true); }
+  if (!localFlight || !helpReady || localFlight.helpPending) return;
+  const previous = helpState;
+  const next = previous?.status === 'open'
+    ? { id: previous.id, status: 'cancelled' }
+    : { id: crypto.randomUUID(), status: 'open' };
+  localFlight.helpPending = { previous, next };
+  syncHelpButton();
+  announceHelp(next.status === 'open' ? 'Richiesta di aiuto inviata alla sincronizzazione.' : 'Annullamento della richiesta in corso.');
+  saveFlight(true);
   drawSoon();
   clock();
 });
