@@ -27,7 +27,7 @@
         <div class="hud" aria-label="Stato della partita">
           <div><span>Vite</span><strong id="lives">3 / 3</strong></div>
           <div><span>Punteggio</span><strong id="score">0</strong></div>
-          <div><span>Missioni</span><strong id="mission-count">0 / 4</strong></div>
+          <div><span>Missioni</span><strong id="mission-count">—</strong></div>
           <div><span>Velocità</span><strong id="speed">5</strong></div>
           <div><span>Scudo</span><strong id="shield">Spento</strong></div>
         </div>
@@ -142,6 +142,7 @@
       <h2 id="mission-title"></h2>
       <p id="mission-problem"><strong>Problema</strong> <span></span></p>
       <p class="mission-goal" id="mission-goal"><strong>Cosa fare</strong> <span></span></p>
+      <p id="mission-explanation" class="mission-explanation" hidden></p>
       <form id="mission-form">
         <label for="mission-code">Codice Python</label>
         <div class="editor-frame">
@@ -153,6 +154,7 @@
           <figcaption>Risultato atteso</figcaption>
           <div class="preview-symbol" aria-hidden="true"></div>
           <span id="mission-effect"></span>
+          <div id="mission-instruments" class="mission-instruments" hidden></div>
         </figure>
         <div class="mission-actions">
           <button id="mission-run" type="submit">Esegui</button>

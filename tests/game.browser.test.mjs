@@ -188,7 +188,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     assert.equal(await evaluate("document.querySelector('#mission-code').value"), 'velocita = 6');
     assert.equal(await evaluate("document.querySelectorAll('#mission-hints li').length"), 3);
     assert.match(await submit('velocita = 5 * 2', 'success'), /intero 10/);
-    assert.equal(await text('mission-count'), '1 / 4');
+    assert.equal(await text('mission-count'), '1 / 11');
     await finish();
     assert.equal(await state(), 'PLAYING');
   });
@@ -201,9 +201,9 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await key('ArrowRight', 'keyUp');
     assert.ok((await paint())[0] - x > 45);
     for (const [title, code, count] of [
-      ['Messaggio di bordo', 'print("Aurora " + "online")', '2 / 4'],
-      ['Interruttore scudo', 'scudo = 2 < 3', '3 / 4'],
-      ['Vernice spaziale', 'colore = "b" + "lu"', '4 / 4'],
+      ['Messaggio di bordo', 'print("Aurora " + "online")', '2 / 11'],
+      ['Interruttore scudo', 'scudo = 2 < 3', '3 / 11'],
+      ['Vernice spaziale', 'colore = "b" + "lu"', '4 / 11'],
     ]) {
       await advance(220);
       assert.equal(await text('mission-title'), title);
@@ -219,7 +219,9 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     assert.equal((await paint())[2], '64,155,255');
     assert.equal(await evaluate("document.querySelector('#final-button').hidden"), false);
     await advance(220);
-    assert.equal(await dialog(), false);
+    assert.equal(await dialog(), true);
+    assert.equal(await text('mission-title'), 'Ricarica energetica');
+    await click('#mission-skip');
     assert.equal(await evaluate("document.querySelector('#final-button').hidden"), false);
   });
 
@@ -235,7 +237,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     for (let index = 0; index < 3; index++) {
       await action('tutorial');
       await action('start');
-      assert.deepEqual((await hud()).slice(0, 3), ['3 / 3', '0', '4 / 4']);
+      assert.deepEqual((await hud()).slice(0, 3), ['3 / 3', '0', '4 / 11']);
       await action('pause');
       await evaluate("document.querySelector('#paused-panel [data-action=menu]').click()");
     }
@@ -243,7 +245,47 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     assert.deepEqual(await evaluate("JSON.parse(localStorage.getItem('code-space:missioni-1.1:progress:v3')).completed"), [1, 2, 3, 4]);
     await browser.page('Page.reload');
     await waitForPage(browser);
-    assert.equal(await text('mission-count'), '4 / 4');
+    assert.equal(await text('mission-count'), '4 / 11');
+  });
+
+  await t.test('In volo: missioni 5–11, salto, recupero e strumenti di bordo', async () => {
+    await click('#teacher-open');
+    await click('#teacher-demo');
+    await evaluate("document.querySelector('#teacher').close()");
+    await action('tutorial');
+    await action('start');
+    await click('#mission-retry');
+    assert.equal(await text('mission-title'), 'Ricarica energetica');
+    await click('#mission-hint');
+    assert.doesNotMatch(await text('mission-hints'), /energia = energia \+ 20/);
+    await submit('energia = 40\nenergia = 60', 'error');
+    await submit('energia = 40\nenergia = energia + 20', 'success');
+    assert.deepEqual(await evaluate("[...document.querySelectorAll('#mission-instruments meter')].map(meter => meter.value)"), [40, 60]);
+    await finish();
+    const challenges = [
+      ['Riparazione dello scafo', 'scafo = 100 - danni', /65/],
+      ['Potenziamento laser', 'danno = 10 * livello', /Potenza 20/],
+      ['Distribuzione delle risorse', 'per_motore = energia_totale // motori', /Motore 3 · 20/],
+      ['Segnale extraterrestre', 'messaggio = "Ciao " + nome', /Ciao Vega/],
+      ['Rapporto di bordo', 'print("Vite: " + str(vite))', /Vite: 3/],
+      ['Scudo intelligente', 'scudo = False\nif vite < 3:\n    scudo = True', /2 vite · Accesa.*3 vite · Spenta.*4 vite · Spenta/],
+    ];
+    for (const [title, code, expected] of challenges) {
+      await advance(230);
+      assert.equal(await state(), 'MISSION');
+      assert.equal(await text('mission-title'), title);
+      await source(code);
+      await evaluate("document.querySelector('#mission-code').dispatchEvent(new Event('input', { bubbles: true }))");
+      await submit(code, 'success');
+      assert.match(await text('mission-instruments'), expected);
+      if (title === 'Scudo intelligente') await saveScreenshot(browser, 'fase2-scudo-intelligente');
+      await finish();
+    }
+    assert.equal(await text('mission-count'), '11 / 11');
+    assert.equal(await text('flight-message'), 'Vite: 3');
+    await advance(230);
+    assert.equal(await dialog(), false);
+    assert.equal(await evaluate('peakFrames'), 1);
   });
 
   await t.test('Sottopercorso, rete locale ed errori JavaScript', async () => {

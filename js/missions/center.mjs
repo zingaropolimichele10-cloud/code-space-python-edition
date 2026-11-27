@@ -1,6 +1,7 @@
 import { State } from '../game/engine.mjs';
 import { createPythonRunner } from '../python/runner.mjs';
 import { installEditorTools, protectsLines } from './editor-tools.mjs';
+import { showInstruments } from './preview.mjs';
 import { missions } from './catalog.mjs';
 import { validateMission } from './validate.mjs';
 
@@ -26,6 +27,8 @@ export function createCenter({ progress, sound = () => {} }) {
   const retry = get('mission-retry');
   const note = get('mission-note');
   const preview = get('mission-preview');
+  const instruments = get('mission-instruments');
+  const explanation = get('mission-explanation');
   const consoleOutput = get('flight-message');
   function flightMessage(text = '') {
     consoleOutput.textContent = text;
@@ -140,7 +143,13 @@ export function createCenter({ progress, sound = () => {} }) {
           game.grant(paint ? { color: paint } : effect.upgrade, mission.id);
           if (paint) preview.dataset.paint = paint;
         }
-        if (!practice && result.output.trimEnd()) flightMessage(result.output.trimEnd());
+        showInstruments(instruments, mission, result.cases);
+        if (!instruments.hidden) preview.querySelector('figcaption').textContent = 'Risultato verificato';
+        if (!practice) {
+          const message = mission.effettoNelGioco.pannello === 'laser' ? `Laser · Potenza ${result.variables.danno.value}`
+            : mission.effettoNelGioco.pannello === 'radio' ? result.variables.messaggio.value : result.output.trimEnd();
+          if (message) flightMessage(message);
+        }
         sound('success');
         get('reward-text').textContent = practice ? 'Prova riuscita. Il volo inizierà con la configurazione di partenza.' : mission.effettoNelGioco.anteprima;
         reward.hidden = false;
@@ -177,6 +186,14 @@ export function createCenter({ progress, sound = () => {} }) {
     get('mission-goal').querySelector('span').textContent = active.cosaFare;
     get('mission-effect').textContent = active.effettoNelGioco.anteprima;
     preview.dataset.mission = active.id;
+    const samples = active.scenariDiTest[0].input;
+    const given = active.variabiliFornite.map(name => `${name} = ${JSON.stringify(samples[name])}`);
+    explanation.textContent = active.effettoNelGioco.pannello
+      ? [active.spiegazione, given.length ? 'Prima prova · ' + given.join(', ') : ''].filter(Boolean).join(' ')
+      : '';
+    explanation.hidden = !explanation.textContent;
+    showInstruments(instruments, active);
+    preview.querySelector('figcaption').textContent = 'Risultato atteso';
     delete preview.dataset.paint;
     editor.readOnly = false;
     reward.hidden = true;

@@ -194,3 +194,11 @@ kbd { border: 1px solid #446281; border-radius: .25rem; padding: .1rem .3rem; co
 [data-paint="blu"] .preview-symbol { background: #409bff; }
 [data-paint="verde"] .preview-symbol { background: #64d996; }
 [data-paint="viola"] .preview-symbol { background: #b68bff; }
+.mission-explanation { margin: .35rem 0; color: var(--muted); font-size: .9rem; }
+.mission-instruments {
+  grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .55rem;
+  font: .84rem ui-monospace, monospace;
+}
+.mission-instruments[hidden] { display: none; }
+.mission-instruments span { background: #102c42; border-radius: .25rem; padding: .2rem .4rem; }
+.mission-instruments meter { width: 5rem; height: .85rem; }

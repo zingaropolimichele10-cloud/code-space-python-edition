@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0-missioni.fase1",
+  "version": "1.1.0-missioni.fase2",
   "runtime": [
     "index.html",
     "laboratorio.html",
@@ -16,6 +16,7 @@
     "js/missions/catalog.mjs",
     "js/missions/center.mjs",
     "js/missions/editor-tools.mjs",
+    "js/missions/preview.mjs",
     "js/missions/validate.mjs",
     "js/python/editor.mjs",
     "js/python/protocol.mjs",

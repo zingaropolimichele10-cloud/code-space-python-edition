@@ -1,10 +1,12 @@
+import { missions } from '../missions/catalog.mjs';
 import { limits } from '../python/protocol.mjs';
 
 export const saveKey = 'code-space:missioni-1.1:progress:v3';
 const legacySaveKey = 'code-space:progress:v2';
 const legacyKey = 'code-space:missioni:v1';
 const legacyAudio = 'code-space:audio:v1';
-const ids = [1, 2, 3, 4];
+const ids = missions.map(({ id }) => id);
+const legacyIds = [1, 3, 4];
 const validIds = values => ids.filter(id => Array.isArray(values) && values.includes(id));
 const validScore = value => Number.isSafeInteger(value) && value >= 0 && value <= 1_000_000;
 const validVolume = value => Number.isFinite(value) && value >= 0 && value <= 1;
@@ -12,9 +14,9 @@ const validVolume = value => Number.isFinite(value) && value >= 0 && value <= 1;
 export function normalizeProgress(input) {
   const legacy = input?.version === 2 ? input : null;
   const raw = legacy ? { ...legacy,
-    completed: validIds(legacy.completed).filter(id => id !== 2),
-    skipped: validIds(legacy.skipped).filter(id => id !== 2),
-    drafts: { ...legacy.drafts, 2: undefined },
+    completed: validIds(legacy.completed).filter(id => legacyIds.includes(id)),
+    skipped: validIds(legacy.skipped).filter(id => legacyIds.includes(id)),
+    drafts: Object.fromEntries(legacyIds.map(id => [id, legacy.drafts?.[id]])),
     legacyLives: Array.isArray(legacy.completed) && legacy.completed.includes(2),
     legacyShield: Array.isArray(legacy.completed) && legacy.completed.includes(5),
     legacyDrafts: { 2: legacy.drafts?.[2], 5: legacy.drafts?.[5] },

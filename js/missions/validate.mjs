@@ -43,17 +43,28 @@ function executionFailure(result, source, offset, output) {
 
 export async function validateMission(mission, source, run, isCurrent = () => true) {
   let output = '';
-  let variables;
-  const fail = message => ({ ok: false, output, message });
+  const cases = [];
+  let scenarioLabel = '';
+  const fail = message => ({ ok: false, output, message: scenarioLabel + message });
   const row = mission.righeModificabili[0];
   for (const scenario of mission.scenariDiTest) {
     const fixture = Object.entries(scenario.input).map(([key, value]) => `${key} = ${pythonLiteral(value)}\n`);
-    const result = await run(fixture.join('') + source);
+    scenarioLabel = mission.scenariDiTest.length > 1
+      ? 'Prova con ' + Object.entries(scenario.input).map(([key, value]) => `${key} = ${showValue(value)}`).join(', ') + '. '
+      : '';
+    let program = source;
+    // Varia il dato nella riga protetta del modello, conservando i numeri di riga.
+    if (mission.rigaDiInput && source.trim()) {
+      const lines = source.split('\n');
+      lines[mission.rigaDiInput - 1] = fixture.shift().trimEnd();
+      program = lines.join('\n');
+    }
+    const result = await run(fixture.join('') + program);
     if (!isCurrent()) return null;
     output = (output + (result.output ?? '')).slice(0, limits.output);
     if (!result.ok) return executionFailure(result, source, fixture.length, output);
     if (!source.trim()) return fail(`Riga ${row}. Scrivi il codice richiesto prima di eseguire.`);
-    variables = result.variables;
+    const { variables } = result;
     for (const [name, expected] of Object.entries(scenario.atteso ?? {})) {
       const actual = variables[name];
       if (!actual) return fail(`Riga ${row}. Assegna un valore a ${name}.`);
@@ -69,6 +80,7 @@ export async function validateMission(mission, source, run, isCurrent = () => tr
         return fail(`Riga ${row}. Controlla il messaggio mostrato da print e gli spazi.`);
       }
     }
+    cases.push({ input: scenario.input, variables, output: result.output ?? '' });
   }
-  return { ok: true, output, variables, message: mission.effettoNelGioco.esito };
+  return { ok: true, output: cases[0].output, variables: cases[0].variables, cases, message: mission.effettoNelGioco.esito };
 }

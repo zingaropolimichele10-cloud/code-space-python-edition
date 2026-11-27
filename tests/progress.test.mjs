@@ -16,7 +16,7 @@ test('Salvataggio v2, migrazione, convalida e reset', () => {
   const store = createProgress(storage);
   assert.deepEqual(store.state.completed, [1,3]);
   assert.deepEqual(store.state.audio, { enabled: true, volume: .4 });
-  store.update({ skipped: [1,2], drafts: { 2: 'vite = 5', 9: 'no' }, upgrades: [4], best: 25,
+  store.update({ skipped: [1,2], drafts: { 2: 'vite = 5', 99: 'no' }, upgrades: [4], best: 25,
     light: true, checkpoint: { mode: 'PLAYING', score: 25, time: 3.4 } });
   const restored = createProgress(storage).state;
   assert.deepEqual(restored.upgrades, [1,3]);
@@ -117,4 +117,16 @@ test('Importazione 1.0.0: vecchie ricompense conservate, Messaggio di bordo rest
   progress.update({ completed: [1, 2, 3, 4] });
   assert.deepEqual(JSON.parse(storage.getItem(key)), old);
   assert.deepEqual(createProgress(storage).state.completed, [1, 2, 3, 4]);
+});
+
+test('Ripristino delle missioni della fase 2 nello stesso schema della fase 1', () => {
+  const storage = memory();
+  storage.setItem(saveKey, JSON.stringify({ version: 3, completed: [1, 2, 3, 4], paint: 'verde' }));
+  const progress = createProgress(storage);
+  progress.update({ completed: [1, 2, 3, 4, 7, 11, 12], skipped: [5], drafts: { 5: 'energia = 40\nenergia = energia + 20' } });
+  const restored = createProgress(storage).state;
+  assert.deepEqual(restored.completed, [1, 2, 3, 4, 7, 11]);
+  assert.deepEqual(restored.skipped, [5]);
+  assert.equal(restored.drafts[5], 'energia = 40\nenergia = energia + 20');
+  assert.equal(restored.paint, 'verde');
 });

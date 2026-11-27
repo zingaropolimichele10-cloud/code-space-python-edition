@@ -20,7 +20,7 @@ const copy = {
 };
 
 export function mountGame({ nextMission, onState = () => {},
-  missionCount = () => 0, sound, onCheckpoint, initialLight = false, onLight = () => {}, onRefresh = () => {} } = {}) {
+  missionCount = () => 0, missionTotal = 0, sound, onCheckpoint, initialLight = false, onLight = () => {}, onRefresh = () => {} } = {}) {
   const game = createGame({ nextMission, sound, onCheckpoint });
   const { world, keys } = game;
   const byId = id => document.getElementById(id);
@@ -51,7 +51,7 @@ export function mountGame({ nextMission, onState = () => {},
     set('lives', `${world.lives} / ${world.upgrades.maxLives}`);
     set('score', String(world.score));
     set('speed', String(world.upgrades.speed));
-    set('mission-count', `${missionCount()} / 4`);
+    set('mission-count', `${missionCount()} / ${missionTotal}`);
     set('shield', world.shield ? 'Attivo' : world.emergency && world.lives < 3 ? 'Emergenza'
       : world.upgrades.shield ? 'In ricarica' : 'Spento');
     byId('final-button').hidden = world.state !== State.PLAYING;

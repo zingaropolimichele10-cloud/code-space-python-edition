@@ -61,6 +61,19 @@ test('Cache offline dopo il primo avvio: ricarica, laboratorio e vero Worker sen
   const onlineRequests = browser.requests.length;
   await browser.page('Page.reload');
   await verifyPython(browser);
+  await browser.evaluate(`(() => {
+    document.getElementById('mission-done').click();
+    document.getElementById('teacher-open').click();
+    document.getElementById('teacher-mission').value = '11';
+    document.getElementById('teacher-launch').click();
+    const editor = document.getElementById('mission-code');
+    editor.value = editor.value.replace(/False$/, 'True');
+    editor.dispatchEvent(new Event('input'));
+    document.getElementById('mission-run').click();
+  })()`);
+  await waitFor(browser, "['success','error'].includes(document.getElementById('mission-status').dataset.result)");
+  assert.equal(await browser.evaluate("document.getElementById('mission-status').dataset.result"), 'success');
+  assert.match(await browser.evaluate("document.getElementById('mission-instruments').textContent"), /2 vite · Accesa.*3 vite · Spenta/);
   await browser.page('Page.navigate', { url: browser.origin + browser.prefix + 'laboratorio.html' });
   await waitFor(browser, "document.readyState === 'complete' && !!document.getElementById('codice')");
   await browser.evaluate("document.querySelector('button[type=submit]').click()");

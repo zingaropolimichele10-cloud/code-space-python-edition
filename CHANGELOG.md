@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0 — Sviluppo locale delle missioni
+
+- Fase 2. Missioni 5–11 in ordine di volo, con prove su più valori di bordo, strumenti di riscontro e scudo di riserva sotto tre vite.
+- I salvataggi della Fase 1 restano leggibili. La revisione offline include il modulo degli indicatori delle missioni.
+
 ## 1.0.0 — 26 novembre 2026
 
 - Fase 00. Infrastruttura statica, struttura modulare e documentazione del progetto.
