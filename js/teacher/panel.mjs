@@ -1,11 +1,6 @@
 import { State } from '../game/engine.mjs';
 import { missions } from '../missions/catalog.mjs';
 
-const solutions = [
-  'velocita = 10', 'vite = 5', 'scudo = True', 'colore = "blu"',
-  'scudo = False\nif vite < 3:\n    scudo = True',
-];
-
 export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center, progress }) {
   const get = id => document.getElementById(id);
   const dialog = get('teacher');
@@ -24,7 +19,7 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
   let resetMode;
 
   for (const mission of missions) {
-    const label = `${mission.id}. ${mission.title}${mission.optional ? ' (facoltativa)' : ''}`;
+    const label = `${mission.id}. ${mission.titolo}`;
     selector.add(new Option(label, mission.id));
     const button = document.createElement('button');
     button.type = 'button';
@@ -99,7 +94,7 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
   solution.addEventListener('click', () => {
     if (!answer.hidden) return hideSolution();
     const index = Number(selector.value) - 1;
-    answer.textContent = `${missions[index].title}\n\n${solutions[index]}\n\n${missions[index].explanation}`;
+    answer.textContent = `${missions[index].titolo}\n\n${missions[index].soluzioneEsempio}\n\n${missions[index].spiegazione}`;
     answer.hidden = false;
     solution.setAttribute('aria-expanded', 'true');
     solution.textContent = 'Nascondi soluzione';

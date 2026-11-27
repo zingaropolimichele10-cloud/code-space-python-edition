@@ -24,12 +24,12 @@ const { game, refresh, tutorial, setLight } = mountGame({
     progress.update({ checkpoint: { mode: State.PLAYING, time: world.time, score: world.score } });
     const completed = center.completedMissions();
     get('victory-score').textContent = `Punteggio: ${world.score} · Record locale: ${progress.state.best}`;
-    get('victory-missions').textContent = `Missioni principali: ${center.count()} su 4${completed.some(item => item.optional) ? ' · Missione facoltativa completata' : ''}`;
+    get('victory-missions').textContent = `Missioni principali: ${center.count()} su 4`;
     get('victory-upgrades').textContent = completed.length
-      ? `Potenziamenti: ${completed.map(item => item.reward).join(' · ')}`
+      ? `Potenziamenti: ${completed.map(item => item.effettoNelGioco.anteprima).join(' · ')}`
       : 'Il Centro di controllo resta aperto per provare Python quando vuoi.';
     get('victory-concepts').textContent = completed.length
-      ? `Concetti praticati: ${[...new Set(completed.map(item => item.concept.toLocaleLowerCase('it')))].join(', ')}.` : '';
+      ? `Concetti praticati: ${[...new Set(completed.map(item => item.concetto.toLocaleLowerCase('it')))].join(', ')}.` : '';
     get('victory-recover').hidden = !center.hasIncomplete();
   },
   onRefresh(game) {

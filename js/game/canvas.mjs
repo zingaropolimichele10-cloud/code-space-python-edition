@@ -109,9 +109,13 @@ export function createCanvas(canvas) {
       circle(0, 0, 24, '#81ecff', '#23b8ff25');
     }
     if (!reduced.matches && ship.invulnerable > 0 && Math.sin(ship.invulnerable * 27) < 0) ctx.globalAlpha = 0.48;
-    polygon([[-5, 11], [0, 26 + (reduced.matches ? 0 : Math.sin(world.time * 30) * 4)], [5, 11]], '#57d8ff');
+    const paint = world.upgrades.color;
+    const hull = paint === 'blu' ? '#409bff' : paint === 'verde' ? '#64d996' : paint === 'viola' ? '#b68bff' : '#ef786a';
+    const trail = paint === 'verde' ? '#94f5b6' : paint === 'viola' ? '#dcc1ff' : '#57d8ff';
+    const tip = world.upgrades.speed >= 10 ? 39 : 26;
+    polygon([[-5, 11], [0, tip + (reduced.matches ? 0 : Math.sin(world.time * 30) * 4)], [5, 11]], trail);
     polygon([[0, -20], [16, 13], [5, 10], [0, 15], [-5, 10], [-16, 13]],
-      world.upgrades.color === 'blu' ? '#409bff' : '#ef786a', '#dcecff');
+      hull, '#dcecff');
     polygon([[0, -9], [5, 4], [-5, 4]], '#bcf5ff');
     ctx.fillStyle = '#5ee8ff';
     ctx.fillRect(-12, 8, 3, 2);

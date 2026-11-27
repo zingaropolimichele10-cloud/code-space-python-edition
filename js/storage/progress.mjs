@@ -1,20 +1,34 @@
 import { limits } from '../python/protocol.mjs';
 
-export const saveKey = 'code-space:progress:v2';
+export const saveKey = 'code-space:missioni-1.1:progress:v3';
+const legacySaveKey = 'code-space:progress:v2';
 const legacyKey = 'code-space:missioni:v1';
 const legacyAudio = 'code-space:audio:v1';
-const ids = [1, 2, 3, 4, 5];
+const ids = [1, 2, 3, 4];
 const validIds = values => ids.filter(id => Array.isArray(values) && values.includes(id));
 const validScore = value => Number.isSafeInteger(value) && value >= 0 && value <= 1_000_000;
 const validVolume = value => Number.isFinite(value) && value >= 0 && value <= 1;
 
 export function normalizeProgress(input) {
-  const raw = input?.version === 2 ? input : {};
+  const legacy = input?.version === 2 ? input : null;
+  const raw = legacy ? { ...legacy,
+    completed: validIds(legacy.completed).filter(id => id !== 2),
+    skipped: validIds(legacy.skipped).filter(id => id !== 2),
+    drafts: { ...legacy.drafts, 2: undefined },
+    legacyLives: Array.isArray(legacy.completed) && legacy.completed.includes(2),
+    legacyShield: Array.isArray(legacy.completed) && legacy.completed.includes(5),
+    legacyDrafts: { 2: legacy.drafts?.[2], 5: legacy.drafts?.[5] },
+  } : input?.version === 3 ? input : {};
   const completed = validIds(raw.completed);
   const point = raw.checkpoint;
   return {
-    version: 2,
+    version: 3,
     completed,
+    paint: ['blu', 'verde', 'viola'].includes(raw.paint) ? raw.paint : 'blu',
+    legacyLives: raw.legacyLives === true,
+    legacyShield: raw.legacyShield === true,
+    legacyDrafts: Object.fromEntries([2, 5].filter(id => typeof raw.legacyDrafts?.[id] === 'string')
+      .map(id => [id, raw.legacyDrafts[id].slice(0, limits.source)])),
     skipped: validIds(raw.skipped).filter(id => !completed.includes(id)),
     drafts: Object.fromEntries(ids.filter(id => typeof raw.drafts?.[id] === 'string')
       .map(id => [id, raw.drafts[id].slice(0, limits.source)])),
@@ -41,7 +55,7 @@ export function createProgress(storage) {
     } catch { return null; }
   }
   const saved = read(saveKey);
-  const state = normalizeProgress(saved === undefined ? {
+  const state = normalizeProgress(saved === undefined ? read(legacySaveKey) ?? {
     version: 2, completed: read(legacyKey), audio: read(legacyAudio),
   } : saved);
   let timer;

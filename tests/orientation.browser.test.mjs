@@ -41,7 +41,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
   const click = selector => evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
   const text = id => evaluate(`document.getElementById('${id}').textContent`);
   const state = () => evaluate("document.getElementById('viewport').dataset.state");
-  const save = () => evaluate("JSON.parse(localStorage.getItem('code-space:progress:v2'))");
+  const save = () => evaluate("JSON.parse(localStorage.getItem('code-space:missioni-1.1:progress:v3'))");
   const wait = expression => evaluate(`new Promise((resolve, reject) => {
     const start = performance.now();
     const timer = setInterval(() => {
@@ -113,7 +113,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     await wait('audioStarts === 1');
     assert.equal(await text('mute'), 'Audio attivo');
     await click('#mute');
-    await wait("JSON.parse(localStorage.getItem('code-space:progress:v2'))?.audio?.volume === 0.33");
+    await wait("JSON.parse(localStorage.getItem('code-space:missioni-1.1:progress:v3'))?.audio?.volume === 0.33");
     assert.deepEqual((await save()).audio, { enabled: false, volume: .33 });
   });
 
@@ -130,7 +130,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     await click('#tutorial-next');
     assert.match(await text('mission-id'), /Prova del tutorial/);
     await click('#mission-hint');
-    assert.match(await text('mission-hints'), /intero/);
+    assert.match(await text('mission-hints'), /variabile/);
     await evaluate(`const editor = document.getElementById('mission-code'); editor.focus(); editor.select();`);
     await key('ArrowLeft','ArrowLeft',37);
     assert.equal(await evaluate('editor.selectionStart'), 0);
@@ -139,7 +139,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     await evaluate('editor.select()');
     await key('v','KeyV',86,2);
     await wait("editor.value.includes('print')");
-    assert.equal(await text('line-numbers'), '1\n2');
+    assert.deepEqual(await evaluate("[...document.querySelectorAll('#line-numbers span')].map(row => row.textContent)"), ['1', '2']);
     await evaluate('editor.select()');
     await key('c','KeyC',67,2);
     assert.equal(await evaluate('navigator.clipboard.readText()'), 'velocita = 5 * 2\nprint(velocita)');
@@ -199,7 +199,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     await change('teacher-light', true);
     await capture('06-docente');
     await click('#teacher-launch');
-    assert.match(await text('mission-title'), /Camuffamento/);
+    assert.match(await text('mission-title'), /Vernice spaziale/);
     await click('#mission-skip');
     assert.equal(await evaluate("document.querySelector('#open-unlocked').hidden"), false);
     assert.deepEqual((await save()).skipped, [1, 4]);
@@ -239,7 +239,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
 test('Avvio e volo con LocalStorage bloccato o corrotto', async () => {
   for (const beforeLoad of [
     "Object.defineProperty(window, 'localStorage', { get() { throw new Error('bloccato'); } });",
-    "localStorage.setItem('code-space:progress:v2', '{errore');",
+    "localStorage.setItem('code-space:missioni-1.1:progress:v3', '{errore');",
   ]) {
     const browser = await openBrowser('', { beforeLoad });
     try {

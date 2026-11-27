@@ -10,7 +10,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { openBrowser } from './browser.mjs';
 
 const project = fileURLToPath(new URL('../', import.meta.url));
-const zipName = 'code-space-python-edition-1.0.0';
+const { version } = JSON.parse(await readFile(join(project, 'release-manifest.json')));
+const zipName = 'code-space-python-edition-' + version;
 
 async function unpack(t) {
   const dir = await mkdtemp(join(tmpdir(), 'codespace-release-'));
@@ -52,7 +53,7 @@ test('Cache offline dopo il primo avvio: ricarica, laboratorio e vero Worker sen
   const browser = await openBrowser();
   t.after(browser.close);
   await waitFor(browser, '!!navigator.serviceWorker.controller');
-  const cached = await browser.evaluate(`caches.open('code-space:/code-space-python-edition/:1.0.0').then(c => c.keys()).then(k => k.length)`);
+  const cached = await browser.evaluate(`caches.open('code-space:/code-space-python-edition/:${version}').then(c => c.keys()).then(k => k.length)`);
   const { runtime } = JSON.parse(await readFile(join(project, 'release-manifest.json')));
   assert.equal(cached, runtime.length);
   await browser.page('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });
@@ -75,12 +76,12 @@ test('Aggiornamento atomico: cache in attesa, messaggio e rimozione della versio
   await waitFor(browser, '!!navigator.serviceWorker.controller');
   const worker = join(directory, 'sw.js');
   const manifest = join(directory, 'release-manifest.json');
-  await writeFile(worker, (await readFile(worker, 'utf8')).replace("'1.0.0'", "'1.0.1'"));
-  await writeFile(manifest, (await readFile(manifest, 'utf8')).replace('"1.0.0"', '"1.0.1"'));
+  await writeFile(worker, (await readFile(worker, 'utf8')).replace(version, version + '.next'));
+  await writeFile(manifest, (await readFile(manifest, 'utf8')).replace(version, version + '.next'));
   await browser.evaluate('navigator.serviceWorker.getRegistration().then(r => r.update()).then(() => true)');
   await waitFor(browser, "!document.getElementById('offline-notice').hidden");
-  const old = 'code-space:/code-space-python-edition/:1.0.0';
-  const next = old.replace('1.0.0', '1.0.1');
+  const old = 'code-space:/code-space-python-edition/:' + version;
+  const next = old + '.next';
   assert.deepEqual((await browser.evaluate('caches.keys()')).sort(), [old, next]);
   const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await browser.send('Target.attachToTarget', { targetId, flatten: true });

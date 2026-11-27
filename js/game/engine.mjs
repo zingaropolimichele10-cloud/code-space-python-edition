@@ -157,7 +157,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
 
   function grant(upgrades, reward) {
     Object.assign(world.upgrades, upgrades);
-    if (reward === 2) world.lives = world.upgrades.maxLives;
+    if (reward === 2 && upgrades.maxLives) world.lives = world.upgrades.maxLives;
     if (reward === 3) { world.shield = true; sound('shield'); }
     if (reward === 5) world.emergency = true;
     if (reward) checkpointNow();

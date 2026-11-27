@@ -83,6 +83,7 @@
         <button type="button" id="final-button" data-action="final" hidden>Avvia sfida finale</button>
         <p id="final-route" hidden></p>
         <p id="mission-note"></p>
+        <output id="flight-message" aria-label="Console Python" hidden></output>
         <button type="button" id="open-unlocked" class="secondary" hidden>Scegli missione</button>
         <button type="button" id="mission-retry" class="secondary" hidden>Riprendi missione</button>
         <button type="button" id="mute" class="secondary" aria-pressed="false">Audio disattivato</button>
@@ -139,27 +140,34 @@
         <p class="mission-concept" id="mission-concept"></p>
       </div>
       <h2 id="mission-title"></h2>
-      <p id="mission-goal" class="mission-goal"></p>
-      <p id="mission-explanation"></p>
-      <div class="mission-grid">
-        <form id="mission-form">
-          <label for="mission-code">Codice Python</label>
-          <div class="editor-frame"><div id="line-numbers" aria-hidden="true"></div><textarea id="mission-code" rows="6" wrap="off" maxlength="8192" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea></div>
-          <button id="mission-run" type="submit">Esegui</button>
-          <button id="mission-indent" type="button" class="secondary">Rientro</button>
-          <button id="mission-hint" type="button" class="secondary">Indizio (0/3)</button>
-        </form>
-        <div class="mission-results">
-          <h3>Esito</h3>
-          <p id="mission-status" role="status"></p>
-          <div id="mission-reward" class="reward" hidden><strong>Missione completata</strong><span id="reward-text"></span></div>
-          <pre id="mission-output" aria-label="Output Python"></pre>
-          <ol id="mission-hints" aria-label="Indizi" aria-live="polite"></ol>
+      <p id="mission-problem"><strong>Problema</strong> <span></span></p>
+      <p class="mission-goal" id="mission-goal"><strong>Cosa fare</strong> <span></span></p>
+      <form id="mission-form">
+        <label for="mission-code">Codice Python</label>
+        <div class="editor-frame">
+          <div id="line-numbers" aria-hidden="true"></div>
+          <pre id="code-mirror" aria-hidden="true"></pre>
+          <textarea id="mission-code" rows="4" wrap="off" maxlength="8192" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
         </div>
-      </div>
-      <div class="mission-actions">
-        <button id="mission-skip" type="button" class="secondary">Salta per ora</button>
-        <button id="mission-done" type="button" hidden>Torna al gioco</button>
+        <figure id="mission-preview" class="mission-preview">
+          <figcaption>Risultato atteso</figcaption>
+          <div class="preview-symbol" aria-hidden="true"></div>
+          <span id="mission-effect"></span>
+        </figure>
+        <div class="mission-actions">
+          <button id="mission-run" type="submit">Esegui</button>
+          <button id="mission-hint" type="button" class="secondary">Indizio</button>
+          <button id="mission-skip" type="button" class="secondary">Salta per ora</button>
+          <button id="mission-done" type="button" hidden>Torna al gioco</button>
+        </div>
+        <button id="mission-indent" type="button" class="secondary">Rientro</button>
+      </form>
+      <div class="mission-results">
+        <h3>Esito</h3>
+        <p id="mission-status" role="status"></p>
+        <div id="mission-reward" class="reward" hidden><strong>Missione completata</strong><span id="reward-text"></span></div>
+        <pre id="mission-output" aria-label="Output Python"></pre>
+        <ol id="mission-hints" aria-label="Indizi" aria-live="polite"></ol>
       </div>
     </dialog>
   </main>
