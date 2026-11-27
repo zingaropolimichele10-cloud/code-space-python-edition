@@ -1,4 +1,3 @@
-// Le missioni 18–22 entrano nel catalogo nelle fasi approvate successive.
 export const missions = [
   {
     id: 1, titolo: 'Riaccendi Aurora', blocco: 1, concetto: 'Variabile = nome che conserva un valore',
@@ -251,5 +250,93 @@ export const missions = [
     soluzioneEsempio: "while contatore > 0:\n    print(contatore)\n    contatore = contatore - 1",
     effettoNelGioco: { anteprima: "Conto alla rovescia · Nessun numero saltato", upgrade: {}, pannello: "conto",
       esito: "Il conto è arrivato a zero anche partendo da valori differenti." },
+  },
+  {
+    id: 18, titolo: "Inventario spaziale", blocco: 6, concetto: "lista = più oggetti tra parentesi quadre, append = aggiungi in fondo, len = conta.",
+    problema: "manca un kit nell’inventario di Aurora.", perche: "la console deve mostrare il carico e il suo nuovo totale.",
+    cosaFare: "Sostituisci \"\" con \"kit\" nella riga append.", spiegazione: "inventario.append(\"kit\") aggiunge un oggetto. La riga successiva lo include nel conteggio.",
+    codiceIniziale: "inventario = [\"cavo\", \"filtro\"]\ninventario.append(\"\")\ntotale = len(inventario)", righeModificabili: [2], variabiliFornite: [],
+    scenariDiTest: [{ input: {}, atteso: { inventario: { type: 'list', value: ['cavo', 'filtro', 'kit'] },
+      totale: { type: 'int', value: 3 } } }],
+    indizi: [
+      "Il kit va aggiunto in coda agli oggetti già presenti.",
+      "Cambia solo il testo passato ad append.",
+      "inventario = [\"cavo\", \"filtro\"]\ninventario.append(\"kit\")\ntotale = len(inventario)",
+    ],
+    soluzioneEsempio: "inventario = [\"cavo\", \"filtro\"]\ninventario.append(\"kit\")\ntotale = len(inventario)",
+    effettoNelGioco: { anteprima: "Stiva · Tre oggetti", upgrade: {}, pannello: "stiva",
+      esito: "Il kit è in stiva e il conteggio include tutti e tre gli oggetti." },
+  },
+  {
+    id: 19, titolo: "Scansione inventario", blocco: 6, concetto: "for oggetto in inventario = guarda ogni oggetto, in in un controllo = è presente.",
+    problema: "la stiva contiene oggetti diversi e il computer cerca carburante.", perche: "il registro mostra gli oggetti scansionati e conferma se il carburante c’è.",
+    cosaFare: "Sostituisci \"\" con \"carburante\" nel controllo sotto la scansione.", spiegazione: "il ciclo mostra tutti gli oggetti. Il controllo successivo cerca un nome preciso nella lista.",
+    codiceIniziale: "for oggetto in inventario:\n    print(oggetto)\ntrovato = False\nif \"\" in inventario:\n    trovato = True", righeModificabili: [4], variabiliFornite: ["inventario"],
+    scenariDiTest: [['cavo', 'carburante'], ['kit'], [], ['cavo']].map(inventario => ({
+      input: { inventario }, atteso: { trovato: { type: 'bool', value: inventario.includes('carburante') } },
+      output: inventario,
+    })),
+    indizi: [
+      "Il controllo deve chiedere se nella lista c’è un oggetto, anche se non è il primo.",
+      "Il nome cercato va prima di in inventario.",
+      "for oggetto in inventario:\n    print(oggetto)\ntrovato = False\nif \"carburante\" in inventario:\n    trovato = True",
+    ],
+    soluzioneEsempio: "for oggetto in inventario:\n    print(oggetto)\ntrovato = False\nif \"carburante\" in inventario:\n    trovato = True",
+    effettoNelGioco: { anteprima: "Scansione · Spia carburante", upgrade: {}, pannello: "scansione",
+      esito: "La console elenca la stiva e segnala quando trova carburante." },
+  },
+  {
+    id: 20, titolo: "Computer in avaria", blocco: 6, concetto: "debug = trovare e correggere un errore.",
+    problema: "il computer si blocca prima di mostrare il messaggio di pronto.", perche: "tre piccoli errori impediscono di leggere il comando.",
+    cosaFare: "Correggi i due punti, il rientro e il nome nelle righe evidenziate.", spiegazione: "la prima segnalazione indica dove iniziare. Esegui di nuovo dopo ogni correzione.",
+    codiceIniziale: "messaggio = \"Sistemi pronti\"\nif sistema_pronto\nprint(messagio)", righeModificabili: [2, 3], variabiliFornite: ["sistema_pronto"],
+    scenariDiTest: [true, false, true].map(sistema_pronto => ({
+      input: { sistema_pronto }, output: sistema_pronto ? ['Sistemi pronti'] : [],
+    })),
+    indizi: [
+      "Parti dalla riga indicata dall’errore. Quando esegui di nuovo puoi scoprire quella successiva.",
+      "Controlla la fine di if, gli spazi iniziali sotto if e le lettere del nome dentro print.",
+      "messaggio = \"Sistemi pronti\"\nif sistema_pronto:\n    print(messaggio)",
+    ],
+    soluzioneEsempio: "messaggio = \"Sistemi pronti\"\nif sistema_pronto:\n    print(messaggio)",
+    effettoNelGioco: { anteprima: "Terminale · Sistemi pronti", upgrade: {}, pannello: "diagnostica",
+      esito: "Il terminale risponde solo quando riceve il segnale di pronto." },
+  },
+  {
+    id: 21, titolo: "Nuovo comando", blocco: 6, concetto: "def = definisci un comando, return = restituisci un risultato.",
+    problema: "Aurora ha un comando per lo scudo, ma il computer non lo usa.", perche: "il comando va chiamato per leggere il valore restituito.",
+    cosaFare: "Sostituisci il False dell’ultima riga con attiva_scudo().", spiegazione: "def prepara il comando. Il nome seguito da parentesi lo esegue e return consegna il valore a chi lo ha chiamato.",
+    codiceIniziale: "def attiva_scudo():\n    return True\n\nscudo = False", righeModificabili: [4], variabiliFornite: [],
+    scenariDiTest: [
+      { input: {}, atteso: { scudo: { type: 'bool', value: true } } },
+      { input: {}, rigaAlternativa: [2, '    return False'], atteso: { scudo: { type: 'bool', value: false } } },
+    ],
+    indizi: [
+      "Scrivere il nome di un comando non lo fa partire.",
+      "Usa il nome seguito da parentesi vuote al posto del valore di partenza.",
+      "def attiva_scudo():\n    return True\n\nscudo = attiva_scudo()",
+    ],
+    soluzioneEsempio: "def attiva_scudo():\n    return True\n\nscudo = attiva_scudo()",
+    effettoNelGioco: { anteprima: "Generatore · Scudo attivo", upgrade: { shield: true }, pannello: "comando",
+      esito: "Il generatore usa il valore restituito dal comando." },
+  },
+  {
+    id: 22, titolo: "Protocollo Omega", blocco: 6, concetto: "funzione, ciclo e condizione insieme.",
+    problema: "il protocollo finale deve controllare la somma degli impulsi di Aurora.", perche: "l’accesso rapido alla sfida si attiva con almeno 10 unità.",
+    cosaFare: "Aggiungi ogni impulso a carica nella riga evidenziata.", spiegazione: "il ciclo somma dentro il comando. Il comando restituisce il totale e il controllo finale lo confronta con 10.",
+    codiceIniziale: "def carica_banco():\n    carica = 0\n    for impulso in impulsi:\n        carica = carica + 0\n    return carica\n\ntotale = carica_banco()\nomega = False\nif totale >= 10:\n    omega = True", righeModificabili: [4], variabiliFornite: ["impulsi"],
+    scenariDiTest: [[2, 3, 4], [2, 3, 5], [7, 5], []].map(impulsi => {
+      const totale = impulsi.reduce((sum, impulso) => sum + impulso, 0);
+      return { input: { impulsi }, atteso: { totale: { type: 'int', value: totale },
+        omega: { type: 'bool', value: totale >= 10 } } };
+    }),
+    indizi: [
+      "A ogni giro il ciclo consegna il valore di un impulso.",
+      "Conserva la carica già accumulata e sostituisci lo 0 con il valore del giro.",
+      "def carica_banco():\n    carica = 0\n    for impulso in impulsi:\n        carica = carica + impulso\n    return carica\n\ntotale = carica_banco()\nomega = False\nif totale >= 10:\n    omega = True",
+    ],
+    soluzioneEsempio: "def carica_banco():\n    carica = 0\n    for impulso in impulsi:\n        carica = carica + impulso\n    return carica\n\ntotale = carica_banco()\nomega = False\nif totale >= 10:\n    omega = True",
+    effettoNelGioco: { anteprima: "Banco Omega · Accesso rapido alla sfida", upgrade: {}, pannello: "omega",
+      esito: "Il banco ha verificato il totale e la soglia. Ora puoi avviare la sfida dal pannello." },
   },
 ];

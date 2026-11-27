@@ -93,5 +93,28 @@ export function showInstruments(panel, mission, cases) {
         label(`Da ${sample.input.contatore} · ${sequence} · Fine: ${sample.variables.contatore.value}`);
       }
       break;
+    case 'stiva':
+      for (const item of variables.inventario.value) label(item);
+      label(`${variables.totale.value} oggetti`);
+      break;
+    case 'scansione':
+      for (const sample of samples) {
+        const cargo = sample.output.trimEnd().split('\n').filter(Boolean);
+        label(`${cargo.join(' · ') || 'Stiva vuota'} → Carburante ${sample.variables.trovato.value ? 'presente' : 'assente'}`);
+      }
+      break;
+    case 'diagnostica':
+      label(output.trimEnd());
+      label(samples[1].output ? samples[1].output.trimEnd() : 'Segnale assente · Terminale in attesa');
+      break;
+    case 'comando':
+      for (const sample of samples) label(`Generatore · Scudo ${sample.variables.scudo.value ? 'attivo' : 'spento'}`);
+      break;
+    case 'omega':
+      for (const sample of samples) {
+        const impulses = sample.input.impulsi.join(' + ') || 'Nessun impulso';
+        label(`${impulses} → ${sample.variables.totale.value} · Omega ${sample.variables.omega.value ? 'attivo' : 'in attesa'}`);
+      }
+      break;
   }
 }

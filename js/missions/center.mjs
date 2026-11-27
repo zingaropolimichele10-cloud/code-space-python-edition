@@ -24,6 +24,7 @@ export function createCenter({ progress, sound = () => {} }) {
   const hintButton = get('mission-hint');
   const skip = get('mission-skip');
   const done = get('mission-done');
+  const final = get('mission-final');
   const retry = get('mission-retry');
   const note = get('mission-note');
   const preview = get('mission-preview');
@@ -96,6 +97,12 @@ export function createCenter({ progress, sound = () => {} }) {
 
     skip.addEventListener('click', leave);
     done.addEventListener('click', leave);
+    final.addEventListener('click', () => {
+      if (active?.effettoNelGioco.pannello !== 'omega' || status.dataset.result !== 'success') return;
+      leave();
+      game.action('final');
+      refresh();
+    });
     dialog.addEventListener('cancel', event => {
       event.preventDefault();
       leave();
@@ -156,6 +163,7 @@ export function createCenter({ progress, sound = () => {} }) {
         indent.disabled = true;
         skip.hidden = true;
         done.hidden = false;
+        final.hidden = mission.effettoNelGioco.pannello !== 'omega';
         editor.readOnly = true;
         done.focus();
         refresh();
@@ -207,6 +215,7 @@ export function createCenter({ progress, sound = () => {} }) {
     output.textContent = '';
     skip.hidden = false;
     done.hidden = true;
+    final.hidden = true;
     syncHints();
     dialog.showModal();
     editor.focus({ preventScroll: true });

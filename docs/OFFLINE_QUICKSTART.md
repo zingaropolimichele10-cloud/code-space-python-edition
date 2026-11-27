@@ -1,4 +1,4 @@
-# Avvio offline di CODE SPACE 1.0.0
+# Avvio offline di CODE SPACE 1.1.0
 
 Estrai l’intero ZIP. Apri un terminale nella cartella estratta che contiene index.html e lancia:
 

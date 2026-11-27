@@ -1,6 +1,6 @@
 import { limits } from '../python/protocol.mjs';
 
-const typeNames = { int: 'un intero', bool: 'un booleano', str: 'una stringa' };
+const typeNames = { int: 'un intero', bool: 'un booleano', str: 'una stringa', list: 'una lista' };
 const showValue = value => typeof value === 'boolean' ? (value ? 'True' : 'False') : JSON.stringify(value);
 const pythonLiteral = value => typeof value === 'boolean' ? showValue(value)
   : Array.isArray(value) ? '[' + value.map(pythonLiteral).join(', ') + ']'
@@ -49,14 +49,15 @@ export async function validateMission(mission, source, run, isCurrent = () => tr
   const row = mission.righeModificabili[0];
   for (const scenario of mission.scenariDiTest) {
     const fixture = Object.entries(scenario.input).map(([key, value]) => `${key} = ${pythonLiteral(value)}\n`);
-    scenarioLabel = mission.scenariDiTest.length > 1
-      ? 'Prova con ' + Object.entries(scenario.input).map(([key, value]) => `${key} = ${showValue(value)}`).join(', ') + '. '
-      : '';
+    const inputs = Object.entries(scenario.input).map(([key, value]) => `${key} = ${showValue(value)}`);
+    scenarioLabel = inputs.length ? 'Prova con ' + inputs.join(', ') + '. '
+      : scenario.rigaAlternativa ? 'Prova con il comando di bordo che restituisce False. ' : '';
     let program = source;
     // Varia il dato nella riga protetta del modello, conservando i numeri di riga.
-    if (mission.rigaDiInput && source.trim()) {
+    if ((mission.rigaDiInput || scenario.rigaAlternativa) && source.trim()) {
       const lines = source.split('\n');
-      lines[mission.rigaDiInput - 1] = fixture.shift().trimEnd();
+      const [rowNumber, replacement] = scenario.rigaAlternativa ?? [mission.rigaDiInput, fixture.shift().trimEnd()];
+      lines[rowNumber - 1] = replacement;
       program = lines.join('\n');
     }
     const result = await run(fixture.join('') + program);
@@ -69,7 +70,11 @@ export async function validateMission(mission, source, run, isCurrent = () => tr
       const actual = variables[name];
       if (!actual) return fail(`Riga ${row}. Assegna un valore a ${name}.`);
       if (actual.type !== expected.type) return fail(`Riga ${row}. Tipo errato. ${name} deve contenere ${typeNames[expected.type]}.`);
-      if (expected.oneOf ? !expected.oneOf.includes(actual.value) : actual.value !== expected.value) {
+      const matches = expected.oneOf ? expected.oneOf.includes(actual.value)
+        : expected.type === 'list' ? actual.value.length === expected.value.length
+          && actual.value.every((item, index) => item === expected.value[index])
+          : actual.value === expected.value;
+      if (!matches) {
         return fail(`Riga ${row}. ${name} vale ${showValue(actual.value)}. Controlla che il valore sia ${(expected.oneOf ?? [expected.value]).map(showValue).join(' oppure ')}.`);
       }
     }

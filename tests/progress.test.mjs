@@ -123,7 +123,7 @@ test('Ripristino delle missioni della fase 2 nello stesso schema della fase 1', 
   const storage = memory();
   storage.setItem(saveKey, JSON.stringify({ version: 3, completed: [1, 2, 3, 4], paint: 'verde' }));
   const progress = createProgress(storage);
-  progress.update({ completed: [1, 2, 3, 4, 7, 11, 18], skipped: [5], drafts: { 5: 'energia = 40\nenergia = energia + 20' } });
+  progress.update({ completed: [1, 2, 3, 4, 7, 11, 99], skipped: [5], drafts: { 5: 'energia = 40\nenergia = energia + 20' } });
   const restored = createProgress(storage).state;
   assert.deepEqual(restored.completed, [1, 2, 3, 4, 7, 11]);
   assert.deepEqual(restored.skipped, [5]);

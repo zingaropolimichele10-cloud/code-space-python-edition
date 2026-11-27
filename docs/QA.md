@@ -217,3 +217,11 @@ La prova browser avviata sul checkout di riferimento prima delle correzioni ha c
 Il percorso ha incluso movimento tramite frecce, collisioni, stelle, tentativi Python riusciti e falliti, pause, riprese e sfide. Sono stati effettuati **63 recuperi dal checkpoint** e **15 riavvii dopo la vittoria**. Creati 11 Worker Python, con picco di **uno** attivo e **zero** attivi alla fine. Nessuna eccezione JavaScript rilevata. Il numero di oggetti attivi è stato misurato separatamente dalla simulazione Node. La prova da 120,43 secondi, la suite di regressione e le verifiche di distribuzione hanno riguardato il candidato 1.0.0.
 
 Una verifica separata ha attivato una seconda scheda Chromium. La pagina del gioco è passata da visibile a nascosta e da PLAYING a PAUSED. Al ritorno è rimasta in pausa in attesa di ripresa esplicita. Il contrasto calcolato per quattro coppie testo/sfondo campione è risultato fra 9,82:1 e 12,16:1. Una nuova generazione del pacchetto ZIP ha prodotto lo stesso file byte per byte.
+
+## Ramo 1.1.0 · Collaudo delle 22 missioni
+
+La suite Chromium percorre il gioco da 0/22 a 22/22, recupera missioni saltate, riapre i progressi dopo un ricaricamento e raggiunge la sfida finale anche con missioni incomplete. Le prove Skulpt esercitano soluzioni previste ed equivalenti, risultati errati, codice vuoto, sintassi e timeout. Per le liste si controllano ordine, valori e tipo. Per la funzione scudo si verifica anche la risposta a una funzione protetta che restituisce False.
+
+I controlli del layout coprono 1024 × 768, 1280 × 720, 1366 × 768 e 1920 × 1080 in Chromium. Il test dello ZIP lancia un server Python e apre il pacchetto estratto su loopback e sull’IPv4 del container. Un test distinto disattiva la rete di Chromium e verifica il caricamento dalla cache e l’esecuzione del Protocollo Omega con Skulpt.
+
+Il collaudo accelerato del motore simula 30 minuti in 108.000 passi. La prova reale in Chromium di circa 121 secondi è stata effettuata prima di aggiungere la controprova alla missione 19. Ha campionato 5.436 intervalli durante il volo (59,6 FPS, p95 16,8 ms), rilevato un picco di un Worker attivo e zero errori JavaScript. Le misure si riferiscono al container, senza una prova fisica sui PC del laboratorio.

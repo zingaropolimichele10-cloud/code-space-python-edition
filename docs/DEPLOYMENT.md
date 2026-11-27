@@ -1,4 +1,4 @@
-# Distribuzione di CODE SPACE 1.0.0
+# Distribuzione di CODE SPACE 1.1.0
 
 ## GitHub Pages
 
@@ -19,7 +19,7 @@ Per pubblicare un aggiornamento, incrementa la stessa versione in `sw.js` e `rel
 Usa il pacchetto consegnato oppure ricrealo dalla radice del checkout con Python 3:
 
 ```sh
-python3 tools/build-offline.py ../code-space-python-edition-1.0.0.zip
+python3 tools/build-offline.py ../CODE-SPACE-1.1.0-offline.zip
 ```
 
 Estrai l’intera cartella. Entra nella directory con `index.html` ed esegui:

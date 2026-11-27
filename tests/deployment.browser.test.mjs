@@ -16,8 +16,8 @@ const zipName = 'code-space-python-edition-' + version;
 async function unpack(t) {
   const dir = await mkdtemp(join(tmpdir(), 'codespace-release-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
-  const archive = join(dir, 'release.zip');
-  execFileSync('python3', ['tools/build-offline.py', archive], { cwd: project });
+  const archive = process.env.CODESPACE_OFFLINE_ZIP || join(dir, 'release.zip');
+  if (!process.env.CODESPACE_OFFLINE_ZIP) execFileSync('python3', ['tools/build-offline.py', archive], { cwd: project });
   execFileSync('python3', ['-m', 'zipfile', '-e', archive, dir]);
   return join(dir, zipName);
 }
@@ -47,6 +47,22 @@ async function verifyPython(browser) {
   await waitFor(browser, "['success','error'].includes(document.getElementById('mission-status').dataset.result)");
   assert.equal(await browser.evaluate("document.getElementById('mission-status').dataset.result"), 'success');
   assert.equal(await browser.evaluate("document.getElementById('speed').textContent"), '10');
+}
+
+async function verifyOmega(browser) {
+  await browser.evaluate(`(() => {
+    document.getElementById('mission-done').click();
+    document.getElementById('teacher-open').click();
+    document.getElementById('teacher-mission').value = '22';
+    document.getElementById('teacher-launch').click();
+    const editor = document.getElementById('mission-code');
+    editor.value = editor.value.replace('carica + 0', 'carica + impulso');
+    editor.dispatchEvent(new Event('input'));
+    document.getElementById('mission-run').click();
+  })()`);
+  await waitFor(browser, "['success','error'].includes(document.getElementById('mission-status').dataset.result)");
+  assert.equal(await browser.evaluate("document.getElementById('mission-status').dataset.result"), 'success');
+  assert.equal(await browser.evaluate("document.getElementById('mission-final').hidden"), false);
 }
 
 test('Cache offline dopo il primo avvio: ricarica, laboratorio e vero Worker senza server', async t => {
@@ -87,6 +103,7 @@ test('Cache offline dopo il primo avvio: ricarica, laboratorio e vero Worker sen
   await waitFor(browser, "['success','error'].includes(document.getElementById('mission-status').dataset.result)");
   assert.equal(await browser.evaluate("document.getElementById('mission-status').dataset.result"), 'success');
   assert.match(await browser.evaluate("document.getElementById('mission-instruments').textContent"), /Giro 1 · 1 unità.*Giro 5 · 15 unità/);
+  await verifyOmega(browser);
   await browser.page('Page.navigate', { url: browser.origin + browser.prefix + 'laboratorio.html' });
   await waitFor(browser, "document.readyState === 'complete' && !!document.getElementById('codice')");
   await browser.evaluate("document.querySelector('button[type=submit]').click()");
@@ -152,6 +169,7 @@ test('ZIP estratto avviato dal server Python su loopback e sull’indirizzo LAN 
     const browser = await openBrowser('', { externalOrigin, externalPrefix: '/' });
     try {
       await verifyPython(browser);
+      await verifyOmega(browser);
       assert.ok(browser.network.some(url => url.endsWith('/workers/python.worker.js')));
       assert.ok(browser.network.every(url => url.startsWith(externalOrigin + '/')));
       assert.deepEqual(browser.errors, []);

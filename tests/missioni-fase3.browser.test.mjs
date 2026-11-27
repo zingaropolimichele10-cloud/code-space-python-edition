@@ -27,7 +27,7 @@ test('Missioni 12–17: soglie, rami e sequenze eseguiti da Skulpt', async t => 
     [17, 'while contatore > 0:\n    print(contatore)\n    contatore -= 1', 'while contatore > 0:\n    print(contatore)\n    contatore -= 2'],
   ];
   const execute = (id, source) => evaluate(`prova(${id}${source === undefined ? '' : ', ' + JSON.stringify(source)})`);
-  assert.deepEqual(await evaluate('lessons.map(({ id }) => id)'), Array.from({ length: 17 }, (_, index) => index + 1));
+  assert.deepEqual(await evaluate('lessons.slice(0, 17).map(({ id }) => id)'), Array.from({ length: 17 }, (_, index) => index + 1));
   for (const [id, alternative, wrong] of examples) {
     await t.test(`Missione ${id}`, async () => {
       assert.equal((await execute(id)).ok, true);
