@@ -310,9 +310,10 @@ test('Game over nel browser e vittoria senza missione facoltativa', async t => {
     const status = () => document.querySelector('#viewport').dataset.state;
     document.querySelector('[data-action=tutorial]').click();
     document.querySelector('[data-action=start]').click();
-    advance(220);
-    if (status() === 'MISSION') document.querySelector('#mission-skip').click();
-    advance(330);
+    document.querySelector('#teacher-open').click();
+    document.querySelector('#teacher-launch').click();
+    document.querySelector('#mission-skip').click();
+    advance(550);
     return [status(), document.querySelector('#lives').textContent];
   })()`);
   assert.deepEqual(result, ['GAME_OVER', '0 / 3']);

@@ -1,3 +1,4 @@
+import { missionPolicy } from '../missions/policy.mjs';
 import { studentRecovery } from './recovery.mjs';
 import { State } from '../game/engine.mjs';
 
@@ -14,6 +15,7 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio, 
   const { world } = game;
   let room;
   let seq = -1;
+  let missionSignal;
   let gate = 'offline';
   let bossEntered = false;
   let bossWon = false;
@@ -55,7 +57,7 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio, 
       lastAudio = enabled;
     }
     const duration = gate === 'boss' ? Math.max(1, Math.min(180, data.bossSeconds)) : settings.bossSeconds;
-    game.configure({ difficulty: settings.difficulty, asteroids: settings.rocks, duration });
+    game.configure({ ...missionPolicy(settings), difficulty: settings.difficulty, asteroids: settings.rocks, duration });
     const skip = settings.skip || center.completedMissions().length >= settings.required;
     center.classroomPolicy(game, { blocked: !flying(), skip, mask: data.completed });
     bossWon ||= data.bossWon === true;
@@ -99,6 +101,11 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio, 
         bossEntered = false;
       } else if (!['flight', 'boss'].includes(old) && world.state === State.PAUSED) game.action('resume');
     }
+    const signal = settings.missionSignal ?? 0;
+    if (missionSignal !== undefined && signal > missionSignal && !['ended', 'expired', 'kicked'].includes(gate)) {
+      game.requestMissionStar();
+    }
+    missionSignal = signal;
     syncBoss(data.bossLeft);
     refresh();
   }

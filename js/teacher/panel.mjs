@@ -1,5 +1,6 @@
+import { missionPolicy } from '../missions/policy.mjs';
 import { State } from '../game/engine.mjs';
-import { missions } from '../missions/catalog.mjs';
+import { missions, MISSION_COUNT } from '../missions/catalog.mjs';
 
 export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center, progress }) {
   const get = id => document.getElementById(id);
@@ -29,6 +30,7 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
       picker.close();
       openMission(mission.id);
     });
+    button.dataset.missionId = mission.id;
     get('picker-list').append(button);
   }
 
@@ -40,6 +42,7 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
   }
 
   function openMission(id) {
+    if (id > game.world.options.missionLimit) return;
     ensureFlight();
     game.openMission(id);
     refresh();
@@ -63,8 +66,46 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
     solution.textContent = 'Mostra soluzione';
   }
 
-  function openTeacher() {
-    game.action('pause');
+  const limit = get('teacher-mission-limit');
+  const interval = get('teacher-mission-interval');
+  const automatic = get('teacher-mission-auto');
+  const additions = [...dialog.querySelectorAll('[data-local-add]')];
+  function showPolicy() {
+    const { missionLimit, missionInterval, missionAuto } = game.world.options;
+    limit.value = missionLimit;
+    limit.disabled = ![State.MENU, State.TUTORIAL].includes(game.world.state);
+    interval.value = missionInterval;
+    automatic.textContent = missionAuto ? 'Sospendi stelle automatiche' : 'Riattiva stelle automatiche';
+    get('teacher-mission-policy').textContent = `${missionLimit}/${MISSION_COUNT} disponibili · automatiche ${missionAuto ? 'attive' : 'sospese'}`;
+    for (const button of additions) button.disabled = missionLimit >= MISSION_COUNT;
+    get('teacher-mission-spawn').disabled = [State.MENU, State.TUTORIAL, State.VICTORY, State.FINAL_CHALLENGE].includes(game.world.state);
+    for (const option of selector.options) option.disabled = Number(option.value) > missionLimit;
+    if (Number(selector.value) > missionLimit) selector.value = '1';
+    for (const button of picker.querySelectorAll('[data-mission-id]')) button.hidden = Number(button.dataset.missionId) > missionLimit;
+  }
+  function changePolicy(options) {
+    game.configure(options);
+    progress.update({ missionOptions: missionPolicy(game.world.options) });
+    showPolicy();
+    refresh();
+  }
+  limit.addEventListener('change', () => {
+    if (limit.checkValidity() && !limit.disabled) changePolicy({ missionLimit: limit.valueAsNumber });
+  });
+  interval.addEventListener('change', () => {
+    if (interval.checkValidity()) changePolicy({ missionInterval: interval.valueAsNumber });
+  });
+  automatic.addEventListener('click', () => changePolicy({ missionAuto: !game.world.options.missionAuto }));
+  for (const button of additions) button.addEventListener('click', () => {
+    changePolicy({ missionLimit: Math.min(MISSION_COUNT, game.world.options.missionLimit + Number(button.dataset.localAdd)) });
+  });
+  get('teacher-mission-spawn').addEventListener('click', () => {
+    status.textContent = game.requestMissionStar() ? 'Richiesta in coda. La stella può comparire dopo almeno 20 secondi di volo.'
+      : 'Una stella Python è già in volo.';
+  });
+
+  function openTeacher(live = false) {
+    if (!live) game.action('pause');
     refresh();
     const { options } = game.world;
     difficulty.value = options.difficulty;
@@ -76,12 +117,16 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
     status.textContent = '';
     confirm.hidden = true;
     hideSolution();
-    dialog.showModal();
+    showPolicy();
+    if (live) dialog.show();
+    else dialog.showModal();
   }
-  get('teacher-open').addEventListener('click', openTeacher);
-  document.querySelector('[data-open-teacher]').addEventListener('click', openTeacher);
+  get('flight-mission-options').addEventListener('click', () => openTeacher(true));
+  get('teacher-open').addEventListener('click', () => openTeacher());
+  document.querySelector('[data-open-teacher]').addEventListener('click', () => openTeacher());
   get('open-unlocked').addEventListener('click', () => {
     game.action('pause');
+    showPolicy();
     refresh();
     picker.showModal();
   });
@@ -107,6 +152,7 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
     openMission(Number(selector.value));
   });
   get('teacher-unlock').addEventListener('click', () => {
+    changePolicy({ missionLimit: MISSION_COUNT });
     center.unlock();
     status.textContent = 'Tutte le missioni sono accessibili da Scegli missione. I premi si ottengono eseguendo il codice.';
     refresh();

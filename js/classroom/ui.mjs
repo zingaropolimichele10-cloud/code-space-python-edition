@@ -1,3 +1,4 @@
+import { missionPolicy } from '../missions/policy.mjs';
 import { downloadFile, readJson } from '../storage/files.mjs';
 import { archiveCsv, archiveEntry, importArchive, localValue, mergeReports, privateReportFields, saveLocal, studentRecovery } from './recovery.mjs';
 import { MAIN_MISSIONS, missions, MISSION_COUNT, MISSION_MASK } from '../missions/catalog.mjs';
@@ -178,6 +179,15 @@ function draw() {
     const won = rows.filter(row => row.boss).length;
     set('host-totals', `${missionCount} missioni Python · Boss: ${fought} in corso, ${won} completati`);
     get('live-difficulty').value = control.settings.difficulty;
+    const { missionLimit, missionInterval, missionAuto } = missionPolicy(control.settings);
+    const input = get('live-mission-interval');
+    if (document.activeElement !== input) input.value = missionInterval;
+    set('live-mission-status', `${missionLimit}/${MISSION_COUNT} disponibili · intervallo ${missionInterval} s · automatiche ${missionAuto ? 'attive' : 'sospese'}`);
+    const panel = get('live-mission-controls');
+    panel.disabled = busy || !connected || !ready || current === 'ended' || current === 'expired';
+    panel.querySelector('[data-mission-action=toggle]').textContent = missionAuto ? 'Sospendi stelle automatiche' : 'Riattiva stelle automatiche';
+    for (const button of panel.querySelectorAll('[data-mission-action=add]')) button.disabled = missionLimit >= MISSION_COUNT;
+    panel.querySelector('[data-mission-action=spawn]').disabled = control.phase !== 'flight';
     for (const button of document.querySelectorAll('[data-command]')) {
       const action = button.dataset.command;
       button.disabled = !connected || !ready || busy || !(
@@ -202,7 +212,7 @@ function draw() {
     const totals = control.settings.adventure
       ? ` · Missioni totali: ${learned.length}/${MISSION_COUNT} · Principali: ${main}/${MAIN_MISSIONS} · Bonus: ${learned.length - main}/${MISSION_COUNT - MAIN_MISSIONS}`
       : '';
-    set('player-summary', me ? `${me.name} · posizione ${me.rank} · ${me.total} punti${distance}${totals} · obiettivo: ${control.settings.required} missioni${current === 'ended' ? ' · Concetti allenati: ' + (learned.join(', ') || 'puoi continuare a esercitarti in modalità individuale') : ''}` : '');
+    set('player-summary', me ? `${me.name} · posizione ${me.rank} · ${me.total} punti${distance}${totals} · disponibili: ${missionPolicy(control.settings).missionLimit}/${MISSION_COUNT} · obiettivo: ${control.settings.required} missioni${current === 'ended' ? ' · Concetti allenati: ' + (learned.join(', ') || 'puoi continuare a esercitarti in modalità individuale') : ''}` : '');
     get('help').hidden = !me || ['ended', 'expired', 'kicked', 'offline', 'lobby'].includes(current);
     get('help').disabled = false;
     set('help', help ? 'Annulla richiesta di aiuto' : 'Chiedi aiuto');
@@ -591,7 +601,7 @@ get('host-email').addEventListener('submit', event => {
 get('create-form').addEventListener('submit', event => {
   event.preventDefault();
   const values = new FormData(event.currentTarget);
-  const options = Object.fromEntries(['capacity', 'minutes', 'bossSeconds', 'required'].map(key => [key, Number(values.get(key))]));
+  const options = Object.fromEntries(['capacity', 'minutes', 'bossSeconds', 'required', 'missionLimit', 'missionInterval'].map(key => [key, Number(values.get(key))]));
   for (const key of ['audio', 'skip', 'late']) options[key] = values.has(key);
   options.difficulty = values.get('difficulty');
   void run(async () => {
@@ -713,6 +723,15 @@ for (const button of document.querySelectorAll('[data-option]')) {
       podium: { view: 'podium', reveal: 0 }, reveal: { reveal: Math.min(3, control.reveal + 1) },
     };
     void run(() => service.options(room, updates[option]), button);
+  });
+}
+get('live-mission-interval').addEventListener('change', event => {
+  const input = event.currentTarget;
+  if (host && control && input.checkValidity()) void run(() => service.missionOptions(room, 'interval', input.valueAsNumber));
+});
+for (const button of document.querySelectorAll('[data-mission-action]')) {
+  button.addEventListener('click', () => {
+    if (host && control) void run(() => service.missionOptions(room, button.dataset.missionAction, Number(button.dataset.count)), button);
   });
 }
 get('live-difficulty').addEventListener('change', event => {

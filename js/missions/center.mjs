@@ -104,8 +104,9 @@ export function createCenter({ progress, sound = () => {} }) {
   let since = 0;
   let pauseSince = 0;
 
-  function nextMission() {
-    return missions.find(({ id }) => !completed.has(id) && !pending.has(id));
+  let available = 10;
+  function nextMission(limit = available) {
+    return missions.find(({ id }) => id <= limit && !completed.has(id) && !pending.has(id));
   }
 
   function syncHints() {
@@ -169,7 +170,7 @@ export function createCenter({ progress, sound = () => {} }) {
     }
     retry.addEventListener('click', () => {
       if (locked || game.world.state !== State.PLAYING) return;
-      const ids = [...pending].sort((a, b) => a - b);
+      const ids = [...pending].filter(id => id <= available).sort((a, b) => a - b);
       if (ids.length === 1) return reopen(ids[0]);
       pendingList.hidden = !pendingList.hidden;
       retry.setAttribute('aria-expanded', String(!pendingList.hidden));
@@ -331,20 +332,21 @@ export function createCenter({ progress, sound = () => {} }) {
       for (const id of skipped) if (!completed.has(id)) pending.add(id);
       progress.update({ drafts: savedDrafts, skipped: [...pending] });
     },
-    hasIncomplete: () => completed.size < missions.length,
+    hasIncomplete: () => missions.some(({ id }) => id <= available && !completed.has(id)),
     completedMissions: () => missions.filter(({ id }) => completed.has(id)),
     unlock() { unlocked = true; },
     reset() { completed.clear(); pending.clear(); drafts.clear(); shownHints.clear(); unlocked = false; },
     demo: () => show(missions[0], true),
-    nextStar: () => nextMission()?.id ?? null,
+    nextStar: limit => nextMission(limit)?.id ?? null,
     total: () => completed.size,
     count: () => [...completed].filter(id => id <= MAIN_MISSIONS).length,
     onRefresh({ world }) {
+      available = world.options.missionLimit;
       const mission = nextMission();
-      const retryable = pending.size > 0;
+      const retryable = [...pending].some(id => id <= available);
       const text = mission
         ? `${mission.optional ? 'Missione bonus' : 'Prossima missione'} ${mission.id} · ${mission.title}. Raccogli la stella PYTHON.${retryable ? ' Puoi anche riprendere le missioni in sospeso.' : ''}`
-        : retryable ? 'Riprendi le missioni in sospeso per completare il percorso.' : 'Tutte le missioni sono completate.';
+        : retryable ? 'Riprendi le missioni in sospeso per completare il percorso.' : 'Missioni disponibili concluse. Puoi continuare a volare o affrontare la sfida finale.';
       note.hidden = world.state === State.FINAL_CHALLENGE;
       if (note.textContent !== text) note.textContent = text;
       retry.hidden = world.state !== State.PLAYING || !retryable;

@@ -1,3 +1,4 @@
+import { missionPolicy } from '../missions/policy.mjs';
 import { MISSION_COUNT } from '../missions/catalog.mjs';
 import { limits } from '../python/protocol.mjs';
 
@@ -47,6 +48,7 @@ export function normalizeProgress(input) {
     best: validScore(raw.best) ? raw.best : 0,
     audio: { enabled: raw.audio?.enabled === true, volume: validVolume(raw.audio?.volume) ? raw.audio.volume : .25 },
     light: raw.light === true,
+    ...(raw.missionOptions ? { missionOptions: missionPolicy(raw.missionOptions) } : {}),
     checkpoint: validPoint(point)
       ? {
         mode: point.mode, score: point.score, time: point.time,
@@ -118,7 +120,7 @@ export function createProgress(storage, { onSaved = () => {} } = {}) {
     }
     serial = 0;
     lastWrite = undefined;
-    update({ ...normalizeProgress(null), audio: state.audio, light: state.light });
+    update({ ...normalizeProgress(null), audio: state.audio, light: state.light, missionOptions: state.missionOptions });
   }
   globalThis.addEventListener?.('pagehide', flush);
   globalThis.addEventListener?.('codespace:before-update', flush);

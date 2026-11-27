@@ -45,7 +45,7 @@ const { game, refresh, tutorial, setLight } = mountGame({
     get('victory-stats').textContent = `Asteroidi distrutti: ${rocks} · Stelle raccolte: ${stars} · Combo migliore: ${bestCombo}`;
     get('victory-rank').textContent = `Grado di volo: ${rocks >= 12 && bestCombo >= 3 ? 'Esploratore stellare' : rocks >= 5 || bestCombo >= 3 ? 'Pilota d’orbita' : 'Pioniere Aurora'}`;
     const main = center.count();
-    get('victory-missions').textContent = `Missioni totali: ${completed.length}/${MISSION_COUNT} · Missioni principali: ${main}/${MAIN_MISSIONS} · Missioni bonus: ${completed.length - main}/${MISSION_COUNT - MAIN_MISSIONS}`;
+    get('victory-missions').textContent = `Missioni totali: ${completed.length}/${MISSION_COUNT} · Missioni principali: ${main}/${MAIN_MISSIONS} · Missioni bonus: ${completed.length - main}/${MISSION_COUNT - MAIN_MISSIONS} · Disponibili: ${world.options.missionLimit}/${MISSION_COUNT}`;
     get('victory-classroom-next').hidden = !frame || !center.hasIncomplete();
     get('victory-upgrades').textContent = completed.length
       ? `Potenziamenti: ${completed.map(item => item.reward).join(' · ')}`
@@ -57,6 +57,7 @@ const { game, refresh, tutorial, setLight } = mountGame({
   onRefresh(game) {
     const { world } = game;
     center.onRefresh(game);
+    get('flight-mission-options').hidden = frame || world.state !== State.PLAYING;
     const count = center.total();
     if (count !== lastSystems) {
       lastSystems = count;
@@ -74,6 +75,7 @@ const { game, refresh, tutorial, setLight } = mountGame({
     if (route.textContent !== label) route.textContent = label;
   },
 });
+if (!frame && progress.state.missionOptions) { game.configure(progress.state.missionOptions); refresh(); }
 center.bind(game, refresh);
 tutorial.bindCenter(center.demo);
 if (frame) {

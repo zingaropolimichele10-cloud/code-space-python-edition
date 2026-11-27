@@ -49,7 +49,7 @@
         <details id="mission-progress" class="cockpit-metric">
           <summary><span>Missioni totali</span><strong id="mission-total">0 / 22</strong></summary>
           <div class="progress-drawer">
-            <p><span>Missioni principali</span><strong id="mission-count">0 / 5</strong></p>
+            <p><span>Disponibili</span><strong id="mission-available">10 / 22</strong></p><p><span>Missioni principali</span><strong id="mission-count">0 / 5</strong></p>
             <p><span>Missioni bonus</span><strong id="mission-bonus">0 / 17</strong></p>
             <details id="flight-systems-panel" hidden><summary>Sistemi sbloccati</summary><p id="flight-systems"></p></details>
             <label class="setting"><input id="light" type="checkbox"> Grafica leggera</label>
@@ -118,6 +118,7 @@
           <span id="save-status" role="status"></span>
         </div>
         <div class="comms-actions">
+          <button type="button" id="flight-mission-options" class="secondary" hidden>Stelle Python</button>
           <button type="button" id="open-unlocked" class="secondary" hidden>Scegli missione</button>
           <button type="button" id="mission-retry" class="secondary" aria-controls="pending-missions" aria-expanded="false" hidden>Riprendi missione</button>
           <ul id="pending-missions" hidden></ul>
@@ -155,6 +156,17 @@
         <button type="button" id="teacher-solution" class="secondary" aria-expanded="false">Mostra soluzione</button>
         <button type="button" id="teacher-unlock" class="secondary">Sblocca tutte le missioni</button>
       </div>
+      <fieldset>
+        <legend>Stelle Python</legend>
+        <label>Missioni iniziali <input id="teacher-mission-limit" type="number" min="1" max="22" value="10" required></label>
+        <label>Intervallo di volo (secondi) <input id="teacher-mission-interval" type="number" min="20" max="180" step="5" value="45" required></label>
+        <p id="teacher-mission-policy" role="status"></p>
+        <button type="button" id="teacher-mission-auto"></button>
+        <button type="button" id="teacher-mission-spawn">Genera prossima stella Python</button>
+        <button type="button" data-local-add="1">+1 missione</button>
+        <button type="button" data-local-add="3">+3 missioni</button>
+        <button type="button" data-local-add="4">+4 missioni</button>
+      </fieldset>
       <pre id="teacher-answer" hidden></pre>
       <p id="teacher-status" role="status"></p>
       <div class="teacher-options">

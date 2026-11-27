@@ -1,5 +1,5 @@
 {
-  "version": "2.3.1",
+  "version": "2.3.2",
   "runtime": [
     "index.html",
     "aggiorna.html",
@@ -15,6 +15,7 @@
     "js/game/main.mjs",
     "js/game/tutorial.mjs",
     "js/missions/catalog.mjs",
+    "js/missions/policy.mjs",
     "js/missions/center.mjs",
     "js/missions/editor-tools.mjs",
     "js/missions/validate.mjs",

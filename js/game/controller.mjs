@@ -28,7 +28,7 @@ export function mountGame({ nextMission, onState = () => {},
   const byId = id => document.getElementById(id);
   const tutorial = createTutorial();
   const canvas = createCanvas(byId('space'));
-  const hud = Object.fromEntries(['lives', 'score', 'mission-count', 'mission-total', 'mission-bonus', 'speed', 'shield', 'flight-status', 'flight-note', 'sector-label', 'arcade-notice', 'combo-label', 'boss-label']
+  const hud = Object.fromEntries(['lives', 'score', 'mission-count', 'mission-total', 'mission-available', 'mission-bonus', 'speed', 'shield', 'flight-status', 'flight-note', 'sector-label', 'arcade-notice', 'combo-label', 'boss-label']
     .map(id => [id, byId(id)]));
   const set = (id, value) => {
     if (hud[id].textContent !== value) hud[id].textContent = value;
@@ -103,6 +103,7 @@ export function mountGame({ nextMission, onState = () => {},
     set('speed', String(world.upgrades.speed));
     const main = missionCount();
     const total = missionTotal();
+    set('mission-available', `${world.options.missionLimit} / ${MISSION_COUNT}`);
     set('mission-total', `${total} / ${MISSION_COUNT}`);
     set('mission-count', `${main} / ${MAIN_MISSIONS}`);
     set('mission-bonus', `${total - main} / ${MISSION_COUNT - MAIN_MISSIONS}`);

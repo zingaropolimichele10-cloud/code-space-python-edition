@@ -1,3 +1,4 @@
+import { MIN_MISSION_FLIGHT, missionDefaults, missionPolicy } from '../missions/policy.mjs';
 import { FIRE_KEY, HAZARD_LIMIT, SHOT_LIMIT, moveBoss, newBoss, rockTypes, sectors, shapeRock } from './arcade.mjs';
 
 export const WIDTH = 960;
@@ -34,7 +35,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     stats: { rocks: 0, stars: 0, bestCombo: 0 }, combo: 0, multiplier: 1,
     notice: '', noticeLeft: 0, rewardFlash: 0, shieldFlash: 0,
     upgrades: { ...baseUpgrades },
-    options: { ...DEFAULT_FLIGHT },
+    options: { ...DEFAULT_FLIGHT, ...missionDefaults },
     time: 0, score: 0, lives: 3, shield: false, emergency: false,
     finalLeft: DEFAULT_FLIGHT.duration, mission: null,
   };
@@ -43,7 +44,8 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
   let pausedFrom;
   let rockIn;
   let starIn;
-  let missionIn;
+  let missionFlight = 0;
+  let missionRequested = false;
   let shieldCooling;
   let serial, shotIn, comboLeft, safeTime;
   const keys = new Set();
@@ -79,7 +81,8 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     world.finalLeft = challengeDuration;
     rockIn = 1.4;
     starIn = 0.7;
-    missionIn = 2.5;
+    missionFlight = 0;
+    missionRequested = false;
     shieldCooling = 0;
   }
 
@@ -134,7 +137,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
 
   function openMission(id) {
     if (id == null || !transition(State.MISSION)) return false;
-    world.stars = world.stars.filter(star => star.mission !== id);
+    world.stars = world.stars.filter(star => star.mission == null);
     world.mission = id;
     return true;
   }
@@ -143,7 +146,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     if (world.state !== State.MISSION || !transition(State.PLAYING)) return false;
     world.mission = null;
     world.ship.invulnerable = Math.max(world.ship.invulnerable, 1);
-    missionIn = 3;
+    missionFlight = 0;
     return true;
   }
 
@@ -196,7 +199,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
   }
 
   function configure(options) {
-    Object.assign(world.options, options);
+    Object.assign(world.options, options, missionPolicy({ ...world.options, ...options }));
     if (!world.options.asteroids || world.options.demo) world.rocks.length = 0;
   }
 
@@ -248,6 +251,12 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     }
   }
 
+  function requestMissionStar() {
+    if (world.stars.some(star => star.mission != null)) return false;
+    missionRequested = true;
+    return true;
+  }
+
   function spawnStar(mission) {
     if (mission == null) {
       if (world.stars.length >= LIMITS.stars - 1) return;
@@ -264,11 +273,11 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     for (let index = world.stars.length - 1; index >= 0; index--) {
       const star = world.stars[index];
       star.y += star.vy * dt;
-      if (star.mission != null && (star.age += dt) >= 7) {
+      if (star.mission != null && (star.age += dt) >= MIN_MISSION_FLIGHT) {
         const dx = world.ship.x - star.x;
         const dy = world.ship.y - star.y;
         const distance = Math.hypot(dx, dy);
-        const fraction = distance ? Math.min(1, 480 * dt / distance) : 0;
+        const fraction = distance ? Math.min(1, Math.min(95, (star.age - MIN_MISSION_FLIGHT) * 24) * dt / distance) : 0;
         star.x += dx * fraction;
         star.y += dy * fraction;
       }
@@ -451,9 +460,18 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
       spawnStar(null);
       starIn = 2.2;
     }
-    if (!final && (missionIn -= dt) <= 0) {
-      spawnStar(nextMission());
-      missionIn = 2.5;
+    if (!final) {
+      const { missionInterval, missionAuto, missionLimit } = world.options;
+      missionFlight += dt;
+      if (missionFlight + 1e-8 >= MIN_MISSION_FLIGHT &&
+          (missionRequested || (missionAuto && missionFlight + 1e-8 >= missionInterval)) &&
+          !world.stars.some(star => star.mission != null)) {
+        const id = nextMission(missionLimit);
+        if (id != null && id <= missionLimit) {
+          spawnStar(id);
+          missionRequested = false;
+        }
+      }
     }
     updateStars(dt);
     if (world.state === State.MISSION) return;
@@ -479,5 +497,5 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     return true;
   }
 
-  return { world, keys, action, step, openMission, closeMission, grant, restore, reset, configure, finishFinal, snapshot };
+  return { world, keys, action, step, openMission, closeMission, grant, restore, reset, configure, requestMissionStar, finishFinal, snapshot };
 }

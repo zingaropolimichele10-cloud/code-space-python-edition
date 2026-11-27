@@ -1,3 +1,5 @@
+import { missionPolicy } from '../missions/policy.mjs';
+import { MISSION_COUNT } from '../missions/catalog.mjs';
 import { command, defaults, nickname, pinNumber } from './model.mjs';
 
 export function sessionService(store, { randomPin = pinNumber, id = () => crypto.randomUUID() } = {}) {
@@ -24,7 +26,7 @@ export function sessionService(store, { randomPin = pinNumber, id = () => crypto
         });
       if (!ok) continue;
       const data = { owner: store.uid, title, pin, created, expires, phase: 'lobby', seq: 0,
-        at: created, until: 0, locked: false, view: 'lobby', reveal: 0, settings: { ...defaults, ...settings } };
+        at: created, until: 0, locked: false, view: 'lobby', reveal: 0, settings: { ...defaults, ...settings, ...missionPolicy(settings), missionSignal: 0 } };
       try {
         await store.set('rooms/' + room, data);
         return { room, data };
@@ -127,6 +129,17 @@ export function sessionService(store, { randomPin = pinNumber, id = () => crypto
     options: (room, patch) => change(room, current => ({
       ...current, ...patch, settings: { ...current.settings, ...patch.settings }, seq: current.seq + 1,
     })),
+    missionOptions: (room, action, value) => change(room, current => {
+      if (current.phase === 'ended') throw Error('La lezione è terminata.');
+      const settings = { ...current.settings, ...missionPolicy(current.settings) };
+      if (action === 'interval') settings.missionInterval = missionPolicy({ missionInterval: value }).missionInterval;
+      else if (action === 'toggle') settings.missionAuto = !settings.missionAuto;
+      else if (action === 'spawn') settings.missionSignal = current.seq + 1;
+      else if (action === 'add' && [1, 3, 4].includes(value)) {
+        settings.missionLimit = Math.min(MISSION_COUNT, settings.missionLimit + value);
+      } else throw Error('Comando per le missioni non valido.');
+      return { ...current, settings, seq: current.seq + 1 };
+    }),
     async kick(room, uid, member) {
       await store.update({
         [`members/${room}/${uid}/kicked`]: true,

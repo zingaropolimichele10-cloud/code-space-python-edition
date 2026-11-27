@@ -78,7 +78,7 @@
           ".validate": "(newData.val() === 'flight' || newData.val() === 'boss')"
         },
         "settings": {
-          ".validate": "newData.hasChildren(['capacity', 'minutes', 'difficulty', 'bossSeconds', 'audio', 'required', 'skip', 'late', 'rocks']) && (!data.exists() || newData.child('adventure').val() === data.child('adventure').val())",
+          ".validate": "newData.hasChildren(['capacity', 'minutes', 'difficulty', 'bossSeconds', 'audio', 'required', 'skip', 'late', 'rocks']) && (!data.exists() || newData.child('adventure').val() === data.child('adventure').val()) && (!data.child('missionLimit').exists() || newData.child('missionLimit').exists()) && (!data.child('missionInterval').exists() || newData.child('missionInterval').exists()) && (!data.child('missionAuto').exists() || newData.child('missionAuto').exists()) && (!data.child('missionSignal').exists() || newData.child('missionSignal').exists())",
           "capacity": {
             ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 50 && newData.val() % 1 === 0 && (!data.exists() || newData.val() === data.val())"
           },
@@ -93,6 +93,18 @@
           },
           "audio": {
             ".validate": "newData.isBoolean()"
+          },
+          "missionLimit": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 22 && newData.val() % 1 === 0 && (!data.exists() || data.parent().parent().child('phase').val() === 'lobby' || newData.val() >= data.val())"
+          },
+          "missionInterval": {
+            ".validate": "newData.isNumber() && newData.val() >= 20 && newData.val() <= 180 && newData.val() % 5 === 0"
+          },
+          "missionAuto": {
+            ".validate": "newData.isBoolean()"
+          },
+          "missionSignal": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() % 1 === 0 && newData.val() <= newData.parent().parent().child('seq').val() && (!data.exists() || newData.val() >= data.val())"
           },
           "required": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && (newData.val() <= 5 || (newData.parent().child('adventure').val() === true && newData.val() <= 22)) && newData.val() % 1 === 0"
