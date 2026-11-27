@@ -131,7 +131,7 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore e 22 missioni pr
       let callbacks = [];
       const pump = actual => {
         now = Math.max(now, actual);
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 10; i++) {
           const batch = callbacks;
           callbacks = [];
           now += 50;

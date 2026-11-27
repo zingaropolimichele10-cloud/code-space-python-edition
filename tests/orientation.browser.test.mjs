@@ -115,7 +115,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     await wait('audioStarts === 1');
     assert.equal(await text('mute'), 'Audio attivo');
     await click('#mute');
-    await wait("JSON.parse(localStorage.getItem('code-space:progress:v3'))?.audio?.volume === 0.33");
+    await wait("(() => { const audio = JSON.parse(localStorage.getItem('code-space:progress:v3'))?.audio; return audio?.volume === 0.33 && audio.enabled === false; })()");
     assert.deepEqual((await save()).audio, { enabled: false, volume: .33 });
   });
 
