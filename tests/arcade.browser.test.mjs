@@ -1,3 +1,4 @@
+import { answerQuiz } from './quiz-fixture.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { test } from 'node:test';
@@ -38,13 +39,14 @@ test('Browser: combattimento, segnali del drone e nuova missione if', async t =>
   await click('#teacher-open');
   await evaluate(`(() => {
     const choice = document.getElementById('teacher-mission');
-    choice.value = '7';
+    document.getElementById('teacher-unlock').click();
+    choice.value = '11';
     choice.dispatchEvent(new Event('change'));
   })()`);
   await click('#teacher-launch');
   assert.equal(await evaluate("document.querySelector('#mission-code').value"), 'scudo = False\nif vite < 3:\n    scudo = False');
-  assert.match(await text('mission-scenarios'), /2 vite\s*Scudo attivo/);
-  assert.match(await text('mission-scenarios'), /4 vite\s*Scudo disattivato/);
+  assert.match(await text('mission-panel'), /Con 2 vite lo scudo si accende. Con 3 o 4 vite resta spento./);
+  await answerQuiz(evaluate);
   await shot('02-condizioni');
   const verify = source => evaluate(`(async () => {
     const editor = document.getElementById('mission-code');

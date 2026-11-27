@@ -1,3 +1,4 @@
+import { answerQuiz } from './quiz-fixture.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { test } from 'node:test';
@@ -62,8 +63,10 @@ test('Revisione finale: testo letterale, limite risorse, annullamento e cambio d
   assert.equal(await state(), 'PAUSED');
   await evaluate("delete document.hidden");
   await click('[data-action=resume]');
-  await evaluate('advance(130)');
+  await click('#teacher-open');
+  await click('#teacher-launch');
   assert.equal(await state(), 'MISSION');
+  await answerQuiz(evaluate);
   await screenshot('04-centro');
   await click('#mission-hint');
   await screenshot('05-indizi');

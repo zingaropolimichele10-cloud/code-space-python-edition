@@ -18,7 +18,9 @@ if (banner && workers && window === window.top) {
   async function register() {
     if (!navigator.onLine) return;
     try {
+      let wasControlled = Boolean(workers.controller);
       const registration = await workers.register('./sw.js', { updateViaCache: 'none' });
+      wasControlled ||= Boolean(workers.controller);
       let requested = false;
       let reloading = false;
       function showUpdate() {
@@ -50,6 +52,13 @@ if (banner && workers && window === window.top) {
           return;
         }
         if (reloading) return;
+        const firstController = !wasControlled;
+        wasControlled = true;
+        if (firstController && !requested && !updatePage) {
+          // Il primo controller sta adottando la pagina già caricata.
+          showUpdate();
+          return;
+        }
         if (!requested && playing()) {
           banner.hidden = false;
           message.textContent = 'Nuova versione disponibile. Aggiorna al termine della partita.';

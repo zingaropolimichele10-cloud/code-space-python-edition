@@ -1,3 +1,4 @@
+import { answerQuiz } from './quiz-fixture.mjs';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
@@ -32,15 +33,16 @@ async function unpack(t, previous) {
 }
 
 async function waitFor(browser, expression) {
-  return browser.evaluate(`new Promise((resolve, reject) => {
-    const start = performance.now();
-    const id = setInterval(async () => {
-      try {
-        if (await (${expression})) { clearInterval(id); resolve(true); }
-        else if (performance.now() - start > 6500) { clearInterval(id); reject(Error('Condizione assente')); }
-      } catch (error) { clearInterval(id); reject(error); }
-    }, 35);
-  })`);
+  const expires = Date.now() + 9500;
+  do {
+    try {
+      if (await browser.evaluate(expression)) return;
+    } catch (error) {
+      if (!/navigated|Execution context was destroyed|Cannot find context/i.test(error.message)) throw error;
+    }
+    await new Promise(resolve => setTimeout(resolve, 50));
+  } while (Date.now() < expires);
+  throw Error('Condizione assente: ' + expression);
 }
 
 async function verifyPython(browser) {
@@ -48,6 +50,9 @@ async function verifyPython(browser) {
   await browser.evaluate(`(() => {
     document.getElementById('teacher-open').click();
     document.getElementById('teacher-launch').click();
+  })()`);
+  await answerQuiz(browser.evaluate);
+  await browser.evaluate(`(() => {
     const editor = document.getElementById('mission-code');
     editor.value = 'velocita = 5 * 2';
     editor.dispatchEvent(new Event('input'));
@@ -125,9 +130,9 @@ async function verifyUpdate(t, previous) {
   if (previous) {
     await waitFor(replacement, "document.getElementById('mission-count')?.textContent === '2 / 5'");
     assert.deepEqual(await replacement.evaluate("JSON.parse(localStorage.getItem('code-space:progress:v2'))"), data);
-    await replacement.evaluate("document.getElementById('continue').click(); document.getElementById('mission-retry').click();");
+    await replacement.evaluate("document.getElementById('teacher-open').click(); document.getElementById('teacher-unlock').click(); document.getElementById('teacher').close(); if (document.getElementById('viewport').dataset.state === 'MENU') document.getElementById('continue').click(); if (document.getElementById('viewport').dataset.state === 'PAUSED') document.querySelector('#paused-panel [data-action=resume]').click(); document.getElementById('mission-retry').click();");
     await waitFor(replacement, "document.getElementById('control-center').open");
-    assert.equal(await replacement.evaluate("document.querySelector('#mission-id').textContent.includes('07')"), true);
+    assert.equal(await replacement.evaluate("document.querySelector('#mission-id').textContent.includes('11')"), true);
     assert.equal(await replacement.evaluate("document.getElementById('mission-code').value"),
       'scudo = False\nif vite < 3:\n    scudo = False');
   }

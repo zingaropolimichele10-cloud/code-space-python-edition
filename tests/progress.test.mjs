@@ -16,7 +16,7 @@ test('Salvataggio v3, migrazione, convalida e reset', () => {
   const store = createProgress(storage);
   assert.deepEqual(store.state.completed, [1,3]);
   assert.deepEqual(store.state.audio, { enabled: true, volume: .4 });
-  store.update({ skipped: [1,2], drafts: { 2: 'vite = 5', 13: 'no' }, upgrades: [4], best: 25,
+  store.update({ skipped: [1,2], drafts: { 2: 'vite = 5', 23: 'no' }, upgrades: [4], best: 25,
     light: true, checkpoint: { mode: 'PLAYING', score: 25, time: 3.4 } });
   const restored = createProgress(storage).state;
   assert.deepEqual(restored.upgrades, [1,3]);

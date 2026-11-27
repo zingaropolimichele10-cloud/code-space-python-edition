@@ -1,3 +1,4 @@
+import { answerQuiz } from './quiz-fixture.mjs';
 import { missions } from '../js/missions/catalog.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -10,7 +11,7 @@ const selectors = {
   reveal: '[data-option=reveal]',
 };
 
-test('Chromium: demo Classroom dalla lobby al podio, proiettore e 12 missioni prima e dopo il boss', async t => {
+test('Chromium: demo Classroom dalla lobby al podio, proiettore e 22 missioni prima e dopo il boss', async t => {
   const browser = await openBrowser('', {
     width: 1180, height: 820, beforeLoad: 'window.confirm = () => true;',
   });
@@ -64,7 +65,7 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore e 12 missioni pr
   await click(parent, '#host-login');
   await until(parent, "!document.querySelector('#create-form').hidden");
   await capture(parent, '02-creazione');
-  await parent.evaluate(`document.querySelector('[name=bossSeconds]').value = '10';
+  await parent.evaluate(`document.querySelector('[name=bossSeconds]').value = '10'; document.querySelector('[name=missionLimit]').value = '22';
     document.querySelector('#create-form').requestSubmit();`);
   const pin = await until(parent, "document.querySelector('#pin-value').textContent");
   assert.match(pin, /^\d{6}$/);
@@ -119,7 +120,32 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore e 12 missioni pr
   await click(parent, selectors.resume);
   await student.activate();
   await until(student, "document.querySelector('#flight-frame').contentDocument.querySelector('#viewport').dataset.state === 'PLAYING'");
+  async function speedUpFlight() {
+    await student.evaluate(`(() => {
+      const frame = document.querySelector('#flight-frame').contentWindow;
+      const nativeRAF = frame.requestAnimationFrame.bind(frame);
+      frame.Math.random = () => .5;
+      if (frame.fastTestFlight) return;
+      frame.fastTestFlight = true;
+      let now = frame.performance.now();
+      let callbacks = [];
+      const pump = actual => {
+        now = Math.max(now, actual);
+        for (let i = 0; i < 5; i++) {
+          const batch = callbacks;
+          callbacks = [];
+          now += 50;
+          for (const callback of batch) callback(now);
+        }
+        nativeRAF(pump);
+      };
+      frame.requestAnimationFrame = callback => callbacks.push(callback);
+      nativeRAF(pump);
+    })()`);
+  }
+  await speedUpFlight();
   await until(student, "document.querySelector('#flight-frame').contentDocument.querySelector('#control-center').open", 14000);
+  await answerQuiz(student.evaluate, "document.querySelector('#flight-frame').contentDocument");
   await student.evaluate(`(() => {
     const d = document.querySelector('#flight-frame').contentDocument;
     d.querySelector('#mission-code').value = 'velocita = 5 * 2';
@@ -133,19 +159,6 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore e 12 missioni pr
   await click(parent, '[data-option=rocks]');
   await until(parent, "document.querySelector('[data-option=rocks]').textContent.includes('Riattiva')");
   await student.activate();
-  async function speedUpFlight() {
-    await student.evaluate(`(() => {
-      const frame = document.querySelector('#flight-frame').contentWindow;
-      const nativeRAF = frame.requestAnimationFrame.bind(frame);
-      frame.Math.random = () => .5;
-      let now = frame.performance.now();
-      frame.requestAnimationFrame = callback => nativeRAF(actual => {
-        now = Math.max(now, actual);
-        now += 50;
-        callback(now);
-      });
-    })()`);
-  }
   await speedUpFlight();
   const playMission = async mission => {
     const frameDocument = "document.querySelector('#flight-frame').contentDocument";
@@ -172,6 +185,7 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore e 12 missioni pr
       await speedUpFlight();
     }
 
+    await answerQuiz(student.evaluate, frameDocument);
     await student.evaluate(`
       ${frameDocument}.querySelector('#mission-code').value = ${JSON.stringify(mission.solution)};
       ${frameDocument}.querySelector('#mission-run').click();
@@ -180,7 +194,7 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore e 12 missioni pr
     await student.evaluate(`${frameDocument}.querySelector('#mission-done').click()`);
   };
   for (const mission of missions.slice(1, 5)) await playMission(mission);
-  await until(student, "document.querySelector('#flight-frame').contentDocument.querySelector('#mission-total').textContent === '5 / 12'");
+  await until(student, "document.querySelector('#flight-frame').contentDocument.querySelector('#mission-total').textContent === '5 / 22'");
   await parent.activate();
   await parent.evaluate("document.querySelector('#rank').scrollIntoView({block:'end'})");
   await capture(parent, '11-classifica');
@@ -206,9 +220,9 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore e 12 missioni pr
   await until(student, "document.querySelector('#flight-frame').contentDocument.querySelector('#viewport').dataset.state === 'PLAYING'");
   for (const mission of missions.slice(5)) await playMission(mission);
   const readCount = id => student.evaluate(`document.querySelector('#flight-frame').contentDocument.getElementById('${id}').textContent`);
-  assert.deepEqual(await Promise.all(['mission-total', 'mission-count', 'mission-bonus'].map(readCount)), ['12 / 12', '5 / 5', '7 / 7']);
+  assert.deepEqual(await Promise.all(['mission-total', 'mission-count', 'mission-bonus'].map(readCount)), ['22 / 22', '5 / 5', '17 / 17']);
   await parent.activate();
-  await until(parent, "document.querySelector('#host-totals').textContent.includes('12 missioni Python')");
+  await until(parent, "document.querySelector('#host-totals').textContent.includes('22 missioni Python')");
   await click(parent, selectors.end);
   await until(parent, "document.querySelector('#phase-label').textContent === 'Sessione terminata'");
   await until(parent, "!document.querySelector('[data-option=podium]').disabled");

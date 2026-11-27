@@ -27,12 +27,12 @@ function isSaved(input) {
 const validVolume = value => Number.isFinite(value) && value >= 0 && value <= 1;
 
 export function normalizeProgress(input) {
-  const legacyIds = values => Array.isArray(values) ? values.filter(id => [1, 2, 3, 4, 5].includes(id))
-    .map(id => id === 5 ? 7 : id) : [];
+  const legacyIds = values => Array.isArray(values) ? values.filter(id => [1, 3, 4, 5].includes(id))
+    .map(id => id === 5 ? 11 : id) : [];
   const { drafts } = input ?? {};
   const raw = input?.version === 3 ? input : input?.version === 2 ? {
     ...input, completed: legacyIds(input.completed), skipped: legacyIds(input.skipped),
-    drafts: { 1: drafts?.[1], 3: drafts?.[3], 7: drafts?.[5] === 'scudo = False\nif vite < 3:\n    pass' ? undefined : drafts?.[5] },
+    drafts: { 1: drafts?.[1], 3: drafts?.[3], 11: drafts?.[5] === 'scudo = False\nif vite < 3:\n    pass' ? undefined : drafts?.[5] },
   } : {};
   const completed = validIds(raw.completed);
   const point = raw.checkpoint;

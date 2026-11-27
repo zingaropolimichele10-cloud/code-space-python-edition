@@ -1,3 +1,4 @@
+import { answerQuiz } from './quiz-fixture.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -123,7 +124,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     assert.match(await text('tutorial-text'), /quattro frecce/);
     await capture('03-tutorial');
     await click('#tutorial-next');
-    assert.match(await text('tutorial-text'), /Aggira/);
+    await wait("document.getElementById('tutorial-text').textContent.includes('Aggira')");
     await click('#tutorial-next');
     assert.match(await text('tutorial-text'), /stella dorata/);
     await click('#tutorial-next');
@@ -131,7 +132,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     await click('#tutorial-next');
     assert.match(await text('mission-id'), /Prova del tutorial/);
     await click('#mission-hint');
-    assert.match(await text('mission-hints'), /intero/);
+    assert.match(await text('mission-hints'), /variabile/);
     await evaluate(`const editor = document.getElementById('mission-code'); editor.focus(); editor.select();`);
     await key('ArrowLeft','ArrowLeft',37);
     assert.equal(await evaluate('editor.selectionStart'), 0);
@@ -156,8 +157,13 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     await click('#tutorial-panel [data-action=start]');
     await evaluate('fly(110)');
     await capture('05-volo');
-    await evaluate('fly(120)');
+    await click('#teacher-open');
+    await change('teacher-rocks', false);
+    await evaluate("document.getElementById('teacher').close()");
+    await click('#paused-panel [data-action=resume]');
+    for (let batch = 0; batch < 16 && await state() !== 'MISSION'; batch++) await evaluate('fly(100)');
     assert.equal(await state(), 'MISSION');
+    await answerQuiz(evaluate);
     await evaluate(`editor.value = ${JSON.stringify('velocita = 6\nprint(velocita)')}; editor.dispatchEvent(new Event('input'));`);
     await click('#mission-run');
     await wait("document.getElementById('mission-status').dataset.result === 'error'");
@@ -189,7 +195,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     await click('#teacher-open');
     await change('teacher-mission', '4');
     await click('#teacher-solution');
-    assert.match(await text('teacher-answer'), /messaggio = prima \+ seconda/);
+    assert.match(await text('teacher-answer'), /colore = "blu"/);
     await click('#teacher-unlock');
     await change('teacher-difficulty', 'hard');
     await change('teacher-duration', '5');
@@ -201,7 +207,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     await change('teacher-light', true);
     await capture('06-docente');
     await click('#teacher-launch');
-    assert.match(await text('mission-title'), /Messaggio extraterrestre/);
+    assert.match(await text('mission-title'), /Vernice spaziale/);
     await click('#mission-skip');
     assert.equal(await evaluate("document.querySelector('#open-unlocked').hidden"), false);
     assert.deepEqual((await save()).skipped, [1, 4]);

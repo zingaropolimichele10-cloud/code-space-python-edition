@@ -1,3 +1,4 @@
+import { answerQuiz } from './quiz-fixture.mjs';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -152,12 +153,25 @@ test('Disconnessione Classroom simulata: il terminale conserva la bozza e attend
     const nativeRAF = w.requestAnimationFrame.bind(w);
     let now = w.performance.now();
     w.Math.random = () => .5;
-    w.requestAnimationFrame = task => nativeRAF(time => { now = Math.max(now, time) + 50; task(now); });
+    let callbacks = [];
+    const pump = actual => {
+      now = Math.max(now, actual);
+      for (let i = 0; i < 5; i++) {
+        const batch = callbacks;
+        callbacks = [];
+        now += 50;
+        for (const callback of batch) callback(now);
+      }
+      nativeRAF(pump);
+    };
+    w.requestAnimationFrame = callback => callbacks.push(callback);
+    nativeRAF(pump);
   })()`);
   const heartbeat = await browser.evaluate(`setInterval(() => ${iframe}.contentWindow.postMessage({
     type: 'cs:heartbeat', room: 'connection-test', seq: 3
   }, location.origin), 200)`);
   await waitFor(browser, state('MISSION'));
+  await answerQuiz(browser.evaluate, `${iframe}.contentDocument`);
   await browser.evaluate(`(() => {
     const w = ${iframe}.contentWindow;
     const editor = w.document.getElementById('mission-code');

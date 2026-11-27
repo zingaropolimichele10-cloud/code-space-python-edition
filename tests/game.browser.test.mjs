@@ -1,3 +1,4 @@
+import { answerQuiz } from './quiz-fixture.mjs';
 import { missions } from '../js/missions/catalog.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -47,7 +48,14 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
   const dialog = () => evaluate("document.querySelector('#control-center').open");
   const text = id => evaluate(`document.getElementById('${id}').textContent`);
   const click = selector => evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
-  const advance = frames => evaluate(`advance(${frames})`);
+  async function advance(frames) {
+    for (let remaining = frames; remaining > 0; remaining -= 150) {
+      await evaluate(`advance(${Math.min(remaining, 150)})`);
+    }
+  }
+  async function reachMission() {
+    for (let batch = 0; batch < 16 && await state() !== 'MISSION'; batch++) await advance(100);
+  }
   const key = (name, type = 'keyDown') => browser.page('Input.dispatchKeyEvent', {
     type, key: name, code: name,
     windowsVirtualKeyCode: { ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40 }[name],
@@ -141,10 +149,16 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
   });
 
   await t.test('Prima stella, editor, congelamento, indizi e recupero', async () => {
-    await advance(220);
+    await click('#teacher-open');
+    await click('#teacher-demo');
+    await click('#teacher-unlock');
+    await evaluate("document.querySelector('#teacher').close()");
+    await action('resume');
+    await reachMission();
     assert.equal(await state(), 'MISSION');
     assert.equal(await dialog(), true);
-    assert.equal(await text('mission-title'), 'Motori fuori controllo');
+    assert.equal(await text('mission-title'), 'Riaccendi Aurora');
+    await answerQuiz(evaluate);
     const snapshot = await paint();
     const before = await hud();
     await source('velocita = 6');
@@ -202,14 +216,15 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await key('ArrowRight', 'keyUp');
     assert.ok((await paint())[0] - x > 45);
     for (const [title, code, count] of [
-      ['Emergenza vitale', 'energia = 2 + 3', '2 / 5'],
-      ['Tempesta di meteoriti', 'scudo = 2 < 3', '3 / 5'],
-      ['Messaggio extraterrestre', 'messaggio = "NORD" + "-7"', '4 / 5'],
-      ['Armi in avaria', 'potenza = 4 * 3', '5 / 5'],
+      ['Messaggio di bordo', 'print("Aurora online")', '2 / 5'],
+      ['Interruttore scudo', 'scudo = 2 < 3', '3 / 5'],
+      ['Vernice spaziale', 'colore = "blu"', '4 / 5'],
+      ['Ricarica energetica', 'energia = 40\nenergia = energia + 20', '5 / 5'],
     ]) {
-      await advance(220);
+      await reachMission();
       assert.equal(await text('mission-title'), title);
       assert.equal(await state(), 'MISSION');
+      await answerQuiz(evaluate);
       await submit(code, 'success');
       assert.equal(await text('mission-count'), count);
       await finish();
@@ -219,8 +234,8 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await advance(23);
     assert.equal((await paint())[2], '64,155,255');
     assert.equal(await evaluate("document.querySelector('#final-button').hidden"), false);
-    assert.equal(await text('mission-total'), '5 / 12');
-    assert.equal(await text('mission-bonus'), '0 / 7');
+    assert.equal(await text('mission-total'), '5 / 22');
+    assert.equal(await text('mission-bonus'), '0 / 17');
   });
 
   await t.test('Sfida finale, vittoria, riavvii e un solo ciclo', async () => {
@@ -231,11 +246,11 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await advance(1170);
     assert.equal(await state(), 'VICTORY');
     await saveScreenshot(browser, '03-vittoria');
-    assert.match(await text('victory-missions'), /Missioni totali: 5\/12.*Missioni bonus: 0\/7/);
+    assert.match(await text('victory-missions'), /Missioni totali: 5\/22.*Missioni bonus: 0\/17/);
     await click('#victory-recover');
     assert.equal(await state(), 'PLAYING');
     for (const mission of missions.slice(5)) {
-      await advance(240);
+      await reachMission();
       assert.equal(await state(), 'MISSION');
       assert.equal(await text('mission-title'), mission.title);
       assert.match(await text('mission-id'), /Facoltativa/);
@@ -243,26 +258,28 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
         await click('#mission-skip');
         continue;
       }
-      if (mission.id === 7) {
-        assert.match(await submit('scudo = True', 'error'), /Con 4 vite/);
-        assert.match(await submit('vite = 2\nscudo = True', 'error'), /Lascia invariato/);
+      await answerQuiz(evaluate);
+      if (mission.id === 11) {
+        assert.match(await submit('scudo = True', 'error'), /vite = 3/);
       }
       await submit(mission.solution, 'success');
       await finish();
     }
     await click('#mission-retry');
-    assert.match(await text('pending-missions'), /Energia critica.*Rotta sconosciuta/s);
+    assert.match(await text('pending-missions'), /Riparazione dello scafo.*Distribuzione delle risorse/s);
     await click('#pending-missions li:nth-child(2) button');
     assert.equal(await text('mission-title'), missions[7].title);
+    await answerQuiz(evaluate);
     await submit(missions[7].solution, 'success');
     await finish();
     await click('#mission-retry');
     assert.equal(await text('mission-title'), missions[5].title);
+    await answerQuiz(evaluate);
     await submit(missions[5].solution, 'success');
     await finish();
-    assert.equal(await text('mission-total'), '12 / 12');
+    assert.equal(await text('mission-total'), '22 / 22');
     assert.equal(await text('mission-count'), '5 / 5');
-    assert.equal(await text('mission-bonus'), '7 / 7');
+    assert.equal(await text('mission-bonus'), '17 / 17');
     await action('pause');
     await evaluate("document.querySelector('#paused-panel [data-action=menu]').click()");
     for (let index = 0; index < 3; index++) {
