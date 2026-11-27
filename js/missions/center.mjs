@@ -263,10 +263,9 @@ export function createCenter({ progress, sound = () => {} }) {
     get('mission-id').textContent = practice ? 'Prova del tutorial' : `Missione ${String(active.id).padStart(2, '0')}${active.optional ? ' · Facoltativa' : ''}`;
     get('mission-title').textContent = active.title;
     get('mission-concept').textContent = active.concept;
-    get('mission-goal').textContent = active.goal;
+    get('mission-goal').textContent = active.cosaFare;
     get('mission-briefing').textContent = 'Aurora · ' + active.briefing;
     renderPanel(get('mission-panel'), active);
-    get('mission-edit').textContent = active.edit;
     get('mission-preview').textContent = active.preview;
     get('mission-preview').dataset.mission = active.id;
     get('mission-scenarios').hidden = true;
@@ -275,7 +274,7 @@ export function createCenter({ progress, sound = () => {} }) {
     editor.readOnly = !quizPassed;
     reward.hidden = true;
     indent.disabled = !quizPassed;
-    updateEditor();
+    updateEditor(active.righeModificabili);
     sound('mission');
     button.disabled = locked || !quizPassed;
     hintButton.hidden = !quizPassed;

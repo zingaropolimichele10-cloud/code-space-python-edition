@@ -168,8 +168,8 @@ kbd { border: 1px solid #446281; border-radius: .25rem; padding: .1rem .3rem; co
 #boss-status { width: 100%; margin: .25rem 0 .75rem; font-size: .83rem; }
 #boss-hp { display: block; width: 100%; height: .48rem; accent-color: #ffaf79; }
 .flight-keys { font-size: .85rem; margin: .45rem 0; }
-#mission-briefing, #mission-edit { margin: .35rem 0; }
-#mission-edit { font-weight: 650; }
+#mission-briefing { margin: .35rem 0; }
+#line-numbers .mission-editable-line { color: #ffda71; font-weight: 700; }
 #mission-preview { border-left: 3px solid #79d8ff; padding: .3rem .55rem; margin: .45rem 0 .65rem; background: #0b1c32; }
 #mission-preview[data-mission="1"], #mission-preview[data-mission="2"] { border-color: #ffc573; }
 .mission-scenarios { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; margin-bottom: .65rem; }

@@ -7,12 +7,10 @@ export const missions = adventure.map(m => ({
   title: m.titolo,
   concept: m.concetto,
   briefing: m.problema + ' ' + m.perche,
-  goal: m.cosaFare,
   explanation: m.spiegazione,
   source: m.codiceIniziale,
   solution: m.soluzioneEsempio,
   hints: m.indizi,
-  edit: m.cosaFare,
   preview: m.anteprimaDidattica,
   reward: m.effettoNelGioco.anteprima,
   upgrade: {

@@ -40,14 +40,21 @@ function extractVariables(globals, limits) {
   for (const name of Object.keys(globals)) {
     if (name.startsWith('_')) continue;
     const item = globals[name];
-    const type = scalarTypes.get(item?.ob$type);
+    const type = item?.ob$type === Sk.builtin.list ? 'list' : scalarTypes.get(item?.ob$type);
     if (expected.has(name) && expected.get(name) !== type) {
       throw new ExecutionError('VARIABLE_TYPE', { variable: name, expected: expected.get(name) });
     }
     let value;
     if (type === 'bool') value = item === Sk.builtin.bool.true$;
     else if (['int', 'float', 'str'].includes(type)) value = item.v;
-    else if (item === Sk.builtin.none.none$) value = null;
+    else if (type === 'list') {
+      // Esporta solo liste brevi di scalari, senza ricorsione né oggetti Python.
+      if (item.v.length > limits.variables || !item.v.every(entry => scalarTypes.has(entry?.ob$type))) continue;
+      value = item.v.map(entry => entry.ob$type === Sk.builtin.bool ? entry === Sk.builtin.bool.true$ : entry.v);
+      if (!value.every(entry => typeof entry === 'boolean' ||
+          (typeof entry === 'number' && Number.isFinite(entry) && Math.abs(entry) <= Number.MAX_SAFE_INTEGER) ||
+          (typeof entry === 'string' && entry.length <= limits.variableText))) continue;
+    } else if (item === Sk.builtin.none.none$) value = null;
     else continue;
 
     if (++count > limits.variables ||

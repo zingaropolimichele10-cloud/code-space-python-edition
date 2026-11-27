@@ -1,10 +1,17 @@
 export function installEditorTools(editor, gutter, indentButton) {
   let renderedCount;
+  let editableRows = [];
   function update() {
     const count = editor.value.split('\n').length;
     if (renderedCount !== count) {
       renderedCount = count;
-      gutter.textContent = Array.from({ length: count }, (_, index) => index + 1).join('\n');
+      gutter.replaceChildren(...Array.from({ length: count }, (_, index) => {
+        const row = document.createElement('span');
+        const lineNumber = index + 1;
+        row.textContent = lineNumber + (index + 1 < count ? '\n' : '');
+        if (editableRows.includes(lineNumber)) row.className = 'mission-editable-line';
+        return row;
+      }));
     }
     gutter.scrollTop = editor.scrollTop;
   }
@@ -25,5 +32,9 @@ export function installEditorTools(editor, gutter, indentButton) {
     editor.dispatchEvent(new Event('input', { bubbles: true }));
     editor.focus();
   });
-  return update;
+  return rows => {
+    editableRows = rows;
+    renderedCount = undefined;
+    update();
+  };
 }

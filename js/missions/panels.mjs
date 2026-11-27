@@ -1,3 +1,5 @@
+import { boardLines } from './validate-adventure.mjs';
+
 const presets = {
   motori: ['Propulsori', [['Spinta', 5, 10], ['Margine', 5, 10]]],
   vita: ['Batterie', [['Batteria A', 2, 5], ['Batteria B', 3, 5], ['Totale', 2, 5]]],
@@ -30,7 +32,9 @@ export function renderPanel(panel, mission, observations = []) {
             )).join(' · ')
           + (item.output ? '\\n' + item.output : '')
         ).join('\\n')
-      : mission.variabiliFornite?.join(', ') || '';
+      : boardLines(Object.fromEntries(mission.variabiliFornite.map(
+        name => [name, mission.scenariDiTest[0].input[name]],
+      ))).join('\n');
     panel.replaceChildren(title, explanation, result);
     return;
   }
