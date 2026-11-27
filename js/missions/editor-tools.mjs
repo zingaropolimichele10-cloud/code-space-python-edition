@@ -10,6 +10,7 @@ export function protectsLines(mission, source) {
 export function installEditorTools(editor, gutter, indentButton, mirror) {
   let mission;
   let previous = '';
+  let boardRows = 0;
   let selection = [0, 0];
   function update() {
     const lines = editor.value.split('\n');
@@ -22,7 +23,7 @@ export function installEditorTools(editor, gutter, indentButton, mirror) {
         return item;
       }));
     }
-    render(gutter, lines.map((_, index) => index + 1));
+    render(gutter, lines.map((_, index) => boardRows + index + 1));
     render(mirror, lines);
     scroll();
   }
@@ -60,7 +61,8 @@ export function installEditorTools(editor, gutter, indentButton, mirror) {
     editor.dispatchEvent(new Event('input', { bubbles: true }));
     editor.focus();
   });
-  return (newMission, draft) => {
+  return (newMission, draft, prefixRows = 0) => {
+    boardRows = prefixRows;
     mission = newMission;
     editor.value = previous = draft !== undefined && protectsLines(mission, draft) ? draft : mission.codiceIniziale;
     update();

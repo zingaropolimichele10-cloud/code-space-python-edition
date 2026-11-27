@@ -145,10 +145,15 @@
       <p id="mission-explanation" class="mission-explanation" hidden></p>
       <form id="mission-form">
         <label for="mission-code">Codice Python</label>
+        <p id="mission-code-legend" class="code-legend">Righe evidenziate: modificabili. Righe grigie: protette.</p>
+        <div class="editor-board" id="mission-board" hidden>
+          <span>Fornito dal computer di bordo · sola lettura</span>
+          <div class="board-listing"><pre id="mission-board-lines" aria-hidden="true"></pre><pre id="mission-board-code"></pre></div>
+        </div>
         <div class="editor-frame">
           <div id="line-numbers" aria-hidden="true"></div>
           <pre id="code-mirror" aria-hidden="true"></pre>
-          <textarea id="mission-code" rows="4" wrap="off" maxlength="8192" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+          <textarea id="mission-code" aria-describedby="mission-code-legend mission-board-code" rows="4" wrap="off" maxlength="8192" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
         </div>
         <figure id="mission-preview" class="mission-preview">
           <figcaption>Risultato atteso</figcaption>
@@ -169,6 +174,7 @@
         <h3>Esito</h3>
         <p id="mission-status" role="status"></p>
         <div id="mission-reward" class="reward" hidden><strong>Missione completata</strong><span id="reward-text"></span></div>
+        <div id="mission-cases" class="mission-instruments" hidden></div>
         <pre id="mission-output" aria-label="Output Python"></pre>
         <ol id="mission-hints" aria-label="Indizi" aria-live="polite"></ol>
       </div>

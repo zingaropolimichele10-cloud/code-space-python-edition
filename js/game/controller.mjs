@@ -1,6 +1,6 @@
 import { createTutorial } from './tutorial.mjs';
 import { createCanvas } from './canvas.mjs';
-import { createGame, State } from './engine.mjs';
+import { createGame, FIRE_KEY, State } from './engine.mjs';
 
 const flying = new Set([State.PLAYING, State.FINAL_CHALLENGE]);
 const arrows = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
@@ -11,7 +11,7 @@ const panels = {
 const copy = {
   [State.MENU]: ['In attesa', 'Avvia il tutorial per conoscere i comandi.'],
   [State.TUTORIAL]: ['Pronti a partire', 'Prova le quattro frecce prima del decollo.'],
-  [State.PLAYING]: ['In volo', 'Raccogli stelle dorate ed evita gli asteroidi.'],
+  [State.PLAYING]: ['In volo', 'Raccogli stelle dorate. Premi Spazio per colpire gli asteroidi.'],
   [State.PAUSED]: ['Volo sospeso', 'Riprendi quando sei pronto.'],
   [State.MISSION]: ['Centro di controllo', 'Il volo riprenderà quando chiuderai la missione.'],
   [State.GAME_OVER]: ['Checkpoint disponibile', 'Riparti con tutte le vite.'],
@@ -75,6 +75,12 @@ export function mountGame({ nextMission, onState = () => {},
     if (event.key === 'Escape' && !event.repeat) {
       if (game.action(world.state === State.PAUSED ? 'resume' : 'pause')) event.preventDefault();
       refresh();
+    } else if (event.key === FIRE_KEY && flying.has(world.state) && !event.target.closest?.('button, a, input')) {
+      event.preventDefault();
+      if (!event.repeat) {
+        keys.add(FIRE_KEY);
+        game.requestFire();
+      }
     } else if (arrows.has(event.key) && (flying.has(world.state) || world.state === State.TUTORIAL)) {
       event.preventDefault();
       keys.add(event.key);

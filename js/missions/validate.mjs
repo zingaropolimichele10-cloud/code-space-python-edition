@@ -6,6 +6,9 @@ const pythonLiteral = value => typeof value === 'boolean' ? showValue(value)
   : Array.isArray(value) ? '[' + value.map(pythonLiteral).join(', ') + ']'
   : value === null ? 'None' : JSON.stringify(value);
 
+export const boardLines = input => Object.entries(input)
+  .map(([key, value]) => `${key} = ${pythonLiteral(value)}`);
+
 const feedback = {
   SYNTAX: 'Errore di sintassi. Controlla i segni di questa riga.',
   INDENTATION: 'Errore di sintassi. Metti quattro spazi all’inizio della riga del blocco.',
@@ -45,10 +48,10 @@ export async function validateMission(mission, source, run, isCurrent = () => tr
   let output = '';
   const cases = [];
   let scenarioLabel = '';
-  const fail = message => ({ ok: false, output, message: scenarioLabel + message });
+  const fail = message => ({ ok: false, output, cases, message: scenarioLabel + message });
   const row = mission.righeModificabili[0];
   for (const scenario of mission.scenariDiTest) {
-    const fixture = Object.entries(scenario.input).map(([key, value]) => `${key} = ${pythonLiteral(value)}\n`);
+    const fixture = boardLines(scenario.input).map(line => line + '\n');
     const inputs = Object.entries(scenario.input).map(([key, value]) => `${key} = ${showValue(value)}`);
     scenarioLabel = inputs.length ? 'Prova con ' + inputs.join(', ') + '. '
       : scenario.rigaAlternativa ? 'Prova con il comando di bordo che restituisce False. ' : '';
@@ -63,9 +66,10 @@ export async function validateMission(mission, source, run, isCurrent = () => tr
     const result = await run(fixture.join('') + program);
     if (!isCurrent()) return null;
     output = (output + (result.output ?? '')).slice(0, limits.output);
-    if (!result.ok) return executionFailure(result, source, fixture.length, output);
+    if (!result.ok) return { ...executionFailure(result, source, fixture.length, output), cases };
     if (!source.trim()) return fail(`Riga ${row}. Scrivi il codice richiesto prima di eseguire.`);
     const { variables } = result;
+    cases.push({ input: scenario.input, variables, output: result.output ?? '' });
     for (const [name, expected] of Object.entries(scenario.atteso ?? {})) {
       const actual = variables[name];
       if (!actual) return fail(`Riga ${row}. Assegna un valore a ${name}.`);
@@ -75,17 +79,16 @@ export async function validateMission(mission, source, run, isCurrent = () => tr
           && actual.value.every((item, index) => item === expected.value[index])
           : actual.value === expected.value;
       if (!matches) {
-        return fail(`Riga ${row}. ${name} vale ${showValue(actual.value)}. Controlla che il valore sia ${(expected.oneOf ?? [expected.value]).map(showValue).join(' oppure ')}.`);
+        return fail(`Riga ${row}. ${name} vale ${showValue(actual.value)}. ${mission.riscontro ?? mission.indizi[0]}`);
       }
     }
     if (scenario.output) {
       const lines = result.output.replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n');
       if (scenario.output.length ? lines.length !== scenario.output.length || lines.some((line, i) => line !== scenario.output[i])
         : result.output.length > 0) {
-        return fail(`Riga ${row}. Controlla il testo stampato da print, l’ordine delle righe e gli spazi.`);
+        return fail(`Riga ${row}. ${mission.riscontro ?? mission.indizi[0]} Controlla anche le righe stampate.`);
       }
     }
-    cases.push({ input: scenario.input, variables, output: result.output ?? '' });
   }
   return { ok: true, output: cases[0].output, variables: cases[0].variables, cases, message: mission.effettoNelGioco.esito };
 }

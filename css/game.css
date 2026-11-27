@@ -218,3 +218,12 @@ kbd { border: 1px solid #446281; border-radius: .25rem; padding: .1rem .3rem; co
 .mission-instruments [data-signal="giallo"] { border-inline-start: 3px solid #ffda71; }
 .mission-instruments [data-signal="verde"] { border-inline-start: 3px solid #76e4b4; }
 #mission-hints li { white-space: pre-wrap; }
+
+.editor-board { background: #060f20; border: 1px solid #496b8c; padding: .35rem .75rem; border-radius: .35rem; color: #b1c4da; }
+.editor-board span, .code-legend { font-size: .83rem; color: var(--muted); }
+.editor-board pre { margin: .25rem 0 0; overflow: auto; }
+.code-legend { margin: .3rem 0; }
+#mission-cases { margin-bottom: .5rem; white-space: pre-line; overflow-wrap: anywhere; }
+
+.board-listing { display: grid; grid-template-columns: 2ch minmax(0, 1fr); gap: .4rem; }
+#mission-board-lines { color: var(--muted); }

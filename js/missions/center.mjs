@@ -3,7 +3,7 @@ import { createPythonRunner } from '../python/runner.mjs';
 import { installEditorTools, protectsLines } from './editor-tools.mjs';
 import { showInstruments } from './preview.mjs';
 import { missions } from './catalog.mjs';
-import { validateMission } from './validate.mjs';
+import { boardLines, validateMission } from './validate.mjs';
 
 export function createCenter({ progress, sound = () => {} }) {
   const completed = new Set(progress.state.completed);
@@ -29,6 +29,7 @@ export function createCenter({ progress, sound = () => {} }) {
   const note = get('mission-note');
   const preview = get('mission-preview');
   const instruments = get('mission-instruments');
+  const scenarioPanel = get('mission-cases');
   const explanation = get('mission-explanation');
   const consoleOutput = get('flight-message');
   function flightMessage(text = '') {
@@ -131,14 +132,27 @@ export function createCenter({ progress, sound = () => {} }) {
       const current = ++revision;
       button.disabled = true;
       output.textContent = '';
+      scenarioPanel.hidden = true;
       status.textContent = 'Esecuzione in corso…';
       status.dataset.result = 'pending';
       const result = await validateMission(mission, source, run, () => current === revision);
       if (!result || current !== revision) return;
       output.textContent = result.output;
+      const cases = result.cases ?? [];
+      scenarioPanel.hidden = mission.scenariDiTest.length <= 1 || cases.length === 0;
+      scenarioPanel.replaceChildren(...(scenarioPanel.hidden ? [] : cases.map(({ input, variables, output }, index) => {
+        const item = document.createElement('span');
+        const relevant = Object.keys(mission.scenariDiTest[index].atteso ?? {});
+        const values = Object.fromEntries(relevant.filter(name => variables[name]).map(name => [name, variables[name].value]));
+        const readings = [...boardLines(values), ...(mission.scenariDiTest[index].output ? [output.trimEnd() || 'Nessuna stampa'] : [])];
+        const conditions = boardLines(input).join(', ') || (mission.scenariDiTest[index].rigaAlternativa ? 'Funzione di prova: False' : `Prova ${index + 1}`);
+        item.textContent = `${conditions} → ${readings.join(' · ') || 'Nessun valore prodotto'}`;
+        return item;
+      })));
       status.textContent = result.ok && practice
         ? 'velocita contiene l’intero 10. Python calcola il valore a destra di = prima di assegnarlo.'
-        : result.message;
+        : result.message.replace(/Riga (\d+)\./g,
+          (_, row) => `Riga ${Number(row) + mission.variabiliFornite.length}.`);
       status.dataset.result = result.ok ? 'success' : 'error';
       if (result.ok) {
         if (!practice && (!completed.has(mission.id) || mission.effettoNelGioco.colore)) {
@@ -150,6 +164,7 @@ export function createCenter({ progress, sound = () => {} }) {
           game.grant(paint ? { color: paint } : effect.upgrade, mission.id);
           if (paint) preview.dataset.paint = paint;
         }
+        get('mission-effect').textContent = mission.effettoNelGioco.anteprima;
         showInstruments(instruments, mission, result.cases);
         if (!instruments.hidden) preview.querySelector('figcaption').textContent = 'Risultato verificato';
         if (!practice) {
@@ -192,13 +207,15 @@ export function createCenter({ progress, sound = () => {} }) {
     get('mission-concept').textContent = active.concetto;
     get('mission-problem').querySelector('span').textContent = active.problema;
     get('mission-goal').querySelector('span').textContent = active.cosaFare;
-    get('mission-effect').textContent = active.effettoNelGioco.anteprima;
+    get('mission-effect').textContent = active.anteprimaDidattica ?? active.effettoNelGioco.anteprima;
     preview.dataset.mission = active.id;
     const samples = active.scenariDiTest[0].input;
-    const given = active.variabiliFornite.map(name => `${name} = ${JSON.stringify(samples[name])}`);
-    explanation.textContent = active.effettoNelGioco.pannello
-      ? [active.spiegazione, given.length ? 'Prima prova · ' + given.join(', ') : ''].filter(Boolean).join(' ')
-      : '';
+    const given = boardLines(Object.fromEntries(active.variabiliFornite.map(name => [name, samples[name]])));
+    get('mission-board-lines').textContent = given.map((_, index) => index + 1).join('\n');
+    get('mission-board-code').textContent = given.join('\n');
+    get('mission-board').hidden = !given.length;
+    scenarioPanel.hidden = true;
+    explanation.textContent = active.spiegazione;
     explanation.hidden = !explanation.textContent;
     showInstruments(instruments, active);
     preview.querySelector('figcaption').textContent = 'Risultato atteso';
@@ -207,7 +224,7 @@ export function createCenter({ progress, sound = () => {} }) {
     editor.rows = Math.max(4, active.codiceIniziale.split('\n').length);
     reward.hidden = true;
     indent.disabled = false;
-    updateEditor(active, practice ? undefined : drafts.get(active.id));
+    updateEditor(active, practice ? undefined : drafts.get(active.id), given.length);
     sound('mission');
     button.disabled = false;
     status.textContent = 'Modifica il codice e premi Esegui.';

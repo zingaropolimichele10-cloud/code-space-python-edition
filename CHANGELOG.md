@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+- Le 22 schede mostrano i dati forniti dal computer, spiegano gli operatori e riportano i risultati delle prove Python.
+- Ripristinato lo sparo Arcade con Spazio. Il laser calibrato spara colpi più larghi e frequenti.
+
 ## 1.1.0 — Sviluppo locale delle missioni
 
 - Fase 4. Completate le 22 missioni, incluse liste, debug, funzioni e accesso rapido alla sfida dal Protocollo Omega.

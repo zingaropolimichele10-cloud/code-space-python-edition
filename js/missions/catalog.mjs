@@ -80,10 +80,10 @@ export const missions = [
   {
     id: 6, titolo: 'Riparazione dello scafo', blocco: 2, concetto: 'Sottrazione = togliere una quantità',
     problema: 'Lo scafo ha subito 35 punti di danno.', perche: 'Aurora deve calcolare quanta protezione le resta.',
-    cosaFare: 'Sottrai danni da 100 nella riga evidenziata.', spiegazione: 'Il computer di bordo fornisce danni.',
-    codiceIniziale: 'scafo = 100 - 0', righeModificabili: [1], variabiliFornite: ['danni'],
+    cosaFare: 'Sostituisci 12 con il nome danni nella riga evidenziata.', spiegazione: 'danni è il nome che contiene i danni misurati. Il segno − toglie quel valore dai 100 punti dello scafo.',
+    codiceIniziale: 'scafo = 100 - 12', righeModificabili: [1], variabiliFornite: ['danni'],
     scenariDiTest: [35, 12].map(danni => ({ input: { danni }, atteso: { scafo: { type: 'int', value: 100 - danni } } })),
-    indizi: ['I danni riducono i 100 punti dello scafo.', 'Usa il nome del valore ricevuto al posto dello 0.', 'Scrivi scafo = 100 - danni.'],
+    indizi: ['I danni riducono i 100 punti dello scafo.', 'Usa il nome del valore ricevuto al posto del 12.', 'Scrivi scafo = 100 - danni.'],
     soluzioneEsempio: 'scafo = 100 - danni',
     effettoNelGioco: { anteprima: 'Integrità dello scafo · 65/100', upgrade: {}, pannello: 'scafo',
       esito: 'L’indicatore dello scafo mostra la protezione rimasta.' },
@@ -96,8 +96,8 @@ export const missions = [
     scenariDiTest: [2, 4].map(livello => ({ input: { livello }, atteso: { danno: { type: 'int', value: 10 * livello } } })),
     indizi: ['Ogni livello vale un altro gruppo di 10.', 'Sostituisci l’1 con il nome del valore di bordo.', 'Scrivi danno = 10 * livello.'],
     soluzioneEsempio: 'danno = 10 * livello',
-    effettoNelGioco: { anteprima: 'Laser · Spia di calibrazione accesa', upgrade: {}, pannello: 'laser',
-      esito: 'La console mostra la potenza calcolata dal banco di calibrazione.' },
+    effettoNelGioco: { anteprima: 'Laser · Colpi più larghi e frequenti', upgrade: { laser: true }, pannello: 'laser',
+      esito: 'Calibrazione riuscita. I colpi dorati sono più larghi e ravvicinati.' },
   },
   {
     id: 8, titolo: 'Distribuzione delle risorse', blocco: 2, concetto: '// = divisione con risultato intero',
@@ -340,3 +340,33 @@ export const missions = [
       esito: "Il banco ha verificato il totale e la soglia. Ora puoi avviare la sfida dal pannello." },
   },
 ];
+
+// Anteprime e riscontri descrivono il comportamento senza anticipare il codice.
+const didattica = {
+  1: ['Il segno = salva il valore a destra nel nome a sinistra.', 'Propulsori · Velocità più alta', 'Controlla il valore salvato nel nome velocita. È quello che legge il propulsore.'],
+  2: ['print mostra il testo tra parentesi. Le virgolette segnano dove inizia e finisce il testo.', 'Console · Compare il messaggio di avvio', 'Controlla che il testo di avvio sia tra virgolette e che maiuscole e spazi siano quelli richiesti.'],
+  3: ['True significa acceso e False spento. Si scrivono con la maiuscola e senza virgolette.', 'Scudo · Anello luminoso', 'Lo scudo legge un interruttore acceso o spento. Usa un valore Python, non una parola tra virgolette.'],
+  4: ['Per Python il testo va tra virgolette. Aurora riconosce blu, verde e viola.', 'Scafo e scia · La tavolozza cambia', 'Controlla che colore contenga uno dei tre nomi riconosciuti, scritto in minuscolo.'],
+  5: ['Python legge prima il valore a destra di =, poi salva il risultato a sinistra. + aggiunge.', 'Batteria · La barra sale di 20 unità', 'Parti dalla carica presente in energia e aggiungi la stessa quantità a ogni prova.'],
+  6: ['danni è il nome che contiene i danni misurati. Il segno − toglie quel valore dai 100 punti dello scafo.', 'Scafo · La parte integra è quella che rimane dopo i danni', 'Sottrai dai 100 punti il valore contenuto in danni. Il numero dei danni cambia tra una prova e l’altra.'],
+  7: ['* significa moltiplica. Usa il livello letto dal computer per contare gruppi da 10.', 'Laser · La calibrazione rende i colpi più larghi e frequenti', 'Calcola la potenza usando il livello di bordo. Con un livello diverso deve cambiare anche il risultato.'],
+  8: ['// divide e dà un intero. Qui puoi distribuire tutta l’energia senza avanzarne.', 'Motori · Tutti ricevono la stessa quota', 'Usa il totale e il numero di motori della prova. La quota deve essere un numero intero.'],
+  9: ['Tra due testi, + li unisce. Lo spazio alla fine del saluto separa le due parole.', 'Radio · Il saluto contiene il nome ricevuto', 'Usa il nome fornito dal radar e controlla lo spazio tra il saluto e il nome.'],
+  10: ['str trasforma un numero in testo. Così + può unire l’etichetta al valore.', 'Registro · Il rapporto cambia con le vite', 'Trasforma il valore di vite in testo prima di unirlo all’etichetta.'],
+  11: ['if significa «se» e < significa «minore di». La riga rientrata parte solo se il confronto è vero.', 'Scudo · Si attiva quando restano poche vite', 'Lo scudo deve partire spento e cambiare solo nel ramo eseguito con meno di tre vite.'],
+  12: ['if significa «se», else «altrimenti». Si esegue solo uno dei due blocchi rientrati.', 'Radar · Cambia la freccia quando l’ostacolo è vicino', 'Distingui la distanza sotto la soglia da quella uguale o superiore.'],
+  13: ['elif significa «altrimenti, se». Python prova i confronti in ordine e usa il primo vero.', 'Allarme · La spia ha tre livelli', 'Verifica le etichette dei tre rami. Un valore esattamente sulla soglia passa al ramo successivo.'],
+  14: ['and significa «e». Entrambi i confronti devono essere veri. > significa «maggiore di».', 'Difesa · Via libera quando entrambi i controlli passano', 'Verifica insieme le vite rimaste e la carica. Un solo confronto vero non basta.'],
+  15: ['for ripete la riga rientrata per ogni valore di range. Il numero tra parentesi indica quanti giri fare.', 'Propulsori · Le spie si accendono una alla volta', 'Conta i giri necessari. Ogni giro deve produrre un solo impulso.'],
+  16: ['Il ciclo cambia i a ogni giro. range(1, 6) va da 1 a 5 perché esclude il limite finale.', 'Generatore · Il totale cresce a ogni scarica', 'Al totale precedente aggiungi il valore del giro corrente. Ogni riga stampata mostra il nuovo totale.'],
+  17: ['while significa «finché». Il ciclo continua mentre il valore è sopra zero. Se non finisce, Python viene fermato.', 'Conto · Il display scende senza saltare numeri', 'Riduci il contatore di un solo passo a ogni giro e controlla quando si ferma.'],
+  18: ['append aggiunge un oggetto alla fine della lista. len conta gli oggetti presenti.', 'Stiva · Compare un nuovo oggetto e il contatore sale', 'Conserva l’ordine degli oggetti già presenti. Il kit va aggiunto una sola volta, in fondo.'],
+  19: ['for visita gli oggetti uno alla volta. In un confronto, in controlla se un oggetto è presente nella lista.', 'Stiva · Il registro elenca gli oggetti e segnala il carburante', 'Cerca il carburante per nome. La spia deve restare spenta anche se in stiva ci sono altri oggetti.'],
+  20: ['Debug significa trovare e correggere errori. Controlla i due punti, il rientro e le lettere dei nomi.', 'Terminale · Il messaggio appare solo con il segnale di pronto', 'Il messaggio va stampato solo nel blocco che parte quando il sistema è pronto.'],
+  21: ['def definisce il comando. Le parentesi dopo il suo nome lo avviano e return restituisce il risultato.', 'Generatore · Lo scudo segue il valore restituito dal comando', 'Usa il risultato del comando per aggiornare lo scudo. Quel risultato può essere acceso oppure spento.'],
+  22: ['Il ciclo somma gli impulsi, return restituisce il totale e >= verifica se raggiunge o supera la soglia.', 'Banco Omega · L’indicatore segue il totale degli impulsi', 'Aggiungi l’impulso del giro alla carica già accumulata. La somma deve funzionare anche se cambia la lista.'],
+};
+
+for (const mission of missions) {
+  [mission.spiegazione, mission.anteprimaDidattica, mission.riscontro] = didattica[mission.id];
+}

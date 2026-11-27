@@ -71,6 +71,13 @@ export function createCanvas(canvas) {
       const size = star.bright ? 2 : 1;
       ctx.fillRect(star.x, (star.y + (reduced.matches ? 0 : world.time * (star.bright ? 11 : index % 2 ? 5 : 2))) % HEIGHT, size, size);
     }
+    for (const shot of world.shots) {
+      ctx.fillStyle = shot.boosted ? '#ffd577' : '#63dfff';
+      const halfWidth = shot.boosted ? 3 : 2;
+      ctx.fillRect(shot.x - halfWidth, shot.y, 2 * halfWidth, 13);
+      ctx.fillStyle = '#e5fbff';
+      ctx.fillRect(shot.x - 1, shot.y, 2, 6);
+    }
     for (const rock of world.rocks) {
       ctx.save();
       ctx.translate(rock.x, rock.y);

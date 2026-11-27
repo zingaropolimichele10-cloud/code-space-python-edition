@@ -145,6 +145,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     assert.equal(await state(), 'MISSION');
     assert.equal(await dialog(), true);
     assert.equal(await text('mission-title'), 'Riaccendi Aurora');
+    await saveScreenshot(browser, '111-missione-01');
     const snapshot = await paint();
     const before = await hud();
     await source('velocita = 6');
@@ -208,6 +209,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     ]) {
       await advance(220);
       assert.equal(await text('mission-title'), title);
+      await saveScreenshot(browser, '111-' + title.toLowerCase().replaceAll(' ', '-'));
       assert.equal(await state(), 'MISSION');
       await submit(code, 'success');
       assert.equal(await text('mission-count'), count);
@@ -257,6 +259,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await action('start');
     await click('#mission-retry');
     assert.equal(await text('mission-title'), 'Ricarica energetica');
+    await saveScreenshot(browser, '111-missione-05');
     await click('#mission-hint');
     assert.doesNotMatch(await text('mission-hints'), /energia = energia \+ 20/);
     await submit('energia = 40\nenergia = 60', 'error');
@@ -275,6 +278,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
       await advance(230);
       assert.equal(await state(), 'MISSION');
       assert.equal(await text('mission-title'), title);
+      await saveScreenshot(browser, '111-' + title.toLowerCase().replaceAll(' ', '-'));
       await source(code);
       await evaluate("document.querySelector('#mission-code').dispatchEvent(new Event('input', { bubbles: true }))");
       await submit(code, 'success');
@@ -296,6 +300,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
       await advance(230);
       assert.equal(await state(), 'MISSION');
       assert.equal(await text('mission-title'), lesson.titolo);
+      await saveScreenshot(browser, '111-missione-' + lesson.id);
       if (lesson.id === 12) {
         await click('#mission-skip');
         await click('#mission-retry');
@@ -335,6 +340,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
       await advance(230);
       assert.equal(await state(), 'MISSION');
       assert.equal(await text('mission-title'), lesson.titolo);
+      await saveScreenshot(browser, '111-missione-' + lesson.id);
       if (lesson.id === 19) {
         await click('#mission-skip');
         await click('#mission-retry');
@@ -452,4 +458,91 @@ test('Campionamento requestAnimationFrame reale in Chromium', async t => {
   assert.ok(data.frames > 0 && data.elapsed >= 2000);
   assert.deepEqual(browser.errors, []);
   t.diagnostic(`${browser.version}, 1360 × 900, ${data.frames} intervalli in ${data.elapsed.toFixed(1)} ms, mediana ${data.median.toFixed(1)} ms, p95 ${data.p95.toFixed(1)} ms`);
+});
+
+test('Spazio nel volo e nell’editor, dati protetti e riscontri della missione 06', async t => {
+  const browser = await openBrowser('', { beforeLoad: controlledFrames + `
+    window.shotDraws = 0;
+    const fillRect = CanvasRenderingContext2D.prototype.fillRect;
+    CanvasRenderingContext2D.prototype.fillRect = function (...args) {
+      if (args[2] === 4 && args[3] === 13 && this.fillStyle === '#63dfff') shotDraws++;
+      return fillRect.apply(this, args);
+    };
+  ` });
+  t.after(browser.close);
+  await waitForPage(browser);
+  const { evaluate } = browser;
+  const key = type => browser.page('Input.dispatchKeyEvent', {
+    type, key: ' ', code: 'Space', windowsVirtualKeyCode: 32, ...(type === 'keyDown' && { text: ' ' }),
+  });
+  const tap = async () => {
+    await key('keyDown');
+    await key('keyUp');
+    await evaluate('advance(1)');
+  };
+  await evaluate(`(() => {
+    const q = selector => document.querySelector(selector);
+    q('[data-action=tutorial]').click();
+    q('#tutorial-panel [data-action=start]').click();
+    q('#space').focus();
+    advance(2);
+  })()`);
+  await tap();
+  assert.ok(await evaluate('shotDraws > 0'));
+  await evaluate(`(() => {
+    document.querySelector('#teacher-open').click();
+    document.querySelector('#teacher-mission').value = '6';
+    document.querySelector('#teacher-launch').click();
+    advance(1);
+  })()`);
+  assert.equal(await evaluate("document.querySelector('#mission-board-code').textContent"), 'danni = 35');
+  assert.equal(await evaluate("document.querySelector('#mission-board-code').isContentEditable"), false);
+  assert.equal(await evaluate("document.querySelector('#line-numbers span').textContent"), '2');
+  assert.equal(await evaluate("document.querySelector('#mission-code').value"), 'scafo = 100 - 12');
+  await evaluate("document.querySelector('#mission-code').setSelectionRange(0,0); shotDraws = 0;");
+  await tap();
+  assert.match(await evaluate("document.querySelector('#mission-code').value"), /^ /);
+  // La simulazione in missione può ridisegnare il proiettile precedente, ma non spostarlo.
+  const canvas = () => evaluate("document.querySelector('#space').toDataURL()");
+  const frozen = await canvas();
+  await evaluate('advance(12)');
+  assert.equal(await canvas(), frozen);
+  const submit = code => evaluate(`new Promise(resolve => {
+    const editor = document.querySelector('#mission-code');
+    const status = document.querySelector('#mission-status');
+    const observer = new MutationObserver(() => {
+      if (['error','success'].includes(status.dataset.result)) {
+        observer.disconnect(); resolve(status.textContent);
+      }
+    });
+    observer.observe(status, {attributes:true, childList:true});
+    editor.value = ${JSON.stringify(code)};
+    editor.dispatchEvent(new Event('input', {bubbles:true}));
+    document.querySelector('#mission-run').click();
+  })`);
+  assert.match(await submit('scafo = 100 - 12'), /Riga 2.*danni.*cambia/i);
+  assert.match(await evaluate("document.querySelector('#mission-cases').textContent"), /danni = 35 → scafo = 88/);
+  await submit('scafo = 100 - danni');
+  assert.deepEqual(await evaluate("[...document.querySelectorAll('#mission-instruments meter')].map(bar => bar.value)"), [100, 35, 65]);
+  assert.match(await evaluate("document.querySelector('#mission-cases').textContent"), /danni = 12 → scafo = 88/);
+  await saveScreenshot(browser, '111-missione-06-verificata');
+  await evaluate("document.querySelector('#mission-done').click(); advance(18); shotDraws = 0;");
+  assert.equal(await evaluate("document.activeElement.id"), 'space');
+  await tap();
+  assert.ok(await evaluate('shotDraws > 0'));
+  for (let id = 1; id <= 22; id++) {
+    await evaluate(`(() => {
+      const q = selector => document.querySelector(selector);
+      q('#teacher-open').click();
+      q('#teacher-mission').value = '${id}';
+      q('#teacher-launch').click();
+      q('#mission-skip').click();
+      advance(18);
+      shotDraws = 0;
+    })()`);
+    assert.equal(await evaluate("document.activeElement.id"), 'space', `Missione ${id}`);
+    await tap();
+    assert.ok(await evaluate('shotDraws > 0'), `Sparo dopo la missione ${id}`);
+  }
+  assert.deepEqual(browser.errors, []);
 });

@@ -159,3 +159,35 @@ test('Lo scudo della missione 11 interviene sotto tre vite e si consuma', () => 
     assert.deepEqual([world.lives, world.emergency], [lives, reserve]);
   }
 });
+
+test('Sparo Arcade: collisione, limite, recupero controlli e upgrade laser', () => {
+  const sounds = [];
+  const game = started({ random: () => 0, sound: name => sounds.push(name) });
+  const { world } = game;
+  world.rocks.push({ ...asteroid(world.ship), y: world.ship.y - 45 });
+  game.requestFire();
+  game.step(.05);
+  assert.equal(world.rocks.length, 0);
+  assert.equal(world.score, 15);
+  assert.deepEqual(sounds, ['fire', 'destroy']);
+  assert.ok(world.particles.length > 0);
+  game.keys.add(' ');
+  assert.ok(game.openMission(6));
+  tick(game, 100);
+  assert.equal(world.shots.length, 0);
+  assert.ok(game.closeMission());
+  tick(game, 30);
+  assert.equal(world.shots.length, 0);
+  game.grant({ laser: true }, 7);
+  game.requestFire();
+  game.step(.01);
+  assert.equal(world.shots[0].boosted, true);
+  assert.equal(world.shots[0].radius, 6);
+  game.keys.add(' ');
+  tick(game, 10);
+  assert.ok(world.shots.length >= 2);
+  for (let step = 0; step < 300; step++) {
+    game.step(.016);
+    assert.ok(world.shots.length <= LIMITS.shots);
+  }
+});

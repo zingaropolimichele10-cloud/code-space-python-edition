@@ -3,6 +3,7 @@ export function showInstruments(panel, mission, cases) {
   panel.replaceChildren();
   panel.hidden = !kind;
   if (!kind) return;
+  if (!cases && mission.anteprimaDidattica && kind !== 'scafo') { panel.hidden = true; return; }
   const samples = cases ?? mission.scenariDiTest.map(({ input, atteso, output }) => ({
     input, variables: atteso, output: output?.join('\n') ?? '',
   }));
@@ -41,7 +42,9 @@ export function showInstruments(panel, mission, cases) {
       meter(`Dopo la ricarica: ${variables.energia.value}/100`, variables.energia.value);
       break;
     case 'scafo':
-      meter(`Integrità: ${variables.scafo.value}/100`, variables.scafo.value);
+      meter('Integrità iniziale: 100/100', 100);
+      meter(`Danni subiti: ${input.danni}`, input.danni);
+      if (cases) meter(`Integrità residua: ${variables.scafo.value}/100`, variables.scafo.value);
       break;
     case 'laser':
       label(`● Calibrato · Potenza ${variables.danno.value}`);

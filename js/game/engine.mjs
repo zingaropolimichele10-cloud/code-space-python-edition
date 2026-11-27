@@ -1,6 +1,7 @@
 export const WIDTH = 960;
 export const HEIGHT = 540;
-export const LIMITS = Object.freeze({ rocks: 16, stars: 8, particles: 90, dt: 0.05 });
+export const FIRE_KEY = ' ';
+export const LIMITS = Object.freeze({ rocks: 16, stars: 8, particles: 90, shots: 18, dt: 0.05 });
 export const State = Object.freeze(Object.fromEntries(
   ['MENU', 'TUTORIAL', 'PLAYING', 'PAUSED', 'MISSION', 'GAME_OVER', 'FINAL_CHALLENGE', 'VICTORY']
     .map(name => [name, name]),
@@ -18,7 +19,7 @@ const transitions = {
 
 export const DEFAULT_FLIGHT = Object.freeze({ duration: 60, difficulty: 'standard', asteroids: true, demo: false });
 const difficultyScale = { calm: 0.65, standard: 1, hard: 1.35 };
-const baseUpgrades = { speed: 5, maxLives: 3, shield: false, color: 'rosso', autoShield: false };
+const baseUpgrades = { speed: 5, maxLives: 3, shield: false, color: 'rosso', autoShield: false, laser: false };
 const clamp = (value, low, high) => Math.max(low, Math.min(value, high));
 const overlaps = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < (a.radius + b.radius) ** 2;
 
@@ -27,7 +28,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     state: State.MENU,
     light: false,
     ship: { x: WIDTH / 2, y: HEIGHT * 0.8, radius: 15, invulnerable: 0 },
-    rocks: [], stars: [], particles: [],
+    rocks: [], stars: [], particles: [], shots: [],
     upgrades: { ...baseUpgrades },
     options: { ...DEFAULT_FLIGHT },
     time: 0, score: 0, lives: 3, shield: false, emergency: false,
@@ -40,12 +41,15 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
   let starIn;
   let missionIn;
   let shieldCooling;
+  let shotIn = 0;
+  let firePressed = false;
   const keys = new Set();
 
   function transition(next) {
     if (!transitions[world.state].includes(next)) return false;
     world.state = next;
     keys.clear();
+    firePressed = false;
     return true;
   }
 
@@ -57,7 +61,8 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
 
   function resetSector(duration = world.options.duration) {
     Object.assign(world.ship, { x: WIDTH / 2, y: HEIGHT * 0.8, invulnerable: 1.4 });
-    world.rocks.length = world.stars.length = world.particles.length = 0;
+    world.rocks.length = world.stars.length = world.particles.length = world.shots.length = 0;
+    shotIn = 0;
     world.lives = world.upgrades.maxLives;
     world.shield = world.upgrades.shield;
     world.emergency = world.upgrades.autoShield;
@@ -100,7 +105,8 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
         return true;
       case 'final':
         if (world.state !== State.PLAYING || !transition(State.FINAL_CHALLENGE)) return false;
-        world.rocks.length = world.stars.length = world.particles.length = 0;
+        world.rocks.length = world.stars.length = world.particles.length = world.shots.length = 0;
+        shotIn = 0;
         challengeDuration = world.options.duration;
         world.finalLeft = challengeDuration;
         checkpointNow(State.FINAL_CHALLENGE);
@@ -233,6 +239,38 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     }
   }
 
+  // Riprende il segmento di collisione e la cadenza del combattimento Arcade.
+  function requestFire() {
+    if (shotIn <= 0) firePressed = true;
+  }
+
+  function updateShots(dt) {
+    shotIn -= dt;
+    if ((firePressed || keys.has(FIRE_KEY)) && shotIn <= 0 && world.shots.length < LIMITS.shots) {
+      const boosted = world.upgrades.laser;
+      world.shots.push({ x: world.ship.x, y: world.ship.y - 19, radius: boosted ? 6 : 4, boosted });
+      shotIn = boosted ? .145 : .205;
+      sound('fire');
+    }
+    firePressed = false;
+    for (let index = world.shots.length - 1; index >= 0; index--) {
+      const shot = world.shots[index];
+      const previousY = shot.y;
+      shot.y -= dt * 610;
+      const target = world.rocks.findIndex(rock => {
+        const y = Math.max(shot.y, Math.min(previousY, rock.y));
+        return overlaps({ x: shot.x, y, radius: shot.radius }, rock);
+      });
+      if (target !== -1) {
+        const [rock] = world.rocks.splice(target, 1);
+        world.score += 15;
+        burst(rock.x, rock.y, '#ffd8a0');
+        sound('destroy');
+      } else if (shot.y > -8) continue;
+      world.shots.splice(index, 1);
+    }
+  }
+
   function updateRocks(dt) {
     for (let index = world.rocks.length - 1; index >= 0; index--) {
       const rock = world.rocks[index];
@@ -291,6 +329,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     }
     updateStars(dt);
     if (world.state === State.MISSION) return;
+    updateShots(dt);
     updateRocks(dt);
     if (world.state === State.GAME_OVER) return;
     for (let index = world.particles.length - 1; index >= 0; index--) {
@@ -305,5 +344,5 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     }
   }
 
-  return { world, keys, action, step, openMission, closeMission, grant, restore, reset, configure };
+  return { world, keys, action, step, requestFire, openMission, closeMission, grant, restore, reset, configure };
 }
