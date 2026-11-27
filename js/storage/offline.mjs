@@ -45,11 +45,14 @@ if (banner && workers && window === window.top) {
       });
 
       workers.addEventListener('controllerchange', () => {
-        if (!requested || !workers.controller) {
+        if (!workers.controller) {
           showUpdate();
           return;
         }
         if (reloading) return;
+        if (!requested) {
+          dispatchEvent(new Event('codespace:before-update'));
+        }
         reloading = true;
         if (updatePage) location.replace('./index.html');
         else location.reload();
