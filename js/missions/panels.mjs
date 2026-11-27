@@ -13,6 +13,27 @@ const presets = {
 };
 
 export function renderPanel(panel, mission, observations = []) {
+  if (mission.panel === 'adventure') {
+    const title = document.createElement('strong');
+    title.textContent = 'Computer di bordo';
+    const explanation = document.createElement('div');
+    explanation.textContent = mission.anteprimaDidattica;
+    const result = document.createElement('div');
+    result.style.whiteSpace = 'pre-wrap';
+    result.textContent = observations.length
+      ? observations.map(item =>
+          Object.entries(item.variables ?? {})
+            .map(([name, v]) => name + ' = ' + (
+              typeof v.value === 'boolean'
+                ? (v.value ? 'True' : 'False')
+                : JSON.stringify(v.value)
+            )).join(' · ')
+          + (item.output ? '\\n' + item.output : '')
+        ).join('\\n')
+      : mission.variabiliFornite?.join(', ') || '';
+    panel.replaceChildren(title, explanation, result);
+    return;
+  }
   const [title, initial] = presets[mission.panel];
   let rows = initial;
   const first = observations[0];

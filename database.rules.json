@@ -95,7 +95,7 @@
             ".validate": "newData.isBoolean()"
           },
           "required": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && (newData.val() <= 5 || (newData.parent().child('adventure').val() === true && newData.val() <= 12)) && newData.val() % 1 === 0"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && (newData.val() <= 5 || (newData.parent().child('adventure').val() === true && newData.val() <= 22)) && newData.val() % 1 === 0"
           },
           "skip": {
             ".validate": "newData.isBoolean()"
@@ -187,7 +187,7 @@
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000 && newData.val() % 1 === 0 && (!data.exists() || newData.val() >= data.val())"
           },
           "mask": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && (newData.val() <= 31 || (root.child('rooms/' + $room + '/settings/adventure').val() === true && newData.val() <= 4095)) && newData.val() % 1 === 0 && (!data.exists() || data.val() % 2 < 1 || newData.val() % 2 >= 1) && (!data.exists() || data.val() % 4 < 2 || newData.val() % 4 >= 2) && (!data.exists() || data.val() % 8 < 4 || newData.val() % 8 >= 4) && (!data.exists() || data.val() % 16 < 8 || newData.val() % 16 >= 8) && (!data.exists() || data.val() % 32 < 16 || newData.val() % 32 >= 16) && (!data.exists() || data.val() % 64 < 32 || newData.val() % 64 >= 32) && (!data.exists() || data.val() % 128 < 64 || newData.val() % 128 >= 64) && (!data.exists() || data.val() % 256 < 128 || newData.val() % 256 >= 128) && (!data.exists() || data.val() % 512 < 256 || newData.val() % 512 >= 256) && (!data.exists() || data.val() % 1024 < 512 || newData.val() % 1024 >= 512) && (!data.exists() || data.val() % 2048 < 1024 || newData.val() % 2048 >= 1024) && (!data.exists() || data.val() % 4096 < 2048 || newData.val() % 4096 >= 2048)"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && (newData.val() <= 31 || (root.child('rooms/' + $room + '/settings/adventure').val() === true && newData.val() <= 4194303)) && newData.val() % 1 === 0 && (!data.exists() || data.val() % 2 < 1 || newData.val() % 2 >= 1) && (!data.exists() || data.val() % 4 < 2 || newData.val() % 4 >= 2) && (!data.exists() || data.val() % 8 < 4 || newData.val() % 8 >= 4) && (!data.exists() || data.val() % 16 < 8 || newData.val() % 16 >= 8) && (!data.exists() || data.val() % 32 < 16 || newData.val() % 32 >= 16) && (!data.exists() || data.val() % 64 < 32 || newData.val() % 64 >= 32) && (!data.exists() || data.val() % 128 < 64 || newData.val() % 128 >= 64) && (!data.exists() || data.val() % 256 < 128 || newData.val() % 256 >= 128) && (!data.exists() || data.val() % 512 < 256 || newData.val() % 512 >= 256) && (!data.exists() || data.val() % 1024 < 512 || newData.val() % 1024 >= 512) && (!data.exists() || data.val() % 2048 < 1024 || newData.val() % 2048 >= 1024) && (!data.exists() || data.val() % 4096 < 2048 || newData.val() % 4096 >= 2048) && (!data.exists() || data.val() % 8192 < 4096 || newData.val() % 8192 >= 4096) && (!data.exists() || data.val() % 16384 < 8192 || newData.val() % 16384 >= 8192) && (!data.exists() || data.val() % 32768 < 16384 || newData.val() % 32768 >= 16384) && (!data.exists() || data.val() % 65536 < 32768 || newData.val() % 65536 >= 32768) && (!data.exists() || data.val() % 131072 < 65536 || newData.val() % 131072 >= 65536) && (!data.exists() || data.val() % 262144 < 131072 || newData.val() % 262144 >= 131072) && (!data.exists() || data.val() % 524288 < 262144 || newData.val() % 524288 >= 262144) && (!data.exists() || data.val() % 1048576 < 524288 || newData.val() % 1048576 >= 524288) && (!data.exists() || data.val() % 2097152 < 1048576 || newData.val() % 2097152 >= 1048576) && (!data.exists() || data.val() % 4194304 < 2097152 || newData.val() % 4194304 >= 2097152)"
           },
           "boss": {
             ".validate": "newData.isBoolean() && (data.val() !== true || newData.val() === true)"
@@ -221,7 +221,7 @@
         "$uid": {
           ".validate": "newData.hasChildren(['mission', 'since', 'attempts', 'hints', 'help']) && newData.child('adventure').val() === root.child('rooms/' + $room + '/settings/adventure').val() && ((newData.child('adventure').val() === true && newData.child('errors').exists()) || (newData.child('adventure').val() !== true && !newData.child('errors').exists()))",
           "mission": {
-            ".validate": "newData.isNumber() && newData.val() >= 0 && (newData.val() <= 5 || (root.child('rooms/' + $room + '/settings/adventure').val() === true && newData.val() <= 12)) && newData.val() % 1 === 0"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && (newData.val() <= 5 || (root.child('rooms/' + $room + '/settings/adventure').val() === true && newData.val() <= 22)) && newData.val() % 1 === 0"
           },
           "since": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999999999999 && newData.val() % 1 === 0"
@@ -233,7 +233,8 @@
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3 && newData.val() % 1 === 0"
           },
           "help": {
-            ".validate": "newData.isBoolean()"
+            ".validate": "newData.isBoolean()",
+            ".write": "auth != null && root.child('hosts').child(auth.uid).val() === true && root.child('rooms/' + $room + '/owner').val() === auth.uid && now < root.child('rooms/' + $room + '/expires').val() && root.child('rooms/' + $room + '/phase').val() !== 'ended' && data.val() === true && newData.val() === false"
           },
           "$other": {
             ".validate": false

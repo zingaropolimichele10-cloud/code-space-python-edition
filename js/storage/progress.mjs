@@ -42,6 +42,8 @@ export function normalizeProgress(input) {
     drafts: Object.fromEntries(ids.filter(id => typeof raw.drafts?.[id] === 'string')
       .map(id => [id, raw.drafts[id].slice(0, limits.source)])),
     upgrades: [...completed],
+    color: ['blu', 'verde', 'viola'].includes(raw.color)
+      ? raw.color : 'blu',
     best: validScore(raw.best) ? raw.best : 0,
     audio: { enabled: raw.audio?.enabled === true, volume: validVolume(raw.audio?.volume) ? raw.audio.volume : .25 },
     light: raw.light === true,

@@ -204,8 +204,8 @@ function draw() {
       : '';
     set('player-summary', me ? `${me.name} · posizione ${me.rank} · ${me.total} punti${distance}${totals} · obiettivo: ${control.settings.required} missioni${current === 'ended' ? ' · Concetti allenati: ' + (learned.join(', ') || 'puoi continuare a esercitarti in modalità individuale') : ''}` : '');
     get('help').hidden = !me || ['ended', 'expired', 'kicked', 'offline', 'lobby'].includes(current);
-    get('help').disabled = help;
-    set('help', help ? 'Aiuto richiesto' : 'Chiedi aiuto');
+    get('help').disabled = false;
+    set('help', help ? 'Annulla richiesta di aiuto' : 'Chiedi aiuto');
   }
   get('rank').hidden = projector && control.view === 'lobby';
   get('podium').hidden = control.view !== 'podium';
@@ -251,6 +251,21 @@ function draw() {
       cell(tr, info.hints ?? 0);
       const aid = cell(tr, info.help ? 'Aiuto richiesto' : stale ? 'Da seguire' : '—');
       if (info.help || stale) aid.className = 'needs-help';
+      if (info.help) {
+        const resolve = document.createElement('button');
+        resolve.type = 'button';
+        resolve.className = 'secondary';
+        resolve.textContent = 'Risolvi richiesta';
+        resolve.disabled = !connected || !ready || current === 'ended';
+        resolve.setAttribute('aria-label', 'Risolvi richiesta di ' + row.name);
+        resolve.addEventListener('click', () => {
+          void run(async () => {
+            await store.set(`metrics/${room}/${row.uid}/help`, false);
+          }, resolve);
+        });
+        aid.append(document.createElement('br'), resolve);
+      }
+
       const action = cell(tr, '');
       const button = document.createElement('button');
       button.type = 'button';
@@ -377,6 +392,29 @@ function attach(id) {
   }, failSync));
   for (const [path, target] of [['members', members], ['scores', scores], ['presence', presence], ...(host ? [['metrics', metrics]] : [])]) {
     stops.push(store.children(path + '/' + id, target, drawSoon, failSync));
+  }
+
+  if (student) {
+    stops.push(store.listen(`metrics/${id}/${store.uid}/help`, value => {
+      if (value === false && help) {
+        const sent = privateReport ? JSON.parse(privateReport) : null;
+        if (sent?.help === true) {
+          help = false;
+          sent.help = false;
+          privateReport = JSON.stringify(sent);
+          if (latest) latest = { ...latest, help: false };
+          if (localFlight) {
+            localFlight.queue = latest;
+            saveFlight(true);
+          }
+          get('flight-frame').contentWindow?.postMessage({
+            type: 'cs:help-resolved', room
+          }, location.origin);
+          drawSoon();
+          clock();
+        }
+      }
+    }, failSync));
   }
   stops.push(store.connection(on => {
     connected = on;
@@ -707,7 +745,7 @@ get('sign-out').addEventListener('click', () => void run(async () => {
   location.reload();
 }));
 get('help').addEventListener('click', () => {
-  help = true;
+  help = !help;
   if (localFlight && latest) { localFlight.queue = { ...latest, help }; saveFlight(true); }
   drawSoon();
   clock();

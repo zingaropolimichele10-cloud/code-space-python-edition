@@ -154,14 +154,14 @@ export function createCanvas(canvas) {
     if (!reduced.matches && ship.invulnerable > 0 && Math.sin(ship.invulnerable * 27) < 0) ctx.globalAlpha = 0.48;
     const turbo = world.upgrades.speed > 5;
     const flame = 26 + (turbo ? 14 : 0) + (reduced.matches ? 0 : Math.sin(flightTime * 30) * 4);
-    const trail = world.upgrades.color === 'blu' ? '#7eebff' : turbo ? '#ffca79' : '#57d8ff';
+    const trail = ({blu:'#7eebff',verde:'#75ffac',viola:'#d49aff'}[world.upgrades.color] ?? (turbo ? '#ffca79' : '#57d8ff'));
     polygon([[-5, 11], [0, flame], [5, 11]], trail);
     if (turbo && !world.light) {
       polygon([[-12, 12], [-9, flame - 5], [-6, 12]], trail);
       polygon([[6, 12], [9, flame - 5], [12, 12]], trail);
     }
     polygon([[0, -20], [16, 13], [5, 10], [0, 15], [-5, 10], [-16, 13]],
-      world.upgrades.color === 'blu' ? '#409bff' : '#ef786a', '#dcecff');
+      ({blu:'#409bff',verde:'#36cf79',viola:'#a66cff'}[world.upgrades.color] ?? '#ef786a'), '#dcecff');
     polygon([[0, -9], [5, 4], [-5, 4]], '#bcf5ff');
     ctx.fillStyle = '#5ee8ff';
     ctx.fillRect(-12, 8, 3, 2);

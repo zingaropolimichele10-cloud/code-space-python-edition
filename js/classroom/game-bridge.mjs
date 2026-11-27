@@ -106,6 +106,14 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio, 
   addEventListener('message', event => {
     if (event.origin !== location.origin || event.source !== parent) return;
     const data = event.data;
+    if (data?.type === 'cs:help-resolved' && data.room === room) {
+      if (flying() && world.state === State.PAUSED) {
+        game.action('resume');
+        game.keys.clear();
+        refresh();
+      }
+      return;
+    }
     if (data?.type === 'cs:heartbeat' && data.room === room && data.seq === seq) {
       expiry = performance.now() + 2400;
       syncBoss(data.bossLeft);

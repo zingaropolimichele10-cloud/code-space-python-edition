@@ -202,16 +202,14 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
 
   function grant(upgrades, reward) {
     Object.assign(world.upgrades, upgrades);
-    if (reward === 2) world.lives = world.upgrades.maxLives;
-    if (reward === 3) { world.shield = true; sound('shield'); }
+    if (reward && upgrades.maxLives) world.lives = world.upgrades.maxLives;
+    if (reward && upgrades.shield) { world.shield = true; sound('shield'); }
     if (upgrades.autoShield || upgrades.reactor) world.emergency = true;
     if (reward === 4 && upgrades.cache) world.score += 150;
     if (upgrades.reactor && shieldCooling > 10) shieldCooling = 10;
     if (reward) {
       world.rewardFlash = 1.25;
-      announce(['', 'Propulsori turbo', 'Riparazione completata', 'Scudo installato', 'Coordinate NORD-7 · +150',
-        'Cannoni rinforzati', 'Reattore bilanciato', 'Riserva d’emergenza pronta', 'Rotta sicura',
-        'Ricarica automatica', 'Magnete installato', 'Computer riparato', 'Protocollo Omega attivo'][reward]);
+      announce('Missione ' + reward + ' completata');
       checkpointNow();
     }
   }

@@ -1,9 +1,10 @@
+import { quizzes } from './quiz.mjs';
 import { State } from '../game/engine.mjs';
 import { createPythonRunner } from '../python/runner.mjs';
 import { installEditorTools } from './editor-tools.mjs';
 import { renderPanel } from './panels.mjs';
 import { MAIN_MISSIONS, missions } from './catalog.mjs';
-import { validateMission } from './validate.mjs';
+import { validateMission } from './validate-adventure.mjs';
 
 export function createCenter({ progress, sound = () => {} }) {
   const completed = new Set(progress.state.completed);
@@ -27,6 +28,69 @@ export function createCenter({ progress, sound = () => {} }) {
   const retry = get('mission-retry');
   const pendingList = get('pending-missions');
   const note = get('mission-note');
+  const understood = new Set();
+  let quizPassed = false;
+
+  const quizPanel = document.createElement('section');
+  quizPanel.className = 'mission-quiz';
+  quizPanel.style.cssText = 'padding:16px;margin:12px 0;border:1px solid #38bdf8;border-radius:12px;';
+
+  get('mission-explanation').after(quizPanel);
+
+  function showQuiz() {
+    quizPanel.replaceChildren();
+    quizPanel.hidden = quizPassed;
+
+    if (quizPassed) return;
+
+    const [question, answers, correct] = quizzes[active.id];
+
+    const heading = document.createElement('h3');
+    heading.textContent = 'Verifica di aver capito';
+
+    const prompt = document.createElement('p');
+    prompt.textContent = question;
+
+    const feedback = document.createElement('p');
+    feedback.setAttribute('aria-live', 'polite');
+
+    quizPanel.append(heading, prompt);
+
+    const choices = answers.map((answer, index) => {
+      const choice = document.createElement('button');
+      choice.type = 'button';
+      choice.className = 'secondary';
+      choice.textContent = answer;
+      choice.style.cssText = 'display:block;width:100%;margin:8px 0;text-align:left;';
+      choice.disabled = locked;
+
+      choice.addEventListener('click', () => {
+        if (locked || quizPassed) return;
+
+        if (index !== correct) {
+          feedback.textContent = 'Non ancora. Rileggi la spiegazione e riprova!';
+          return;
+        }
+
+        quizPassed = true;
+        understood.add(active.id);
+        quizPanel.hidden = true;
+        editor.readOnly = false;
+        indent.disabled = false;
+        button.disabled = false;
+        hintButton.hidden = false;
+        hints.hidden = false;
+        status.textContent = 'Risposta corretta! Ora prova a programmare.';
+        editor.focus({ preventScroll: true });
+      });
+
+      quizPanel.append(choice);
+      return choice;
+    });
+
+    quizPanel.append(feedback);
+  }
+
   let active;
   let practice = false;
   let unlocked = false;
@@ -72,7 +136,9 @@ export function createCenter({ progress, sound = () => {} }) {
       status.textContent = 'Codice modificato. Premi Esegui per verificare questa versione.';
     });
     for (const { id, upgrade } of missions) {
-      if (completed.has(id)) game.grant(upgrade);
+      if (completed.has(id)) game.grant(id === 4
+        ? { ...upgrade, color: progress.state.color ?? 'blu' }
+        : upgrade);
     }
 
     function leave() {
@@ -128,7 +194,7 @@ export function createCenter({ progress, sound = () => {} }) {
     });
     get('mission-form').addEventListener('submit', async event => {
       event.preventDefault();
-      if (!active || button.disabled || locked) return;
+      if (!active || !quizPassed || button.disabled || locked) return;
       attempts++;
       const mission = active;
       const source = editor.value;
@@ -141,7 +207,7 @@ export function createCenter({ progress, sound = () => {} }) {
       const result = await validateMission(mission, source, run, () => current === revision);
       if (!result || current !== revision) return;
       output.textContent = result.output;
-      renderPanel(get('mission-panel'), mission, result.observations);
+      renderPanel(get('mission-panel'), mission, result.cases);
       status.textContent = result.ok && practice
         ? 'velocita contiene l’intero 10. Python calcola il valore a destra di = prima di assegnarlo.'
         : result.message;
@@ -151,7 +217,12 @@ export function createCenter({ progress, sound = () => {} }) {
           completed.add(mission.id);
           pending.delete(mission.id);
           progress.update({ completed: [...completed], skipped: [...pending] });
-          game.grant(mission.upgrade, mission.id);
+          const upgrade = { ...mission.upgrade };
+          if (mission.id === 4) {
+            upgrade.color = result.variables.colore.value;
+            progress.update({ color: upgrade.color });
+          }
+          game.grant(upgrade, mission.id);
         }
         sound('success');
         get('reward-text').textContent = practice ? 'Prova riuscita. Il volo inizierà con la configurazione di partenza.' : mission.reward;
@@ -178,8 +249,9 @@ export function createCenter({ progress, sound = () => {} }) {
     if (dialog.open) return;
     practice = demonstration;
     active = mission;
+    quizPassed = demonstration || understood.has(mission.id) || !quizzes[mission.id];
     dialog.dataset.mission = String(mission.id);
-    dialog.querySelector('.mission-brief').open = false;
+    dialog.querySelector('.mission-brief').open = true;
     attempts = errors = 0;
     since = Date.now();
     pauseSince = 0;
@@ -196,23 +268,29 @@ export function createCenter({ progress, sound = () => {} }) {
     get('mission-edit').textContent = active.edit;
     get('mission-preview').textContent = active.preview;
     get('mission-preview').dataset.mission = active.id;
-    get('mission-scenarios').hidden = active.id !== 7;
+    get('mission-scenarios').hidden = true;
     get('mission-explanation').textContent = active.explanation;
     editor.value = (practice ? undefined : drafts.get(active.id)) ?? active.source;
-    editor.readOnly = false;
+    editor.readOnly = !quizPassed;
     reward.hidden = true;
-    indent.disabled = false;
+    indent.disabled = !quizPassed;
     updateEditor();
     sound('mission');
-    button.disabled = locked;
-    status.textContent = 'Modifica il codice e premi Esegui.';
+    button.disabled = locked || !quizPassed;
+    hintButton.hidden = !quizPassed;
+    hints.hidden = !quizPassed;
+    status.textContent = quizPassed
+      ? 'Modifica il codice e premi Esegui.'
+      : 'Rispondi alla domanda per sbloccare Python.';
     status.dataset.result = '';
     output.textContent = '';
     skip.hidden = !maySkip();
     done.hidden = true;
     syncHints();
+    showQuiz();
     dialog.showModal();
-    editor.focus({ preventScroll: true });
+    if (quizPassed) editor.focus({ preventScroll: true });
+    else quizPanel.querySelector('button')?.focus();
   }
 
   return {
@@ -241,7 +319,10 @@ export function createCenter({ progress, sound = () => {} }) {
         status.textContent = 'Verifica annullata durante la sospensione. Premi Esegui dopo la ripresa.';
       }
       locked = blocked;
-      button.disabled = locked || editor.readOnly || status.dataset.result === 'pending';
+      button.disabled = locked || !quizPassed || editor.readOnly || status.dataset.result === 'pending';
+      for (const choice of quizPanel.querySelectorAll('button')) {
+        choice.disabled = locked;
+      }
       skip.hidden = !maySkip() || editor.readOnly;
       skip.disabled = locked;
     },

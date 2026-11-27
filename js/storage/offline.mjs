@@ -50,9 +50,20 @@ if (banner && workers && window === window.top) {
           return;
         }
         if (reloading) return;
-        if (!requested) {
-          dispatchEvent(new Event('codespace:before-update'));
+        if (!requested && playing()) {
+          banner.hidden = false;
+          message.textContent = 'Nuova versione disponibile. Aggiorna al termine della partita.';
+          apply.disabled = false;
+          apply.textContent = 'Ricarica ora';
+          apply.onclick = () => {
+            if (!confirm('Vuoi ricaricare la partita?')) return;
+            dispatchEvent(new Event('codespace:before-update'));
+            reloading = true;
+            location.reload();
+          };
+          return;
         }
+        dispatchEvent(new Event('codespace:before-update'));
         reloading = true;
         if (updatePage) location.replace('./index.html');
         else location.reload();

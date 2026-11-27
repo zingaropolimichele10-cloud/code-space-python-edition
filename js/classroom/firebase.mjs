@@ -47,7 +47,7 @@ export async function firebaseAdapter(useEmulator = false, role = 'player') {
     signOut: () => sdk.signOut(auth),
     get: async path => (await sdk.get(ref(path))).val(),
     set: (path, value) => sdk.set(ref(path), value),
-    update: patch => sdk.update(ref(''), patch),
+    update: patch => sdk.update(sdk.ref(db), patch),
     async transaction(path, change) {
       const result = await sdk.runTransaction(ref(path), change, { applyLocally: false });
       return result.committed;
