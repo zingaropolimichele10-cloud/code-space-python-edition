@@ -45,7 +45,8 @@ try {
     await writeFile(folder + '/' + name + '.png', await browser.screenshot());
   };
   await picture('01-menu');
-  await browser.evaluate(`(() => {
+  await browser.evaluate(`(async () => {
+    const { missions: lessons } = await import('./js/missions/catalog.mjs');
     const q = selector => document.querySelector(selector);
     const click = selector => q(selector)?.click();
     window.autofly = () => {
@@ -88,11 +89,10 @@ try {
         if (status === 'success') { click('#mission-done'); return; }
         if (status === 'error' && probe.workers % 2 === 1) { click('#mission-skip'); return; }
         const editor = q('#mission-code');
-        const starters = ['velocita = 5 * 2', 'vite = 5', 'scudo = True', 'colore = "blu"',
-          'scudo = False\\nif vite < 3:\\n    scudo = True'];
         const id = Number(q('#mission-id').textContent.match(/\\d+/)?.[0] ?? 1);
-        editor.value = probe.workers % 2 === 0 ? 'print(manca)' : starters[id - 1];
-        if (probe.move % 4 === 0 && probe.workers % 2 === 1) editor.value = starters[id - 1];
+        const lesson = lessons[id - 1];
+        editor.value = status === 'error' || probe.workers % 2 === 1 ? lesson.soluzioneEsempio : lesson.codiceIniziale;
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
         click('#mission-run');
       }
     };

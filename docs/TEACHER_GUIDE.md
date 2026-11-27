@@ -1,18 +1,20 @@
 # Guida docente
 
-L’incontro di orientamento Ferraris è previsto per sabato 28 novembre 2026. La sessione dura 35–40 minuti. Le missioni dalla 06 alla 12 sono bonus facoltative.
+L’incontro di orientamento Ferraris è previsto per sabato 28 novembre 2026. La sessione dura 35–40 minuti. Le 22 missioni sono disponibili in sei blocchi. Per una lezione scegli un sottoinsieme adatto al gruppo.
 
 Proposta per la versione finale. Dedicare 5 minuti alla consegna e al tutorial, 25–30 minuti alle missioni e 5 minuti alla condivisione delle soluzioni. Chiedere agli studenti di prevedere il risultato prima di eseguire un programma e confrontare espressioni diverse con lo stesso valore.
 
-## Dimostrazione nel Centro di controllo
+## Prova del laboratorio Python
 
-Apri **Modalità docente → Motori fuori controllo → Apri missione**. Fai prevedere il risultato di `velocita = 5 * 2`, premi **Esegui** e confrontalo con `velocita = 10`. Prova `print(manca)` per far leggere un errore. Il tutorial offre la stessa missione di prova e rimanda la ricompensa all’avventura.
+Avvia il prototipo seguendo il README. Nell’editor lascia l’esempio `velocita = 5 * 2` con `print(velocita)`, poi premi **Esegui**. Il numero 10 compare nell’output e come valore intero nella sezione Variabili. Sostituisci l’espressione con `10` e confronta i risultati. Per far leggere un errore, prova `print(velocita)` da solo.
+
+Il laboratorio autonomo è adatto a mostrare una singola istruzione senza iniziare il volo.
 
 ## Sessione con le missioni integrate
 
-Apri la pagina del gioco, scegli **Inizia missione** e lascia provare le frecce durante il tutorial. In volo, mostra come sparare con Spazio. Dopo **Salta e decolla**, le stelle dorate con la scritta PYTHON aprono il Centro di controllo. Se una stella è difficile da raggiungere, attendere che si avvicini.
+Apri la pagina del gioco, scegli **Inizia missione** e lascia provare le frecce durante il tutorial. Dopo **Salta e decolla**, le stelle dorate con la scritta PYTHON aprono il Centro di controllo. Se una stella è difficile da raggiungere, attendere che si avvicini.
 
-Nel Centro il gioco è fermo. Invita gli studenti a confrontare il codice iniziale con l’obiettivo e a chiedere un indizio se necessario. **Salta per ora** conserva la bozza e permette di continuare a volare. **Riprendi missione** riapre la stessa missione con gli indizi già consultati. Chi perde le vite può ripartire dal checkpoint. Ogni studente può avviare la sfida con il drone di circa 60 secondi anche con missioni incomplete e riprendere gli esercizi dalla schermata conclusiva. La missione 07 è un esercizio facoltativo sulle condizioni.
+Nel Centro il gioco è fermo. Invita gli studenti a confrontare il codice iniziale con l’obiettivo e a chiedere un indizio se necessario. **Salta per ora** conserva la bozza e permette di continuare a volare. **Riprendi missione** riapre la stessa missione con gli indizi già consultati. Chi perde le vite può ripartire dal checkpoint. Ogni studente può avviare la sfida di 60 secondi anche con missioni incomplete e riprendere gli esercizi dalla schermata conclusiva. Per un esempio sulle condizioni puoi aprire direttamente la missione 11, **Scudo intelligente**.
 
 ## Comandi del relatore
 
@@ -31,16 +33,8 @@ Se una postazione viene ricaricata, **Continua** riparte dal checkpoint. Le bozz
 | 0–4 | Apri il gioco su tutte le postazioni, controlla audio e frecce. Presenta Aurora e il compito di riparare i sistemi con codice. |
 | 4–9 | Guida il tutorial. Spiega che una variabile dà un nome a un valore usato dal gioco. Mostra la differenza tra stella normale e stella Python. |
 | 9–14 | Proietta la prima missione. Chiedi di prevedere cosa succede con `velocita = 10`, poi esegui anche `velocita = 5 * 2` e osserva il valore nell’HUD. |
-| 14–30 | Lavoro individuale. Incoraggia un tentativo e l’uso del primo indizio. Per chi ha difficoltà, usa la modalità Assistita, il selettore docente o la demo senza asteroidi. Le missioni dalla 06 alla 12 sono bonus facoltative. |
+| 14–30 | Lavoro individuale. Incoraggia un tentativo e l’uso del primo indizio. Per chi ha difficoltà, usa la modalità Assistita, il selettore docente o la demo senza asteroidi. Il percorso può proseguire anche saltando gli esercizi più impegnativi. |
 | 30–34 | Avvia la sfida finale. Il percorso libero è disponibile anche con esercizi in sospeso. Il docente può abbreviare il timer se serve. |
 | 34–38 | Confronta due soluzioni equivalenti, chiedi che cosa memorizza una variabile e usa il riepilogo per riconoscere i risultati individuali. |
 
 Prima dell’ingresso verifica la [checklist](LAB_CHECKLIST.md) e prepara lo ZIP. Per un gruppo nuovo, chiudi eventuali esercizi aperti, scegli **Modalità docente → Avvia nuova sessione → Conferma azzeramento** e lascia aperto il tutorial. Controlla il mute e le preferenze grafiche conservate. Per problemi comuni usa la [scheda di risoluzione](TROUBLESHOOTING.md).
-
-### Novità della 1.1.0
-
-Mostra un colpo con Spazio e spiega che gli ostacoli corazzati richiedono più colpi. Le ricompense arcade migliorano il punteggio e lasciano accessibili le missioni. Nel finale invita a lasciare le corsie illuminate prima dell’arrivo degli impulsi. Il drone si ferma anche quando finisce la sua autonomia. Per una classe alle prime armi puoi scegliere Assistita o Demo.
-
-Nella missione facoltativa chiedi prima cosa succede con 2 vite e con 4. Fai leggere soltanto la riga rientrata quando il confronto è vero. Il computer di bordo fornisce vite e il pulsante **Esegui** prova entrambi gli scenari.
-
-Per una sessione Classroom usa la [guida Host](HOST_GUIDE.md) e tieni aperta la [guida studente](STUDENT_GUIDE.md) sulle postazioni. Mantieni disponibile lo ZIP individuale di riserva.

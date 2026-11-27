@@ -11,6 +11,4 @@
 | 06 | Revisione, robustezza, regressioni e stress | Sì |
 | 07 | Versione 1.0.0, offline e preparazione della distribuzione | Sì |
 
-La versione 1.0.0 è preservata come baseline. La versione 1.1.0 aggiorna il gameplay e la didattica sul proprio branch. Pubblicazione e verifica fisica sulle postazioni sono attività distinte dalla preparazione locale della release.
-
-La 2.0.0 Classroom aggiunge coordinamento Host e Firebase sul branch release/2.0.0. La validazione delle regole sul database e il collaudo reale restano distinti dalla demo locale.
+Feature freeze attivo. Pubblicazione e verifica fisica sulle postazioni sono attività distinte dalla preparazione locale della release.

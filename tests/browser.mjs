@@ -12,8 +12,8 @@ const mime = {
   '.js': 'text/javascript', '.svg': 'image/svg+xml',
 };
 
-export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900, staticRoot = root, listenHost = '127.0.0.1', clientHost = listenHost, externalOrigin, externalPrefix = prefix, extraArgs = [], pages = {}, profilePath } = {}) {
-  const profile = profilePath ?? await mkdtemp(`${tmpdir()}/codespace-browser-`);
+export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900, staticRoot = root, listenHost = '127.0.0.1', clientHost = listenHost, externalOrigin, externalPrefix = prefix } = {}) {
+  const profile = await mkdtemp(`${tmpdir()}/codespace-browser-`);
   const requests = [];
   let serving = true;
   const server = createServer(async (req, res) => {
@@ -22,10 +22,6 @@ export async function openBrowser(path = '', { beforeLoad, width = 1360, height 
     if (req.url === '/release-test-probe') {
       res.setHeader('Content-Type', 'text/html');
       return res.end('<!doctype html><title>Verifica aggiornamento</title>');
-    }
-    if (Object.hasOwn(pages, req.url)) {
-      res.setHeader('Content-Type', 'text/html');
-      return res.end(pages[req.url]);
     }
     try {
       if (!req.url.startsWith(prefix)) throw new Error('Percorso fuori dal sottosito');
@@ -44,7 +40,7 @@ export async function openBrowser(path = '', { beforeLoad, width = 1360, height 
   const args = [
     '--headless', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking',
     '--no-first-run', '--no-default-browser-check', '--no-proxy-server', `--user-data-dir=${profile}`,
-    ...extraArgs, '--remote-debugging-pipe', 'about:blank',
+    '--remote-debugging-pipe', 'about:blank',
   ];
   if (process.env.CODESPACE_NO_SANDBOX === '1') args.unshift('--no-sandbox');
   const browser = spawn(process.env.CHROMIUM_BIN || 'chromium', args, {
@@ -113,20 +109,18 @@ export async function openBrowser(path = '', { beforeLoad, width = 1360, height 
   async function close() {
     if (browser.exitCode === null && browser.signalCode === null && browser.pid) {
       const exited = once(browser, 'exit');
-      if (profilePath) {
-        await send('Browser.close').catch(() => browser.kill('SIGKILL'));
-      } else browser.kill('SIGKILL');
+      browser.kill('SIGKILL');
       await exited;
     }
     server.closeAllConnections();
     await new Promise(resolve => server.close(resolve));
-    if (!profilePath) await rm(profile, { recursive: true, force: true, maxRetries: 4 });
+    await rm(profile, { recursive: true, force: true, maxRetries: 4 });
   }
 
   try {
     const version = await send('Browser.getVersion');
     const { targetInfos } = await send('Target.getTargets');
-    const targetId = targetInfos.find(target => target.type === 'page')?.targetId ?? (await send('Target.createTarget', { url: 'about:blank' })).targetId;
+    const targetId = targetInfos.find(target => target.type === 'page').targetId;
     const { sessionId } = await send('Target.attachToTarget', {
       targetId, flatten: true,
     });

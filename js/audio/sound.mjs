@@ -1,5 +1,4 @@
 const tones = {
-  fire: [520], ping: [740], destroy: [150, 95], combo: [620, 820], sector: [440, 660], warning: [260, 260],
   star: [660, 990], impact: [155, 72], shield: [310, 610], mission: [440, 554, 660],
   success: [523, 659, 784], victory: [523, 659, 784, 1047],
 };
@@ -58,21 +57,19 @@ export function createAudio({
 }
 
 export function bindAudio(audio) {
-  const buttons = document.querySelectorAll('#mute, #menu-mute');
+  const button = document.getElementById('mute');
   const slider = document.getElementById('volume');
   const status = document.getElementById('audio-status');
   function sync() {
-    for (const button of buttons) {
-      button.textContent = audio.enabled ? 'Audio attivo' : 'Audio disattivato';
-      button.setAttribute('aria-pressed', String(audio.enabled));
-    }
+    button.textContent = audio.enabled ? 'Audio attivo' : 'Audio disattivato';
+    button.setAttribute('aria-pressed', String(audio.enabled));
     slider.value = String(Math.round(audio.volume * 100));
   }
   const unlock = async () => {
     if (audio.enabled && !await audio.unlock()) status.textContent = 'Audio non disponibile. Puoi continuare a giocare.';
   };
   sync();
-  for (const button of buttons) button.addEventListener('click', () => {
+  button.addEventListener('click', () => {
     audio.configure(audio.enabled, audio.volume);
     status.textContent = '';
     sync();

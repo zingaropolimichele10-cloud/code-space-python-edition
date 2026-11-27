@@ -4,7 +4,3 @@ __pycache__/
 coverage/
 test-results/
 .DS_Store
-
-firebase-debug.log
-database-debug.log
-ui-debug.log

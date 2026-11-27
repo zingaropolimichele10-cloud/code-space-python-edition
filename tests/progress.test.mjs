@@ -6,17 +6,17 @@ import { createGame, State } from '../js/game/engine.mjs';
 
 function memory() {
   const data = new Map();
-  return { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value), removeItem: key => data.delete(key) };
+  return { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
 }
 
-test('Salvataggio v3, migrazione, convalida e reset', () => {
+test('Salvataggio v2, migrazione, convalida e reset', () => {
   const storage = memory();
   storage.setItem('code-space:missioni:v1', '[3,1,99]');
   storage.setItem('code-space:audio:v1', '{"enabled":true,"volume":0.4}');
   const store = createProgress(storage);
   assert.deepEqual(store.state.completed, [1,3]);
   assert.deepEqual(store.state.audio, { enabled: true, volume: .4 });
-  store.update({ skipped: [1,2], drafts: { 2: 'vite = 5', 13: 'no' }, upgrades: [4], best: 25,
+  store.update({ skipped: [1,2], drafts: { 2: 'vite = 5', 99: 'no' }, upgrades: [4], best: 25,
     light: true, checkpoint: { mode: 'PLAYING', score: 25, time: 3.4 } });
   const restored = createProgress(storage).state;
   assert.deepEqual(restored.upgrades, [1,3]);
@@ -28,7 +28,7 @@ test('Salvataggio v3, migrazione, convalida e reset', () => {
   storage.setItem(saveKey, '{broken');
   assert.deepEqual(createProgress(storage).state.completed, []);
   storage.setItem(saveKey, '{"version":7,"completed":[5]}');
-  assert.deepEqual(createProgress(storage).state, { ...normalizeProgress(null), audio: restored.audio, light: true });
+  assert.deepEqual(createProgress(storage).state, normalizeProgress(null));
   assert.equal(normalizeProgress({ version: 2, checkpoint: { mode: 'PAUSED', score: -1, time: 0 } }).checkpoint, null);
 });
 
@@ -99,4 +99,46 @@ test('Audio parte muto, si sblocca su richiesta e gestisce errori', async () => 
   const broken = createAudio({ Context: class { constructor() { throw Error('audio'); } } });
   broken.configure(false, .25);
   assert.equal(await broken.unlock(), false);
+});
+
+test('Importazione 1.0.0: vecchie ricompense conservate, Messaggio di bordo resta da superare', () => {
+  const storage = memory();
+  const key = 'code-space:progress:v2';
+  const old = { version: 2, completed: [1, 2, 3, 4, 5], drafts: { 2: 'vite = 5', 5: 'scudo = False' },
+    best: 21, checkpoint: { mode: 'PLAYING', score: 12, time: 17 } };
+  storage.setItem(key, JSON.stringify(old));
+  const progress = createProgress(storage);
+  assert.deepEqual(progress.state.completed, [1, 3, 4]);
+  assert.equal(progress.state.legacyLives, true);
+  assert.equal(progress.state.legacyShield, true);
+  assert.equal(progress.state.paint, 'blu');
+  assert.deepEqual(progress.state.legacyDrafts, old.drafts);
+  assert.deepEqual(progress.state.checkpoint, old.checkpoint);
+  progress.update({ completed: [1, 2, 3, 4] });
+  assert.deepEqual(JSON.parse(storage.getItem(key)), old);
+  assert.deepEqual(createProgress(storage).state.completed, [1, 2, 3, 4]);
+});
+
+test('Ripristino delle missioni della fase 2 nello stesso schema della fase 1', () => {
+  const storage = memory();
+  storage.setItem(saveKey, JSON.stringify({ version: 3, completed: [1, 2, 3, 4], paint: 'verde' }));
+  const progress = createProgress(storage);
+  progress.update({ completed: [1, 2, 3, 4, 7, 11, 99], skipped: [5], drafts: { 5: 'energia = 40\nenergia = energia + 20' } });
+  const restored = createProgress(storage).state;
+  assert.deepEqual(restored.completed, [1, 2, 3, 4, 7, 11]);
+  assert.deepEqual(restored.skipped, [5]);
+  assert.equal(restored.drafts[5], 'energia = 40\nenergia = energia + 20');
+  assert.equal(restored.paint, 'verde');
+});
+
+test('Ripristino locale delle missioni 12–17 dopo un salvataggio della fase 2', () => {
+  const storage = memory();
+  storage.setItem(saveKey, JSON.stringify({ version: 3, completed: [4, 11], paint: 'viola' }));
+  const progress = createProgress(storage);
+  progress.update({ completed: [4, 11, 13, 17], skipped: [12], drafts: { 12: 'rotta = "devia"' } });
+  const restored = createProgress(storage).state;
+  assert.deepEqual(restored.completed, [4, 11, 13, 17]);
+  assert.deepEqual(restored.skipped, [12]);
+  assert.equal(restored.drafts[12], 'rotta = "devia"');
+  assert.equal(restored.paint, 'viola');
 });

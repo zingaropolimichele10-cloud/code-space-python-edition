@@ -1,5 +1,0 @@
-# Privacy e conservazione
-
-Gli studenti usano un nickname e un UID tecnico anonimo. Realtime Database conserva iscrizione e presenza, stato di gioco, punteggio, completamenti e le informazioni didattiche minime. Tentativi, indizi, tempo di missione e aiuto sono limitati all’Host e alla propria iscrizione. Il sorgente Python resta sulla postazione. Il sito non attiva Analytics e non richiede nome reale, email, geolocalizzazione o profilo del dispositivo agli studenti. Firebase può trattare dati tecnici necessari alla sicurezza e al trasporto del servizio. La proiezione usa un UID tecnico separato e un collegamento riservato. L’identità di accesso del solo Host è separata dai dati didattici.
-
-La scadenza limita l’accesso alla stanza. La cancellazione dei dati avviene manualmente tramite **Elimina dati** e la pulizia amministrativa degli utenti anonimi dopo l’evento. Il piano proposto non aggiunge una funzione server-side di cancellazione programmata. Cancella o chiudi anche i profili browser sui PC condivisi secondo le regole del laboratorio.

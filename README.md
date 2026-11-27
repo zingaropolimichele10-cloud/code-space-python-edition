@@ -1,4 +1,4 @@
-# CODE SPACE – Mission Adventure Edition 2.2.0
+# CODE SPACE – Python Edition 1.1.0
 Educational Python space game – Ferraris Orientation 2026
 
 ## Sviluppo locale
@@ -7,24 +7,16 @@ Dalla radice del repository, avvia `python3 -m http.server 8000 --bind 127.0.0.1
 
 Consulta [specifiche](SPECIFICATIONS.md), [architettura](docs/ARCHITECTURE.md) e [roadmap](docs/ROADMAP.md).
 
-Le stelle PYTHON aprono il Centro di controllo, dove Skulpt esegue Python localmente e i pannelli mostrano il risultato.
+La pagina apre il gioco. Seleziona **Laboratorio Python** per usare il prototipo autonomo. Modifica l’esempio e premi **Esegui** per leggere l’output e i valori delle variabili. Il sito carica Skulpt localmente.
 
 Per eseguire le verifiche usa `node --test tests/*.test.mjs` con Chromium installato. Puoi specificare il binario con `CHROMIUM_BIN`. Consulta [risultati QA e opzioni per il container](docs/QA.md).
 
 ## Gioco e missioni
 
-Scegli **Gioca da solo**, prova le frecce e usa **Spazio** per sparare. Decolla quando sei pronto. Le stelle PYTHON aprono il Centro di controllo. Puoi iniziare la sfida contro il drone da circa 60 secondi anche con missioni incomplete. Le missioni 01–05 sono principali. Le missioni 06–12 sono bonus facoltative e si possono saltare. **Continua** ripristina il checkpoint locale. **Grafica leggera** riduce il carico del Canvas e l’audio parte disattivato.
+Scegli **Inizia missione**, prova le frecce e decolla quando sei pronto. Le stelle PYTHON aprono il Centro di controllo. Puoi iniziare la sfida finale di 60 secondi anche con missioni incomplete. Le 22 missioni sono organizzate in sei blocchi. Il Protocollo Omega offre anche un avvio rapido della sfida. **Continua** ripristina il checkpoint locale. **Grafica leggera** riduce il carico del Canvas e l’audio parte disattivato.
 
 Vedi la [guida docente](docs/TEACHER_GUIDE.md), le [verifiche](docs/QA.md) e le [schermate](docs/screenshots/).
 
 ## Distribuzione
 
-Consulta [GitHub Pages e pacchetto offline](docs/DEPLOYMENT.md), la [checklist](docs/LAB_CHECKLIST.md) e la [risoluzione dei problemi](docs/TROUBLESHOOTING.md). Il sito è statico.
-
-## Classroom
-
-Dal menu scegli **Gioca da solo**, **Unisciti a una sessione** o **Crea una sessione — Host**. Il gioco individuale resta offline. La demo locale usa solo schede dello stesso profilo di browser. La configurazione Web pubblica della modalità online è inclusa. Per il collaudo online occorre pubblicare le regole nel progetto Firebase, autorizzare l’UID dell’Host e aggiungere il dominio GitHub Pages. [Configurazione](docs/FIREBASE_SETUP.md) · [Guida Host](docs/HOST_GUIDE.md) · [Guida studente](docs/STUDENT_GUIDE.md) · [Privacy](docs/PRIVACY.md) · [Verifiche 2.1](docs/ADVENTURE_QA.md) · [Procedura di aggiornamento 2.0 → 2.1](docs/RELEASE_2_1.md).
-
-## Quadro di volo e ripresa
-
-Il menu è separato dal quadro di volo. Apri **Missioni totali** nell’HUD per vedere principali, bonus, potenziamenti e grafica leggera. Il gioco recupera automaticamente l’ultima partita in pausa o nel terminale della missione. Usa **Recupera partita** dal menu o **Impostazioni** per esportare e importare un salvataggio individuale. In Classroom il pannello **Lezioni e archivio** recupera le stanze autorizzate ed esporta i risultati. [Guida a recupero e gruppi](docs/RECOVERY_2_2.md)
+Per l’orientamento puoi usare il [pacchetto offline](docs/OFFLINE_QUICKSTART.md) anche su un computer mai collegato al sito. Consulta [GitHub Pages e pacchetto offline](docs/DEPLOYMENT.md), la [checklist](docs/LAB_CHECKLIST.md) e la [risoluzione dei problemi](docs/TROUBLESHOOTING.md). Il sito è statico.

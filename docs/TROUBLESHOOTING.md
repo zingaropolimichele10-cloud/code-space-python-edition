@@ -12,5 +12,3 @@
 | Il browser mostra un aggiornamento | Chiudi tutte le schede CODE SPACE e riapri l’URL. Cancella i dati del sito solo come ultima risorsa, perché perderesti i progressi. |
 | Audio assente o indesiderato | Usa il pulsante audio e regola il volume dalle impostazioni. Mantieni il mute durante la lezione se non sono previste cuffie. |
 | Una postazione non vede il server LAN | Controlla l’IP, la porta, la rete e il firewall con il referente IT. Passa a una copia ZIP su loopback se necessario. |
-
-In Classroom, un errore Host autorizzazione richiede di verificare hosts/UID nel progetto corretto. Per PIN o rete assente, controlla che l’Host abbia aperto l’aula e che i due browser stiano usando la stessa modalità. La demo funziona nello stesso profilo, mentre Firebase online richiede rete. [Configurazione Firebase](FIREBASE_SETUP.md)

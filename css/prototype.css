@@ -1,0 +1,83 @@
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+  background: #080d1b;
+  color: #edf4ff;
+}
+
+body { margin: 0; }
+
+main {
+  width: min(68rem, calc(100% - 2rem));
+  margin: clamp(1.5rem, 6vw, 5rem) auto;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 6vw, 3.5rem);
+  margin: 0;
+}
+
+h1 span { color: #79d7ff; }
+header p { color: #ffd685; }
+
+.laboratorio {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1rem;
+}
+
+form, section {
+  background: #101a30;
+  border: 1px solid #314564;
+  border-radius: 0.6rem;
+  padding: 1rem;
+  min-width: 0;
+}
+
+label, h2 { font-size: 1rem; font-weight: 650; }
+
+textarea, pre {
+  box-sizing: border-box;
+  width: 100%;
+  color: inherit;
+  background: #080f21;
+  border: 1px solid #435776;
+  border-radius: 0.35rem;
+  padding: 0.8rem;
+  font: 1rem/1.5 ui-monospace, monospace;
+}
+
+textarea {
+  display: block;
+  margin: 0.5rem 0 1rem;
+  resize: vertical;
+  tab-size: 4;
+}
+
+pre {
+  min-height: 3rem;
+  max-height: 11rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+button {
+  border: 0;
+  border-radius: 0.35rem;
+  background: #79d7ff;
+  color: #080d1b;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.6rem 1.3rem;
+  cursor: pointer;
+}
+
+:focus-visible { outline: 2px solid #ffd685; outline-offset: 3px; }
+
+@media (max-width: 42rem) {
+  .laboratorio { grid-template-columns: 1fr; }
+}
+
+.offline-notice { margin: 0; padding: .75rem 1rem; background: #233b57; color: #fff3ce; text-align: center; }
+.offline-notice[hidden] { display: none; }

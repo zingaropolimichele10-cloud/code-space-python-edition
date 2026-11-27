@@ -145,3 +145,17 @@ test('Simulazione prolungata con limiti e recuperi', t => {
   assert.ok(recoveries > 0);
   t.diagnostic(`108000 passi, 1800 s simulati, ${ms.toFixed(1)} ms CPU a parete, picchi ${JSON.stringify(max)}, ${recoveries} recuperi`);
 });
+
+test('Lo scudo della missione 11 interviene sotto tre vite e si consuma', () => {
+  const game = started({ random: () => 0 });
+  const { world } = game;
+  game.grant({}, 5);
+  assert.equal(world.emergency, false);
+  game.grant({ autoShield: true }, 11);
+  for (const [lives, reserve] of [[2, true], [2, false], [1, false]]) {
+    world.ship.invulnerable = 0;
+    world.rocks.push(asteroid(world.ship));
+    game.step(.01);
+    assert.deepEqual([world.lives, world.emergency], [lives, reserve]);
+  }
+});

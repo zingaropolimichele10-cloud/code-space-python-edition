@@ -1,9 +1,9 @@
-const version = '2.2.0';
+const version = '1.1.0';
 const scope = new URL(self.registration.scope);
 const cachePrefix = 'code-space:' + scope.pathname + ':';
 const cacheName = cachePrefix + version;
 const start = new URL('index.html', scope);
-const classroom = new URL('classroom.html', scope);
+const laboratory = new URL('laboratorio.html', scope);
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -27,10 +27,6 @@ self.addEventListener('install', event => {
   })());
 });
 
-self.addEventListener('message', event => {
-  if (event.data?.type === 'SKIP_WAITING') event.waitUntil(self.skipWaiting());
-});
-
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const names = await caches.keys();
@@ -48,7 +44,7 @@ self.addEventListener('fetch', event => {
   let key = request;
   if (request.mode === 'navigate') {
     if (url.pathname === scope.pathname || url.pathname === start.pathname) key = start.href;
-    else if (url.pathname === classroom.pathname) key = classroom.href;
+    else if (url.pathname === laboratory.pathname) key = laboratory.href;
     else return;
   }
 

@@ -1,8 +1,6 @@
-import { FIRE_KEY, HAZARD_LIMIT, SHOT_LIMIT, moveBoss, newBoss, rockTypes, sectors, shapeRock } from './arcade.mjs';
-
 export const WIDTH = 960;
 export const HEIGHT = 540;
-export const LIMITS = Object.freeze({ rocks: 16, stars: 8, particles: 90, shots: SHOT_LIMIT, hazards: HAZARD_LIMIT, dt: 0.05 });
+export const LIMITS = Object.freeze({ rocks: 16, stars: 8, particles: 90, dt: 0.05 });
 export const State = Object.freeze(Object.fromEntries(
   ['MENU', 'TUTORIAL', 'PLAYING', 'PAUSED', 'MISSION', 'GAME_OVER', 'FINAL_CHALLENGE', 'VICTORY']
     .map(name => [name, name]),
@@ -20,19 +18,16 @@ const transitions = {
 
 export const DEFAULT_FLIGHT = Object.freeze({ duration: 60, difficulty: 'standard', asteroids: true, demo: false });
 const difficultyScale = { calm: 0.65, standard: 1, hard: 1.35 };
-const baseUpgrades = { speed: 5, maxLives: 3, shield: false, color: 'rosso', autoShield: false, cache: false, laser: false, reactor: false, navigator: false,
-  rapid: false, magnet: false, autopilot: false, omega: false };
+const baseUpgrades = { speed: 5, maxLives: 3, shield: false, color: 'rosso', autoShield: false };
 const clamp = (value, low, high) => Math.max(low, Math.min(value, high));
-const overlaps = (a, b, extra = 0) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < (a.radius + b.radius + extra) ** 2;
+const overlaps = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < (a.radius + b.radius) ** 2;
 
 export function createGame({ random = Math.random, nextMission = () => null, sound = () => {}, onCheckpoint = () => {} } = {}) {
   const world = {
     state: State.MENU,
     light: false,
     ship: { x: WIDTH / 2, y: HEIGHT * 0.8, radius: 15, invulnerable: 0 },
-    rocks: [], stars: [], particles: [], shots: [], boss: null, sector: 0,
-    stats: { rocks: 0, stars: 0, bestCombo: 0 }, combo: 0, multiplier: 1,
-    notice: '', noticeLeft: 0, rewardFlash: 0, shieldFlash: 0,
+    rocks: [], stars: [], particles: [],
     upgrades: { ...baseUpgrades },
     options: { ...DEFAULT_FLIGHT },
     time: 0, score: 0, lives: 3, shield: false, emergency: false,
@@ -45,7 +40,6 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
   let starIn;
   let missionIn;
   let shieldCooling;
-  let serial, shotIn, comboLeft, safeTime;
   const keys = new Set();
 
   function transition(next) {
@@ -58,23 +52,15 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
   function checkpointNow(mode = State.PLAYING) {
     checkpoint = { mode, time: world.time, score: world.score };
     if (mode === State.FINAL_CHALLENGE) checkpoint.duration = challengeDuration;
-    if (Object.values(world.stats).some(Boolean)) checkpoint.stats = { ...world.stats };
     onCheckpoint(checkpoint);
   }
 
   function resetSector(duration = world.options.duration) {
     Object.assign(world.ship, { x: WIDTH / 2, y: HEIGHT * 0.8, invulnerable: 1.4 });
-    world.rocks.length = world.stars.length = world.particles.length = world.shots.length = 0;
-    world.boss = world.state === State.FINAL_CHALLENGE ? newBoss(world.options) : null;
-    world.sector = world.boss ? 4 : Math.min(3, Math.floor(world.time / 24));
-    world.bossDuration = duration;
-    world.combo = 0;
-    world.multiplier = 1;
-    world.noticeLeft = world.rewardFlash = world.shieldFlash = 0;
-    serial = shotIn = comboLeft = safeTime = 0;
+    world.rocks.length = world.stars.length = world.particles.length = 0;
     world.lives = world.upgrades.maxLives;
     world.shield = world.upgrades.shield;
-    world.emergency = world.upgrades.autoShield || world.upgrades.reactor;
+    world.emergency = world.upgrades.autoShield;
     challengeDuration = duration;
     world.finalLeft = challengeDuration;
     rockIn = 1.4;
@@ -93,7 +79,6 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
       case 'start':
         if (!transition(State.PLAYING)) return false;
         world.time = world.score = 0;
-        clearStats();
         resetSector();
         checkpointNow();
         return true;
@@ -111,16 +96,11 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
         if (world.state !== State.GAME_OVER || !checkpoint || !transition(checkpoint.mode)) return false;
         world.time = checkpoint.time;
         world.score = checkpoint.score;
-        clearStats(checkpoint.stats);
         resetSector(checkpoint.duration);
         return true;
       case 'final':
         if (world.state !== State.PLAYING || !transition(State.FINAL_CHALLENGE)) return false;
-        world.rocks.length = world.stars.length = world.particles.length = world.shots.length = 0;
-        world.boss = newBoss(world.options);
-        world.sector = 4;
-        world.bossDuration = world.options.duration;
-        announce('Settore finale · Scontro conclusivo');
+        world.rocks.length = world.stars.length = world.particles.length = 0;
         challengeDuration = world.options.duration;
         world.finalLeft = challengeDuration;
         checkpointNow(State.FINAL_CHALLENGE);
@@ -151,33 +131,9 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     if (!point || world.state !== State.MENU || !transition(point.mode)) return false;
     world.score = point.score;
     world.time = point.time;
-    clearStats(point.stats);
     resetSector(point.duration);
-    if (point.lives) world.lives = Math.min(point.lives, world.upgrades.maxLives);
-    if (typeof point.shield === 'boolean') {
-      world.shield = world.upgrades.shield && point.shield;
-      if (world.upgrades.shield && !world.shield) shieldCooling = world.upgrades.reactor ? 10 : 18;
-    }
-    if (typeof point.emergency === 'boolean') world.emergency &&= point.emergency;
-    if (world.boss) {
-      if (point.left > 0) world.finalLeft = Math.min(challengeDuration, point.left);
-      if (point.bossHP > 0) world.boss.hp = Math.min(world.boss.max, point.bossHP);
-    }
     checkpointNow(point.mode);
     return true;
-  }
-
-  function snapshot() {
-    const state = world.state === State.PAUSED ? pausedFrom : world.state;
-    if (![State.PLAYING, State.MISSION, State.FINAL_CHALLENGE].includes(state)) return null;
-    return {
-      mode: state === State.FINAL_CHALLENGE ? state : State.PLAYING,
-      time: world.time, score: world.score, stats: { ...world.stats },
-      lives: world.lives, shield: world.shield, emergency: world.emergency, sector: world.sector,
-      ...(state === State.MISSION ? { mission: world.mission } : {}),
-      ...(state === State.FINAL_CHALLENGE && world.boss
-        ? { duration: challengeDuration, left: world.finalLeft, bossHP: world.boss.hp } : {}),
-    };
   }
 
   function reset() {
@@ -188,7 +144,6 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     }
     world.time = world.score = 0;
     world.mission = null;
-    clearStats();
     Object.assign(world.upgrades, baseUpgrades);
     resetSector();
     checkpoint = undefined;
@@ -202,18 +157,10 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
 
   function grant(upgrades, reward) {
     Object.assign(world.upgrades, upgrades);
-    if (reward === 2) world.lives = world.upgrades.maxLives;
-    if (reward === 3) { world.shield = true; sound('shield'); }
-    if (upgrades.autoShield || upgrades.reactor) world.emergency = true;
-    if (reward === 4 && upgrades.cache) world.score += 150;
-    if (upgrades.reactor && shieldCooling > 10) shieldCooling = 10;
-    if (reward) {
-      world.rewardFlash = 1.25;
-      announce(['', 'Propulsori turbo', 'Riparazione completata', 'Scudo installato', 'Coordinate NORD-7 · +150',
-        'Cannoni rinforzati', 'Reattore bilanciato', 'Riserva d’emergenza pronta', 'Rotta sicura',
-        'Ricarica automatica', 'Magnete installato', 'Computer riparato', 'Protocollo Omega attivo'][reward]);
-      checkpointNow();
-    }
+    if (reward === 2 && upgrades.maxLives) world.lives = world.upgrades.maxLives;
+    if (reward && upgrades.shield) { world.shield = true; sound('shield'); }
+    if (reward && upgrades.autoShield) world.emergency = true;
+    if (reward) checkpointNow();
   }
 
   function burst(x, y, color) {
@@ -246,7 +193,7 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     // Una fascia già occupata lascia spazio per aggirare gli ostacoli.
     if (world.rocks.length < LIMITS.rocks &&
         !world.rocks.some(rock => rock.y < 105 && Math.abs(rock.x - candidate.x) < 115)) {
-      world.rocks.push(shapeRock(candidate, world.sector, serial++));
+      world.rocks.push(candidate);
     }
   }
 
@@ -276,16 +223,10 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
       }
       if (star.y > HEIGHT + star.radius) {
         world.stars.splice(index, 1);
-      } else if (overlaps(world.ship, star, world.upgrades.magnet && star.mission == null ? 25 : 0)) {
+      } else if (overlaps(world.ship, star)) {
         world.stars.splice(index, 1);
         sound('star');
-        world.stats.stars++;
-        world.combo++;
-        world.stats.bestCombo = Math.max(world.stats.bestCombo, world.combo);
-        comboLeft = 8;
-        world.multiplier = Math.min(3, 1 + Math.floor((world.combo - 1) / 2));
-        world.score += (star.mission == null ? 10 : 25) * world.multiplier;
-        if (world.combo > 1) { announce(`Combo ${world.combo} · ×${world.multiplier}`); sound('combo'); }
+        world.score += star.mission == null ? 10 : 25;
         burst(star.x, star.y, '#ffd577');
         if (star.mission != null && openMission(star.mission)) return;
       }
@@ -300,131 +241,24 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
       rock.angle += rock.spin * dt;
       if (rock.y > HEIGHT + rock.radius || rock.x < -rock.radius || rock.x > WIDTH + rock.radius) {
         world.rocks.splice(index, 1);
-      } else if (touchesShip(rock)) {
+      } else if (world.ship.invulnerable === 0 && overlaps(
+        world.shield || (world.emergency && world.lives < 3) ? { ...world.ship, radius: 24 } : world.ship, rock,
+      )) {
         world.rocks.splice(index, 1);
-        takeHit(rock);
-        if (world.state === State.GAME_OVER) return;
-      }
-    }
-  }
-
-  function announce(text) {
-    world.notice = text;
-    world.noticeLeft = 2.2;
-  }
-
-  function clearStats(previous) {
-    world.stats = { rocks: 0, stars: 0, bestCombo: 0, ...previous };
-  }
-
-  function protectedShip() {
-    return world.shield || (world.emergency && world.lives < 3);
-  }
-
-  function touchesShip(obstacle) {
-    return world.ship.invulnerable === 0 && overlaps(
-      protectedShip() ? { ...world.ship, radius: 24 } : world.ship, obstacle,
-    );
-  }
-
-  function takeHit(obstacle) {
-    const shielded = protectedShip();
-    world.ship.invulnerable = 1.25;
-    safeTime = 0;
-    burst(obstacle.x, obstacle.y, shielded ? '#69dfff' : '#ff8976');
-    sound(shielded ? 'shield' : 'impact');
-    if (shielded) {
-      world.shieldFlash = .55;
-      if (world.shield) {
-        world.shield = false;
-        shieldCooling = world.upgrades.reactor ? 10 : 18;
-      } else world.emergency = false;
-    } else if (--world.lives === 0) transition(State.GAME_OVER);
-  }
-
-  function destroyRock(index) {
-    const [rock] = world.rocks.splice(index, 1);
-    world.stats.rocks++;
-    const type = rockTypes[rock.type] ?? rockTypes.normal;
-    world.score += type.points * world.multiplier;
-    burst(rock.x, rock.y, type.edge);
-    sound('destroy');
-    if (rock.type === 'split') {
-      for (const side of [-1, 1]) {
-        if (world.rocks.length >= LIMITS.rocks) break;
-        world.rocks.push({ x: rock.x + side * 11, y: rock.y, radius: 9, vx: side * 118,
-          vy: rock.vy * 1.15, spin: side * 2, angle: rock.angle, type: 'fragment', hp: 1 });
-      }
-    }
-  }
-
-  function shotHits(shot, target, previousY) {
-    const y = Math.max(shot.y, Math.min(previousY, target.y));
-    return overlaps({ x: shot.x, y, radius: shot.radius }, target);
-  }
-
-  function updateShots(dt) {
-    shotIn -= dt;
-    if (keys.has(FIRE_KEY) && shotIn <= 0 && world.shots.length < LIMITS.shots) {
-      world.shots.push({ x: world.ship.x, y: world.ship.y - 19, radius: world.upgrades.omega ? 7 : 4, power: world.upgrades.laser ? 2 : 1, omega: world.upgrades.omega });
-      shotIn = world.upgrades.rapid ? .145 : .205;
-      sound('fire');
-    }
-    for (let index = world.shots.length - 1; index >= 0; index--) {
-      const shot = world.shots[index];
-      const previousY = shot.y;
-      shot.y -= dt * 610;
-      const target = world.rocks.findIndex(rock => shotHits(shot, rock, previousY));
-      if (target !== -1) {
-        const rock = world.rocks[target];
-        rock.hp = (rock.hp ?? 1) - (shot.power ?? 1);
-        if (rock.hp <= 0) destroyRock(target);
-        else { burst(shot.x, shot.y, '#ffd8a0'); sound('ping'); }
-      } else if (world.boss && shotHits(shot, world.boss, previousY)) {
-        world.boss.hp = Math.max(0, world.boss.hp - (shot.omega ? 5 : shot.power ?? 1));
-        burst(shot.x, shot.y, '#87e5ff');
-        sound('ping');
-      } else if (shot.y > -8) continue;
-      world.shots.splice(index, 1);
-    }
-  }
-
-  function advanceFlight(dt, final) {
-    world.noticeLeft = Math.max(0, world.noticeLeft - dt);
-    world.rewardFlash = Math.max(0, world.rewardFlash - dt);
-    world.shieldFlash = Math.max(0, world.shieldFlash - dt);
-    if (comboLeft > 0 && (comboLeft -= dt) <= 0) {
-      world.combo = 0;
-      world.multiplier = 1;
-    }
-    safeTime += dt;
-    if (safeTime >= 18) {
-      safeTime -= 18;
-      const bonus = (world.upgrades.autopilot ? 60 : 30) * world.multiplier;
-      world.score += bonus;
-      announce(`Volo pulito · +${bonus} punti`);
-      sound('combo');
-    }
-    if (final) {
-      moveBoss(world.boss, world, dt, sound);
-      const hazards = world.boss.hazards;
-      for (let index = hazards.length - 1; index >= 0; index--) {
-        if (touchesShip(hazards[index])) {
-          takeHit(hazards[index]);
-          hazards.splice(index, 1);
-          if (world.state === State.GAME_OVER) return;
+        world.ship.invulnerable = 1.25;
+        burst(rock.x, rock.y, world.shield || (world.emergency && world.lives < 3) ? '#69dfff' : '#ff8976');
+        sound(world.shield || (world.emergency && world.lives < 3) ? 'shield' : 'impact');
+        if (world.shield) {
+          world.shield = false;
+          shieldCooling = 18;
+        } else if (world.emergency && world.lives < 3) {
+          world.emergency = false;
+        } else if (--world.lives === 0) {
+          transition(State.GAME_OVER);
+          return;
         }
       }
-    } else {
-      const sector = Math.min(3, Math.floor(world.time / 24));
-      if (sector !== world.sector) {
-        world.sector = sector;
-        announce(`Settore 0${sector + 1} · ${sectors[sector].name}`);
-        sound('sector');
-        checkpointNow();
-      }
     }
-    updateShots(dt);
   }
 
   function step(elapsed) {
@@ -438,16 +272,14 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     const difficulty = Math.min(world.time / 150, 1);
     const finalStage = final ? 1 - world.finalLeft / challengeDuration : 0;
     const multiplier = difficultyScale[world.options.difficulty];
-    if (!final) world.time += dt;
+    world.time += dt;
     moveShip(dt);
-    advanceFlight(dt, final);
-    if (world.state === State.GAME_OVER) return;
     if (shieldCooling > 0 && (shieldCooling -= dt) <= 0) world.shield = true;
     if ((rockIn -= dt) <= 0) {
       if (world.options.asteroids && !world.options.demo) {
         spawnRock((difficulty + finalStage * .7) * multiplier, final);
       }
-      rockIn = (final ? .87 - finalStage * .4 : 1.65 - difficulty * .67) * sectors[world.sector].pace * (!final && world.upgrades.navigator ? 1.3 : 1) / multiplier;
+      rockIn = (final ? .87 - finalStage * .4 : 1.65 - difficulty * .67) / multiplier;
     }
     if ((starIn -= dt) <= 0) {
       spawnStar(null);
@@ -469,17 +301,9 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     }
     if (final) {
       world.finalLeft = Math.max(0, world.finalLeft - dt);
-      if (world.finalLeft === 0 || world.boss.hp === 0) finishFinal();
+      if (world.finalLeft === 0 && transition(State.VICTORY)) sound('victory');
     }
   }
 
-  function finishFinal() {
-    if (world.state !== State.FINAL_CHALLENGE) return false;
-    world.score += world.boss.hp === 0 ? 200 : 100;
-    transition(State.VICTORY);
-    sound('victory');
-    return true;
-  }
-
-  return { world, keys, action, step, openMission, closeMission, grant, restore, reset, configure, finishFinal, snapshot };
+  return { world, keys, action, step, openMission, closeMission, grant, restore, reset, configure };
 }

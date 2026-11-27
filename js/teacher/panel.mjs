@@ -19,7 +19,7 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
   let resetMode;
 
   for (const mission of missions) {
-    const label = `${mission.id}. ${mission.title}${mission.optional ? ' (facoltativa)' : ''}`;
+    const label = `${mission.id}. ${mission.titolo}`;
     selector.add(new Option(label, mission.id));
     const button = document.createElement('button');
     button.type = 'button';
@@ -63,7 +63,7 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
     solution.textContent = 'Mostra soluzione';
   }
 
-  function openTeacher() {
+  get('teacher-open').addEventListener('click', () => {
     game.action('pause');
     refresh();
     const { options } = game.world;
@@ -77,9 +77,7 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
     confirm.hidden = true;
     hideSolution();
     dialog.showModal();
-  }
-  get('teacher-open').addEventListener('click', openTeacher);
-  document.querySelector('[data-open-teacher]').addEventListener('click', openTeacher);
+  });
   get('open-unlocked').addEventListener('click', () => {
     game.action('pause');
     refresh();
@@ -96,7 +94,7 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
   solution.addEventListener('click', () => {
     if (!answer.hidden) return hideSolution();
     const index = Number(selector.value) - 1;
-    answer.textContent = `${missions[index].title}\n\n${missions[index].solution}\n\n${missions[index].explanation}`;
+    answer.textContent = `${missions[index].titolo}\n\n${missions[index].soluzioneEsempio}\n\n${missions[index].spiegazione}`;
     answer.hidden = false;
     solution.setAttribute('aria-expanded', 'true');
     solution.textContent = 'Nascondi soluzione';

@@ -1,4 +1,4 @@
-# Distribuzione di CODE SPACE 2.0.0
+# Distribuzione di CODE SPACE 1.1.0
 
 ## GitHub Pages
 
@@ -10,7 +10,7 @@
 
 ## A. Offline dopo un primo caricamento completo
 
-Su HTTPS o sull’indirizzo loopback il Service Worker preleva tutte le risorse elencate nel manifest. Per il primo caricamento occorre raggiungere il server. Apri il gioco, attendi l’attivazione del Service Worker e verifica l’offline disconnettendo la rete di prova e ricaricando. Esegui la prima missione nel Centro di controllo. Usa lo stesso indirizzo e profilo. La modalità privata, la pulizia dei dati e le regole della postazione possono eliminare o impedire la cache.
+Su HTTPS o sull’indirizzo loopback il Service Worker preleva tutte le risorse elencate nel manifest. Per il primo caricamento occorre raggiungere il server. Apri il gioco, attendi l’attivazione del Service Worker e verifica l’offline disconnettendo la rete di prova e ricaricando. Esegui la prima missione e riapri il Laboratorio Python. Usa lo stesso indirizzo e profilo. La modalità privata, la pulizia dei dati e le regole della postazione possono eliminare o impedire la cache.
 
 Per pubblicare un aggiornamento, incrementa la stessa versione in `sw.js` e `release-manifest.json`. Aggiorna l’elenco dei file se necessario e distribuisci l’intera versione insieme. Il Service Worker scarica la nuova cache prima di proporla. Quando compare l’avviso, salva il lavoro e chiudi **tutte** le schede di CODE SPACE su quell’origine. Alla riapertura si attiva la nuova versione e viene rimossa la cache precedente di quello scope. Questa procedura conserva LocalStorage. L’uso offline mantiene l’ultima versione installata fino a una successiva connessione.
 
@@ -19,7 +19,7 @@ Per pubblicare un aggiornamento, incrementa la stessa versione in `sw.js` e `rel
 Usa il pacchetto consegnato oppure ricrealo dalla radice del checkout con Python 3:
 
 ```sh
-python3 tools/build-offline.py ../code-space-python-edition-2.0.0.zip
+python3 tools/build-offline.py ../CODE-SPACE-1.1.0-offline.zip
 ```
 
 Estrai l’intera cartella. Entra nella directory con `index.html` ed esegui:
@@ -39,9 +39,3 @@ python3 -m http.server 8000 --bind 0.0.0.0
 ```
 
 Dai PC apri `http://IP_DEL_SERVER:8000/`. I client richiedono solo un browser e accesso a quella porta. Verifica firewall e connettività da un secondo PC. Su HTTP all’indirizzo LAN il browser in genere disabilita il Service Worker. Il server deve restare acceso e raggiungibile, mentre Internet può essere assente. Interrompi il servizio a fine lezione con Ctrl+C. Tieni il percorso B come riserva.
-
-## Riserva 1.0.0
-
-Conserva separatamente il pacchetto precedente e il suo checksum. Il commit 864825b permette di rigenerarlo con il medesimo generatore. Per provare entrambe le versioni sulla stessa macchina, estrai i pacchetti in cartelle diverse e usa porte HTTP differenti. Aggiornare sullo stesso indirizzo conserva il salvataggio. Premi **Aggiorna ora** per attivare la nuova cache. Durante una partita o una sessione Classroom il gioco chiede conferma prima di ricaricare. Se una scheda rimane bloccata sul vecchio avviso, termina o metti in pausa la partita e apri `aggiorna.html` sullo stesso indirizzo. Premi **Aggiorna ora** e il gioco si riaprirà automaticamente. Se l’aggiornamento è già attivo, usa **Apri il gioco**.
-
-Classroom online richiede la [configurazione Firebase](FIREBASE_SETUP.md). La modalità individuale e la demo locale sono comprese nel pacchetto. Per una riserva senza Classroom usa gli ZIP 1.0.0 o 1.1.0 su una porta distinta.

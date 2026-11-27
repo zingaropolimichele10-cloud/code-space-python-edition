@@ -1,40 +1,11 @@
 # Changelog
 
-## 2.2.0 — Immersive UI
+## 1.1.0 — Sviluppo locale delle missioni
 
-- Menu a schermo intero, quadro di volo compatto, terminali con accenti per sistema e interfaccia Classroom coordinata.
-- Recupero individuale con tre checkpoint verificati e importazione/esportazione JSON.
-- Recupero nel contesto ufficiale Classroom, coda di sincronizzazione e archivio Host per tre lezioni con esportazione JSON e CSV.
-
-## 2.1.2 — Percorso delle missioni
-
-- Il quadro di volo distingue missioni totali, principali e bonus.
-- Il riepilogo del boss chiarisce come proseguire. Il quadro di volo indica la prossima missione e permette di scegliere tra tutte quelle lasciate in sospeso.
-
-## 2.1.1 — Aggiornamento della cache
-
-- **Aggiorna ora** attiva il Service Worker in attesa e ricarica la scheda che ha richiesto l’aggiornamento. Le partite aperte richiedono conferma.
-- La pagina `aggiorna.html` consente di passare alla nuova versione quando il vecchio avviso è già in cache.
-
-## 2.1.0 — Mission Adventure Edition
-
-- Dodici missioni Python, con cinque principali e sette bonus, telemetria contestuale e potenziamenti fino al Protocollo Omega.
-- Centro integrato nell’avventura, progressione dopo il salto e migrazione dei progressi locali dalla 2.0.
-- Protocollo Classroom 2.1 con dodici bit, classifica didattica e conteggio errori privato. Regole di transizione compatibili con le stanze 2.0.
-- Cache 2.1.0 e archivio statico per il gioco individuale e la demo locale.
-
-## 2.0.0 — candidato Classroom
-
-- Accesso Host e anonimo, PIN, lobby, controllo di gruppo, classifica, boss sincronizzato e proiettore.
-- Punteggio didattico, presenza, aiuto privato, demo locale, config e regole Firebase.
-- Aggiornamento della cache mantenendo il gioco individuale e il salvataggio.
-
-## 1.1.0 — candidato
-
-- Combattimento con Spazio, cinque archetipi di asteroide oltre a quelli ordinari, frammenti, combo e bonus di volo.
-- Quattro settori di campagna e drone finale con tre fasi, resistenza, avvisi e difficoltà Assistita.
-- Potenziamenti più leggibili, missioni contestualizzate e esercizio if con i casi 2 e 4 vite.
-- Cache 1.1.0 e recupero verificato del salvataggio v2 da 1.0.0.
+- Fase 4. Completate le 22 missioni, incluse liste, debug, funzioni e accesso rapido alla sfida dal Protocollo Omega.
+- Fase 3. Missioni 12–17 con soglie del radar, allarme a tre livelli, doppio controllo dello scudo e sequenze dei cicli stampate da Skulpt.
+- Fase 2. Missioni 5–11 in ordine di volo, con prove su più valori di bordo, strumenti di riscontro e scudo di riserva sotto tre vite.
+- I salvataggi della Fase 1 restano leggibili. La revisione offline include il modulo degli indicatori delle missioni.
 
 ## 1.0.0 — 26 novembre 2026
 

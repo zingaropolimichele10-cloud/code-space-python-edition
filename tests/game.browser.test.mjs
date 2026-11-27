@@ -1,4 +1,3 @@
-import { missions } from '../js/missions/catalog.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -73,6 +72,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     return result.message;
   };
   const finish = () => click('#mission-done');
+  assert.equal(await text('mission-count'), '0 / 22');
   const paint = () => evaluate(`(() => {
     const canvas = document.querySelector('canvas');
     const { width, height } = canvas;
@@ -144,7 +144,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await advance(220);
     assert.equal(await state(), 'MISSION');
     assert.equal(await dialog(), true);
-    assert.equal(await text('mission-title'), 'Motori fuori controllo');
+    assert.equal(await text('mission-title'), 'Riaccendi Aurora');
     const snapshot = await paint();
     const before = await hud();
     await source('velocita = 6');
@@ -183,18 +183,18 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     });
     await click('#mission-skip');
     assert.equal(await state(), 'PLAYING');
-    await advance(30);
+    await advance(40);
     assert.equal(await dialog(), false);
     await click('#mission-retry');
     assert.equal(await evaluate("document.querySelector('#mission-code').value"), 'velocita = 6');
     assert.equal(await evaluate("document.querySelectorAll('#mission-hints li').length"), 3);
     assert.match(await submit('velocita = 5 * 2', 'success'), /intero 10/);
-    assert.equal(await text('mission-count'), '1 / 5');
+    assert.equal(await text('mission-count'), '1 / 22');
     await finish();
     assert.equal(await state(), 'PLAYING');
   });
 
-  await t.test('Potenziamenti, accesso ordinato e missione facoltativa', async () => {
+  await t.test('Potenziamenti e ordine delle quattro missioni attive', async () => {
     await advance(23);
     const x = (await paint())[0];
     await key('ArrowRight');
@@ -202,10 +202,9 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await key('ArrowRight', 'keyUp');
     assert.ok((await paint())[0] - x > 45);
     for (const [title, code, count] of [
-      ['Emergenza vitale', 'energia = 2 + 3', '2 / 5'],
-      ['Tempesta di meteoriti', 'scudo = 2 < 3', '3 / 5'],
-      ['Messaggio extraterrestre', 'messaggio = "NORD" + "-7"', '4 / 5'],
-      ['Armi in avaria', 'potenza = 4 * 3', '5 / 5'],
+      ['Messaggio di bordo', 'print("Aurora " + "online")', '2 / 22'],
+      ['Interruttore scudo', 'scudo = 2 < 3', '3 / 22'],
+      ['Vernice spaziale', 'colore = "b" + "lu"', '4 / 22'],
     ]) {
       await advance(220);
       assert.equal(await text('mission-title'), title);
@@ -214,13 +213,17 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
       assert.equal(await text('mission-count'), count);
       await finish();
     }
-    assert.equal(await text('lives'), '5 / 5');
+    assert.equal(await text('lives'), '3 / 3');
+    assert.equal(await text('flight-message'), 'Aurora online');
     assert.equal(await text('shield'), 'Attivo');
     await advance(23);
     assert.equal((await paint())[2], '64,155,255');
     assert.equal(await evaluate("document.querySelector('#final-button').hidden"), false);
-    assert.equal(await text('mission-total'), '5 / 12');
-    assert.equal(await text('mission-bonus'), '0 / 7');
+    await advance(220);
+    assert.equal(await dialog(), true);
+    assert.equal(await text('mission-title'), 'Ricarica energetica');
+    await click('#mission-skip');
+    assert.equal(await evaluate("document.querySelector('#final-button').hidden"), false);
   });
 
   await t.test('Sfida finale, vittoria, riavvii e un solo ciclo', async () => {
@@ -231,52 +234,142 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await advance(1170);
     assert.equal(await state(), 'VICTORY');
     await saveScreenshot(browser, '03-vittoria');
-    assert.match(await text('victory-missions'), /Missioni totali: 5\/12.*Missioni bonus: 0\/7/);
-    await click('#victory-recover');
-    assert.equal(await state(), 'PLAYING');
-    for (const mission of missions.slice(5)) {
-      await advance(240);
-      assert.equal(await state(), 'MISSION');
-      assert.equal(await text('mission-title'), mission.title);
-      assert.match(await text('mission-id'), /Facoltativa/);
-      if (mission.id === 6 || mission.id === 8) {
-        await click('#mission-skip');
-        continue;
-      }
-      if (mission.id === 7) {
-        assert.match(await submit('scudo = True', 'error'), /Con 4 vite/);
-        assert.match(await submit('vite = 2\nscudo = True', 'error'), /Lascia invariato/);
-      }
-      await submit(mission.solution, 'success');
-      await finish();
-    }
-    await click('#mission-retry');
-    assert.match(await text('pending-missions'), /Energia critica.*Rotta sconosciuta/s);
-    await click('#pending-missions li:nth-child(2) button');
-    assert.equal(await text('mission-title'), missions[7].title);
-    await submit(missions[7].solution, 'success');
-    await finish();
-    await click('#mission-retry');
-    assert.equal(await text('mission-title'), missions[5].title);
-    await submit(missions[5].solution, 'success');
-    await finish();
-    assert.equal(await text('mission-total'), '12 / 12');
-    assert.equal(await text('mission-count'), '5 / 5');
-    assert.equal(await text('mission-bonus'), '7 / 7');
-    await action('pause');
-    await evaluate("document.querySelector('#paused-panel [data-action=menu]').click()");
+    await evaluate("document.querySelector('#victory-panel [data-action=menu]').click()");
     for (let index = 0; index < 3; index++) {
       await action('tutorial');
       await action('start');
-      assert.deepEqual((await hud()).slice(0, 3), ['5 / 5', '0', '5 / 5']);
+      assert.deepEqual((await hud()).slice(0, 3), ['3 / 3', '0', '4 / 22']);
       await action('pause');
       await evaluate("document.querySelector('#paused-panel [data-action=menu]').click()");
     }
     assert.equal(await evaluate('peakFrames'), 1);
-    assert.deepEqual(await evaluate("JSON.parse(localStorage.getItem('code-space:progress:v3')).completed"), missions.map(mission => mission.id));
+    assert.deepEqual(await evaluate("JSON.parse(localStorage.getItem('code-space:missioni-1.1:progress:v3')).completed"), [1, 2, 3, 4]);
     await browser.page('Page.reload');
     await waitForPage(browser);
-    assert.equal(await text('mission-count'), '5 / 5');
+    assert.equal(await text('mission-count'), '4 / 22');
+  });
+
+  await t.test('In volo: missioni 5–11, salto, recupero e strumenti di bordo', async () => {
+    await click('#teacher-open');
+    await click('#teacher-demo');
+    await evaluate("document.querySelector('#teacher').close()");
+    await action('tutorial');
+    await action('start');
+    await click('#mission-retry');
+    assert.equal(await text('mission-title'), 'Ricarica energetica');
+    await click('#mission-hint');
+    assert.doesNotMatch(await text('mission-hints'), /energia = energia \+ 20/);
+    await submit('energia = 40\nenergia = 60', 'error');
+    await submit('energia = 40\nenergia = energia + 20', 'success');
+    assert.deepEqual(await evaluate("[...document.querySelectorAll('#mission-instruments meter')].map(meter => meter.value)"), [40, 60]);
+    await finish();
+    const challenges = [
+      ['Riparazione dello scafo', 'scafo = 100 - danni', /65/],
+      ['Potenziamento laser', 'danno = 10 * livello', /Potenza 20/],
+      ['Distribuzione delle risorse', 'per_motore = energia_totale // motori', /Motore 3 · 20/],
+      ['Segnale extraterrestre', 'messaggio = "Ciao " + nome', /Ciao Vega/],
+      ['Rapporto di bordo', 'print("Vite: " + str(vite))', /Vite: 3/],
+      ['Scudo intelligente', 'scudo = False\nif vite < 3:\n    scudo = True', /2 vite · Accesa.*3 vite · Spenta.*4 vite · Spenta/],
+    ];
+    for (const [title, code, expected] of challenges) {
+      await advance(230);
+      assert.equal(await state(), 'MISSION');
+      assert.equal(await text('mission-title'), title);
+      await source(code);
+      await evaluate("document.querySelector('#mission-code').dispatchEvent(new Event('input', { bubbles: true }))");
+      await submit(code, 'success');
+      assert.match(await text('mission-instruments'), expected);
+      if (title === 'Scudo intelligente') await saveScreenshot(browser, 'fase2-scudo-intelligente');
+      await finish();
+    }
+    assert.equal(await text('mission-count'), '11 / 22');
+    assert.equal(await text('flight-message'), 'Vite: 3');
+    assert.equal(await evaluate('peakFrames'), 1);
+  });
+
+  await t.test('In volo: decisioni e cicli dalle missioni 12–17', async () => {
+    const lessons = await evaluate(`import('./js/missions/catalog.mjs').then(({ missions }) => missions.slice(11, 17))`);
+    const labels = [/49 unità · ↗ Devia.*50 unità · ↑ Continua/, /19 unità · rosso.*20 unità · giallo.*50 unità · verde/,
+      /2 vite · 21 energia · Via libera.*2 vite · 20 energia · In attesa/, /Impulso 1.*Impulso 2.*Impulso 3/,
+      /Giro 1 · 1 unità.*Giro 5 · 15 unità/, /321Fine · 0.*Da 0 · nessun giro/];
+    for (const [index, lesson] of lessons.entries()) {
+      await advance(230);
+      assert.equal(await state(), 'MISSION');
+      assert.equal(await text('mission-title'), lesson.titolo);
+      if (lesson.id === 12) {
+        await click('#mission-skip');
+        await click('#mission-retry');
+        assert.equal(await text('mission-title'), lesson.titolo);
+        for (let i = 0; i < 2; i++) {
+          await click('#mission-hint');
+          assert.doesNotMatch(await text('mission-hints'), /rotta = "devia"/);
+        }
+        await click('#mission-hint');
+        assert.match(await text('mission-hints'), /rotta = "devia"/);
+      }
+      await source(lesson.soluzioneEsempio);
+      await evaluate("document.querySelector('#mission-code').dispatchEvent(new Event('input', { bubbles: true }))");
+      await submit(lesson.soluzioneEsempio, 'success');
+      assert.match(await text('mission-instruments'), labels[index]);
+      if (lesson.id >= 15) {
+        assert.equal(await evaluate("document.querySelectorAll('#mission-instruments .calc-step').length"),
+          lesson.scenariDiTest[0].output.length);
+      }
+      if (lesson.id === 16 && process.env.CODESPACE_SCREENSHOTS) {
+        await evaluate(`Promise.all(document.querySelector('#mission-instruments')
+          .getAnimations({ subtree: true }).map(animation => animation.finished))`);
+        await saveScreenshot(browser, 'fase3-generatore-automatico');
+      }
+      await finish();
+    }
+    assert.equal(await text('mission-count'), '17 / 22');
+    assert.equal(await text('flight-message'), '3\n2\n1');
+    assert.equal(await evaluate('peakFrames'), 1);
+  });
+
+  await t.test('In volo: inventario, debug, funzioni e accesso Omega fino a 22/22', async () => {
+    const lessons = await evaluate(`import('./js/missions/catalog.mjs').then(({ missions }) => missions.slice(17))`);
+    const expected = [/cavofiltrokit3 oggetti/, /cavo · carburante.*Carburante presente.*Stiva vuota.*assente/,
+      /Sistemi pronti.*Terminale in attesa/, /Scudo attivo.*Scudo spento/, /2 \+ 3 \+ 4 → 9.*2 \+ 3 \+ 5 → 10/];
+    for (const [index, lesson] of lessons.entries()) {
+      await advance(230);
+      assert.equal(await state(), 'MISSION');
+      assert.equal(await text('mission-title'), lesson.titolo);
+      if (lesson.id === 19) {
+        await click('#mission-skip');
+        await click('#mission-retry');
+        assert.equal(await text('mission-title'), lesson.titolo);
+      }
+      assert.equal(await evaluate("document.querySelector('#mission-final').hidden"), true);
+      await source(lesson.soluzioneEsempio);
+      await evaluate("document.querySelector('#mission-code').dispatchEvent(new Event('input', { bubbles: true }))");
+      await submit(lesson.soluzioneEsempio, 'success');
+      assert.equal(await text('mission-count'), `${lesson.id} / 22`);
+      assert.match(await text('mission-instruments'), expected[index]);
+      if (lesson.id === 22) {
+        for (const [width, height] of [[1024, 768], [1280, 720], [1366, 768], [1920, 1080]]) {
+          await browser.page('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+          assert.equal(await evaluate(`(() => {
+            const button = document.querySelector('#mission-final');
+            button.scrollIntoView({ block: 'nearest' });
+            const bounds = button.getBoundingClientRect();
+            const hit = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+            return bounds.width > 0 && bounds.bottom <= innerHeight && hit === button;
+          })()`), true, `${width} × ${height}`);
+          if (width === 1366 || width === 1920) await saveScreenshot(browser, `fase4-omega-${width}x${height}`);
+        }
+        assert.equal(await evaluate("document.querySelector('#mission-final').hidden"), false);
+        await click('#mission-final');
+        assert.equal(await state(), 'FINAL_CHALLENGE');
+      } else await finish();
+      if (lesson.id === 21) assert.equal(await text('shield'), 'Attivo');
+    }
+    assert.equal(await evaluate('peakFrames'), 1);
+    await browser.page('Page.reload');
+    await waitForPage(browser);
+    assert.equal(await text('mission-count'), '22 / 22');
+    assert.deepEqual(await evaluate("JSON.parse(localStorage.getItem('code-space:missioni-1.1:progress:v3')).completed"),
+      Array.from({ length: 22 }, (_, index) => index + 1));
   });
 
   await t.test('Sottopercorso, rete locale ed errori JavaScript', async () => {
@@ -292,15 +385,6 @@ test('Game over nel browser e vittoria senza missione facoltativa', async t => {
   const browser = await openBrowser('', {
     beforeLoad: controlledFrames + `
       if (!sessionStorage.getItem('test:checkpoint')) Math.random = () => 0.5;
-      else {
-        const key = 'code-space:progress:v3';
-        const progress = JSON.parse(localStorage.getItem(key));
-        delete progress.integrity;
-        delete progress.checkpoint?.resume;
-        progress.completed = [1,2,3,4];
-        progress.skipped = [];
-        localStorage.setItem(key, JSON.stringify(progress));
-      }
     `,
   });
   t.after(browser.close);
@@ -322,7 +406,13 @@ test('Game over nel browser e vittoria senza missione facoltativa', async t => {
   assert.equal(await evaluate("document.querySelector('#viewport').dataset.state"), 'PLAYING');
   assert.equal(await evaluate("document.querySelector('#mission-retry').hidden"), false);
 
-  await evaluate("sessionStorage.setItem('test:checkpoint', '1')");
+  await evaluate(`
+    const progress = JSON.parse(localStorage.getItem('code-space:missioni-1.1:progress:v3'));
+    progress.completed = [1,2,3,4];
+    progress.skipped = [];
+    localStorage.setItem('code-space:missioni-1.1:progress:v3', JSON.stringify(progress));
+    sessionStorage.setItem('test:checkpoint', '1');
+  `);
   await browser.page('Page.reload');
   await waitForPage(browser);
   assert.deepEqual(await evaluate(`(() => {
@@ -330,7 +420,7 @@ test('Game over nel browser e vittoria senza missione facoltativa', async t => {
     document.querySelector('[data-action=start]').click();
     document.querySelector('#final-button').click();
     advance(1220);
-    return [document.querySelector('#viewport').dataset.state, JSON.parse(localStorage.getItem('code-space:progress:v3')).completed];
+    return [document.querySelector('#viewport').dataset.state, JSON.parse(localStorage.getItem('code-space:missioni-1.1:progress:v3')).completed];
   })()`), ['VICTORY', [1, 2, 3, 4]]);
   assert.deepEqual(browser.errors, []);
 });
