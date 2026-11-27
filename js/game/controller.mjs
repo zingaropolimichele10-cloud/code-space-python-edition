@@ -1,4 +1,4 @@
-import { MAIN_MISSIONS } from '../missions/catalog.mjs';
+import { MAIN_MISSIONS, MISSION_COUNT } from '../missions/catalog.mjs';
 import { FIRE_KEY, sectors } from './arcade.mjs';
 import { createTutorial } from './tutorial.mjs';
 import { createCanvas } from './canvas.mjs';
@@ -22,13 +22,13 @@ const copy = {
 };
 
 export function mountGame({ nextMission, onState = () => {},
-  missionCount = () => 0, allowAction = () => true, sound, onCheckpoint, initialLight = false, onLight = () => {}, onRefresh = () => {} } = {}) {
+  missionCount = () => 0, missionTotal = () => 0, allowAction = () => true, sound, onCheckpoint, initialLight = false, onLight = () => {}, onRefresh = () => {} } = {}) {
   const game = createGame({ nextMission, sound, onCheckpoint });
   const { world, keys } = game;
   const byId = id => document.getElementById(id);
   const tutorial = createTutorial();
   const canvas = createCanvas(byId('space'));
-  const hud = Object.fromEntries(['lives', 'score', 'mission-count', 'speed', 'shield', 'flight-status', 'flight-note', 'sector-label', 'arcade-notice', 'combo-label', 'boss-label']
+  const hud = Object.fromEntries(['lives', 'score', 'mission-count', 'mission-total', 'mission-bonus', 'speed', 'shield', 'flight-status', 'flight-note', 'sector-label', 'arcade-notice', 'combo-label', 'boss-label']
     .map(id => [id, byId(id)]));
   const set = (id, value) => {
     if (hud[id].textContent !== value) hud[id].textContent = value;
@@ -56,7 +56,11 @@ export function mountGame({ nextMission, onState = () => {},
     set('lives', `${world.lives} / ${world.upgrades.maxLives}`);
     set('score', String(world.score));
     set('speed', String(world.upgrades.speed));
-    set('mission-count', `${missionCount()} / ${MAIN_MISSIONS}`);
+    const main = missionCount();
+    const total = missionTotal();
+    set('mission-total', `${total} / ${MISSION_COUNT}`);
+    set('mission-count', `${main} / ${MAIN_MISSIONS}`);
+    set('mission-bonus', `${total - main} / ${MISSION_COUNT - MAIN_MISSIONS}`);
     set('shield', world.shield ? 'Attivo' : world.emergency && world.lives < 3 ? 'Emergenza'
       : world.upgrades.shield ? 'In ricarica' : 'Spento');
     const inFlight = flying.has(world.state);

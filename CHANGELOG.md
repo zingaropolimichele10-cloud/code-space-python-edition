@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.2 — Percorso delle missioni
+
+- Il quadro di volo distingue missioni totali, principali e bonus.
+- Il riepilogo del boss chiarisce come proseguire. Il quadro di volo indica la prossima missione e permette di scegliere tra tutte quelle lasciate in sospeso.
+
 ## 2.1.1 — Aggiornamento della cache
 
 - **Aggiorna ora** attiva il Service Worker in attesa e ricarica la scheda che ha richiesto l’aggiornamento. Le partite aperte richiedono conferma.

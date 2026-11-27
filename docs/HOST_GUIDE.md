@@ -18,3 +18,7 @@
 | 33–40 | Mostra il podio e confronta due soluzioni equivalenti. Elimina i dati quando la classe lascia l’aula. |
 
 In una stanza 2.1 le missioni principali valgono 1.400 punti, le bonus 1.100, il boss 500 e la parte arcade arriva a 1.000. Errori, tentativi e indizi compaiono solo nella dashboard Host. Se uno studente ha una scheda 2.0 in cache, fargli aggiornare il gioco e riaprire il collegamento d’ingresso.
+
+### Missioni dopo il boss
+
+Il boss non conclude automaticamente la stanza. Dopo il riepilogo, gli studenti tornano in volo e possono completare le missioni bonus o scegliere quelle in sospeso. Se vuoi lasciare tempo per queste missioni, avvia il boss con sufficiente anticipo e premi **Termina sessione** solo quando il gruppo ha finito. Il quadro di volo mostra separatamente le 12 missioni totali, le 5 principali e le 7 bonus.

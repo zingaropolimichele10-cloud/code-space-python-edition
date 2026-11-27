@@ -25,6 +25,7 @@ export function createCenter({ progress, sound = () => {} }) {
   const skip = get('mission-skip');
   const done = get('mission-done');
   const retry = get('mission-retry');
+  const pendingList = get('pending-missions');
   const note = get('mission-note');
   let active;
   let practice = false;
@@ -32,6 +33,7 @@ export function createCenter({ progress, sound = () => {} }) {
   let revision = 0;
   let locked = false;
   let skipAllowed = true;
+  const maySkip = () => skipAllowed || active?.optional;
   let interrupt = () => {};
   let attempts = 0;
   let errors = 0;
@@ -87,15 +89,36 @@ export function createCenter({ progress, sound = () => {} }) {
     }
 
     interrupt = leave;
-    skip.addEventListener('click', () => { if (skipAllowed && !locked) leave(); });
+    skip.addEventListener('click', () => { if (maySkip() && !locked) leave(); });
     done.addEventListener('click', leave);
     dialog.addEventListener('cancel', event => {
       event.preventDefault();
-      if (!locked && (skipAllowed || editor.readOnly)) leave();
+      if (!locked && (maySkip() || editor.readOnly)) leave();
     });
+    function reopen(id) {
+      if (locked || !game.openMission(id)) return;
+      pendingList.hidden = true;
+      retry.setAttribute('aria-expanded', 'false');
+      refresh();
+    }
     retry.addEventListener('click', () => {
-      const id = [...pending].sort((a, b) => a - b)[0];
-      if (id && game.openMission(id)) refresh();
+      if (locked || game.world.state !== State.PLAYING) return;
+      const ids = [...pending].sort((a, b) => a - b);
+      if (ids.length === 1) return reopen(ids[0]);
+      pendingList.hidden = !pendingList.hidden;
+      retry.setAttribute('aria-expanded', String(!pendingList.hidden));
+      if (pendingList.hidden) return;
+      pendingList.replaceChildren(...ids.map(id => {
+        const entry = document.createElement('li');
+        const choice = document.createElement('button');
+        choice.type = 'button';
+        choice.className = 'secondary';
+        choice.textContent = `${id}. ${missions.find(mission => mission.id === id).title}`;
+        choice.addEventListener('click', () => reopen(id));
+        entry.append(choice);
+        return entry;
+      }));
+      pendingList.querySelector('button')?.focus();
     });
     hintButton.addEventListener('click', () => {
       if (!active) return;
@@ -183,7 +206,7 @@ export function createCenter({ progress, sound = () => {} }) {
     status.textContent = 'Modifica il codice e premi Esegui.';
     status.dataset.result = '';
     output.textContent = '';
-    skip.hidden = !skipAllowed;
+    skip.hidden = !maySkip();
     done.hidden = true;
     syncHints();
     dialog.showModal();
@@ -197,7 +220,7 @@ export function createCenter({ progress, sound = () => {} }) {
       return { mission, since: mission ? since : 0, attempts: mission ? attempts : 0,
         hints: mission ? (shownHints.get(mission) ?? 0) : 0, errors: mission ? errors : 0 };
     },
-    classroomPolicy(game, { blocked, skip, mask }) {
+    classroomPolicy(game, { blocked, skip: allowSkip, mask }) {
       for (const mission of missions) {
         if ((mask & (1 << (mission.id - 1))) && !completed.has(mission.id)) {
           completed.add(mission.id);
@@ -205,7 +228,7 @@ export function createCenter({ progress, sound = () => {} }) {
           game.grant(mission.upgrade);
         }
       }
-      skipAllowed = skip;
+      skipAllowed = allowSkip;
       if (!active) { locked = blocked; return; }
       if (!locked && blocked) pauseSince = Date.now();
       if (locked && !blocked && pauseSince) { since += Date.now() - pauseSince; pauseSince = 0; }
@@ -217,7 +240,7 @@ export function createCenter({ progress, sound = () => {} }) {
       }
       locked = blocked;
       button.disabled = locked || editor.readOnly || status.dataset.result === 'pending';
-      skip.hidden = !skipAllowed || editor.readOnly;
+      skip.hidden = !maySkip() || editor.readOnly;
       skip.disabled = locked;
     },
     hasIncomplete: () => completed.size < missions.length,
@@ -225,21 +248,23 @@ export function createCenter({ progress, sound = () => {} }) {
     unlock() { unlocked = true; },
     reset() { completed.clear(); pending.clear(); drafts.clear(); shownHints.clear(); unlocked = false; },
     demo: () => show(missions[0], true),
-    nextStar: () => {
-      const mission = nextMission();
-      return mission && !pending.has(mission.id) ? mission.id : null;
-    },
+    nextStar: () => nextMission()?.id ?? null,
     total: () => completed.size,
     count: () => [...completed].filter(id => id <= MAIN_MISSIONS).length,
     onRefresh({ world }) {
       const mission = nextMission();
       const retryable = pending.size > 0;
-      const text = retryable ? `In sospeso: ${missions.find(item => item.id === Math.min(...pending)).title}.`
-        : mission ? mission.optional ? 'Segnale bonus rilevato · raccogli la stella PYTHON.' : 'Raccogli la stella contrassegnata PYTHON.'
-        : 'Tutte le missioni sono completate.';
+      const text = mission
+        ? `${mission.optional ? 'Missione bonus' : 'Prossima missione'} ${mission.id} · ${mission.title}. Raccogli la stella PYTHON.${retryable ? ' Puoi anche riprendere le missioni in sospeso.' : ''}`
+        : retryable ? 'Riprendi le missioni in sospeso per completare il percorso.' : 'Tutte le missioni sono completate.';
       note.hidden = world.state === State.FINAL_CHALLENGE;
       if (note.textContent !== text) note.textContent = text;
       retry.hidden = world.state !== State.PLAYING || !retryable;
+      retry.disabled = locked;
+      if (retry.hidden || locked) {
+        pendingList.hidden = true;
+        retry.setAttribute('aria-expanded', 'false');
+      }
       get('open-unlocked').hidden = world.state !== State.PLAYING || !unlocked;
     },
   };

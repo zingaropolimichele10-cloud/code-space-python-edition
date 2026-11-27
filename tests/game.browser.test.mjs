@@ -1,3 +1,4 @@
+import { missions } from '../js/missions/catalog.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -218,16 +219,8 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await advance(23);
     assert.equal((await paint())[2], '64,155,255');
     assert.equal(await evaluate("document.querySelector('#final-button').hidden"), false);
-    await advance(220);
-    assert.equal(await text('mission-title'), 'Energia critica');
-    await click('#mission-skip');
-    await advance(220);
-    assert.equal(await text('mission-title'), 'Difesa intelligente');
-    assert.match(await text('mission-id'), /Facoltativa/);
-    assert.match(await submit('scudo = True', 'error'), /Con 4 vite/);
-    assert.match(await submit('vite = 2\nscudo = True', 'error'), /Lascia invariato/);
-    assert.match(await submit('scudo = False\nif vite < 3:\n    scudo = True', 'success'), /2 vite.*4/);
-    await finish();
+    assert.equal(await text('mission-total'), '5 / 12');
+    assert.equal(await text('mission-bonus'), '0 / 7');
   });
 
   await t.test('Sfida finale, vittoria, riavvii e un solo ciclo', async () => {
@@ -238,7 +231,40 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await advance(1170);
     assert.equal(await state(), 'VICTORY');
     await saveScreenshot(browser, '03-vittoria');
-    await evaluate("document.querySelector('#victory-panel [data-action=menu]').click()");
+    assert.match(await text('victory-missions'), /Missioni totali: 5\/12.*Missioni bonus: 0\/7/);
+    await click('#victory-recover');
+    assert.equal(await state(), 'PLAYING');
+    for (const mission of missions.slice(5)) {
+      await advance(240);
+      assert.equal(await state(), 'MISSION');
+      assert.equal(await text('mission-title'), mission.title);
+      assert.match(await text('mission-id'), /Facoltativa/);
+      if (mission.id === 6 || mission.id === 8) {
+        await click('#mission-skip');
+        continue;
+      }
+      if (mission.id === 7) {
+        assert.match(await submit('scudo = True', 'error'), /Con 4 vite/);
+        assert.match(await submit('vite = 2\nscudo = True', 'error'), /Lascia invariato/);
+      }
+      await submit(mission.solution, 'success');
+      await finish();
+    }
+    await click('#mission-retry');
+    assert.match(await text('pending-missions'), /Energia critica.*Rotta sconosciuta/s);
+    await click('#pending-missions li:nth-child(2) button');
+    assert.equal(await text('mission-title'), missions[7].title);
+    await submit(missions[7].solution, 'success');
+    await finish();
+    await click('#mission-retry');
+    assert.equal(await text('mission-title'), missions[5].title);
+    await submit(missions[5].solution, 'success');
+    await finish();
+    assert.equal(await text('mission-total'), '12 / 12');
+    assert.equal(await text('mission-count'), '5 / 5');
+    assert.equal(await text('mission-bonus'), '7 / 7');
+    await action('pause');
+    await evaluate("document.querySelector('#paused-panel [data-action=menu]').click()");
     for (let index = 0; index < 3; index++) {
       await action('tutorial');
       await action('start');
@@ -247,7 +273,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
       await evaluate("document.querySelector('#paused-panel [data-action=menu]').click()");
     }
     assert.equal(await evaluate('peakFrames'), 1);
-    assert.deepEqual(await evaluate("JSON.parse(localStorage.getItem('code-space:progress:v3')).completed"), [1, 2, 3, 4, 5, 7]);
+    assert.deepEqual(await evaluate("JSON.parse(localStorage.getItem('code-space:progress:v3')).completed"), missions.map(mission => mission.id));
     await browser.page('Page.reload');
     await waitForPage(browser);
     assert.equal(await text('mission-count'), '5 / 5');

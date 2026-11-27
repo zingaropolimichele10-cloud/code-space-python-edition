@@ -1,3 +1,4 @@
+import { missions } from '../js/missions/catalog.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { test } from 'node:test';
@@ -9,7 +10,7 @@ const selectors = {
   reveal: '[data-option=reveal]',
 };
 
-test('Chromium: demo Classroom dalla lobby al podio, proiettore, pausa e missione', async t => {
+test('Chromium: demo Classroom dalla lobby al podio, proiettore e 12 missioni prima e dopo il boss', async t => {
   const browser = await openBrowser('', {
     width: 1180, height: 820, beforeLoad: 'window.confirm = () => true;',
   });
@@ -128,6 +129,41 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore, pausa e mission
   await until(student, "document.querySelector('#player-summary').textContent.includes('punti') && Number(document.querySelector('#rank-body tr td:nth-child(3)').textContent) >= 1400");
   await parent.activate();
   await until(parent, "Number(document.querySelector('#rank-body tr td:nth-child(3)').textContent) >= 1400");
+  await click(parent, '[data-option=rocks]');
+  await until(parent, "document.querySelector('[data-option=rocks]').textContent.includes('Riattiva')");
+  await student.activate();
+  await student.evaluate(`(() => {
+    const frame = document.querySelector('#flight-frame').contentWindow;
+    const nativeRAF = frame.requestAnimationFrame.bind(frame);
+    frame.Math.random = () => .5;
+    let now = frame.performance.now();
+    frame.requestAnimationFrame = callback => nativeRAF(actual => {
+      now = Math.max(now, actual);
+      now += 50;
+      callback(now);
+    });
+  })()`);
+  const playMission = async mission => {
+    const frameDocument = "document.querySelector('#flight-frame').contentDocument";
+    await student.evaluate(`(() => {
+      const d = ${frameDocument};
+      if (d.querySelector('#viewport').dataset.state === 'PAUSED') d.querySelector('#paused-panel [data-action=resume]').click();
+    })()`);
+    await until(student, `${frameDocument}.querySelector('#control-center').open`, 9000).catch(async error => {
+      const state = await student.evaluate(`${frameDocument}.querySelector('#viewport').dataset.state`);
+      throw Error(`Missione ${mission.id}, stato ${state}. ${error.message}`);
+    });
+    assert.equal(await student.evaluate(`${frameDocument}.querySelector('#mission-title').textContent`), mission.title);
+    await student.evaluate(`
+      ${frameDocument}.querySelector('#mission-code').value = ${JSON.stringify(mission.solution)};
+      ${frameDocument}.querySelector('#mission-run').click();
+    `);
+    await until(student, `${frameDocument}.querySelector('#mission-status').dataset.result === 'success'`);
+    await student.evaluate(`${frameDocument}.querySelector('#mission-done').click()`);
+  };
+  for (const mission of missions.slice(1, 5)) await playMission(mission);
+  await until(student, "document.querySelector('#flight-frame').contentDocument.querySelector('#mission-total').textContent === '5 / 12'");
+  await parent.activate();
   await parent.evaluate("document.querySelector('#rank').scrollIntoView({block:'end'})");
   await capture(parent, '11-classifica');
   await until(parent, "!document.querySelector('[data-command=boss]').disabled");
@@ -139,6 +175,13 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore, pausa e mission
   await until(student, "document.querySelector('#flight-frame').contentDocument.querySelector('#viewport').dataset.state === 'VICTORY'", 13000);
   await parent.activate();
   await until(parent, "document.querySelector('#host-totals').textContent.includes('1 completati')");
+  await student.activate();
+  await until(student, "document.querySelector('#flight-frame').contentDocument.querySelector('#viewport').dataset.state === 'PLAYING'");
+  for (const mission of missions.slice(5)) await playMission(mission);
+  const readCount = id => student.evaluate(`document.querySelector('#flight-frame').contentDocument.getElementById('${id}').textContent`);
+  assert.deepEqual(await Promise.all(['mission-total', 'mission-count', 'mission-bonus'].map(readCount)), ['12 / 12', '5 / 5', '7 / 7']);
+  await parent.activate();
+  await until(parent, "document.querySelector('#host-totals').textContent.includes('12 missioni Python')");
   await click(parent, selectors.end);
   await until(parent, "document.querySelector('#phase-label').textContent === 'Sessione terminata'");
   await until(parent, "!document.querySelector('[data-option=podium]').disabled");

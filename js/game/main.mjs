@@ -1,4 +1,4 @@
-import { MAIN_MISSIONS } from '../missions/catalog.mjs';
+import { MAIN_MISSIONS, MISSION_COUNT } from '../missions/catalog.mjs';
 import { classroomFrame, connectClassroomGame } from '../classroom/game-bridge.mjs';
 import { bindAudio, createAudio } from '../audio/sound.mjs';
 import { createCenter } from '../missions/center.mjs';
@@ -23,7 +23,7 @@ const { game, refresh, tutorial, setLight } = mountGame({
   sound: audio.play, nextMission: center.nextStar,
   initialLight: progress.state.light, onLight: light => progress.update({ light }),
   onCheckpoint: checkpoint => progress.update({ checkpoint }),
-  missionCount: center.count,
+  missionCount: center.count, missionTotal: center.total,
   onState(game) {
     center.onState(game);
     const { world } = game;
@@ -34,7 +34,9 @@ const { game, refresh, tutorial, setLight } = mountGame({
     const { rocks, stars, bestCombo } = world.stats;
     get('victory-stats').textContent = `Asteroidi distrutti: ${rocks} · Stelle raccolte: ${stars} · Combo migliore: ${bestCombo}`;
     get('victory-rank').textContent = `Grado di volo: ${rocks >= 12 && bestCombo >= 3 ? 'Esploratore stellare' : rocks >= 5 || bestCombo >= 3 ? 'Pilota d’orbita' : 'Pioniere Aurora'}`;
-    get('victory-missions').textContent = `Missioni principali: ${center.count()} su ${MAIN_MISSIONS}${completed.some(item => item.optional) ? ' · Missione facoltativa completata' : ''}`;
+    const main = center.count();
+    get('victory-missions').textContent = `Missioni totali: ${completed.length}/${MISSION_COUNT} · Missioni principali: ${main}/${MAIN_MISSIONS} · Missioni bonus: ${completed.length - main}/${MISSION_COUNT - MAIN_MISSIONS}`;
+    get('victory-classroom-next').hidden = !frame || !center.hasIncomplete();
     get('victory-upgrades').textContent = completed.length
       ? `Potenziamenti: ${completed.map(item => item.reward).join(' · ')}`
       : 'Il Centro di controllo resta aperto per provare Python quando vuoi.';
@@ -56,7 +58,7 @@ const { game, refresh, tutorial, setLight } = mountGame({
     get('continue').hidden = !progress.state.checkpoint;
     const route = get('final-route');
     route.hidden = world.state !== State.PLAYING;
-    const label = center.count() === MAIN_MISSIONS ? 'Percorso completo · Potenziamenti principali a bordo.'
+    const label = center.count() === MAIN_MISSIONS ? 'Missioni principali completate. Puoi cercare le stelle bonus prima del boss o continuare dopo lo scontro.'
       : 'Percorso libero · Puoi affrontare la sfida anche con missioni incomplete.';
     if (route.textContent !== label) route.textContent = label;
   },
@@ -74,9 +76,7 @@ get('continue').addEventListener('click', () => {
 });
 get('victory-recover').addEventListener('click', () => {
   game.action('recover');
-  const id = progress.state.skipped[0];
-  if (id) game.openMission(id);
-  else get('space').focus({ preventScroll: true });
+  get('space').focus({ preventScroll: true });
   refresh();
 });
 refresh();

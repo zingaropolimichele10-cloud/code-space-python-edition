@@ -1,4 +1,4 @@
-import { missions, MISSION_COUNT, MISSION_MASK } from '../missions/catalog.mjs';
+import { MAIN_MISSIONS, missions, MISSION_COUNT, MISSION_MASK } from '../missions/catalog.mjs';
 import { gate, ranking } from './model.mjs';
 import { sessionService } from './session.mjs';
 import { demoAdapter } from './demo.mjs';
@@ -148,7 +148,11 @@ function draw() {
     const prior = me && [...rows].reverse().find(row => row.rank < me.rank);
     const distance = prior ? ` · ${prior.total - me.total} punti dalla posizione precedente` : '';
     const learned = me ? (control.settings.adventure ? concepts : legacyConcepts).filter((_, index) => me.mask & (1 << index)) : [];
-    set('player-summary', me ? `${me.name} · posizione ${me.rank} · ${me.total} punti${distance} · obiettivo: ${control.settings.required} missioni${current === 'ended' ? ' · Concetti allenati: ' + (learned.join(', ') || 'puoi continuare a esercitarti in modalità individuale') : ''}` : '');
+    const main = completed((me?.mask ?? 0) & ((1 << MAIN_MISSIONS) - 1));
+    const totals = control.settings.adventure
+      ? ` · Missioni totali: ${learned.length}/${MISSION_COUNT} · Principali: ${main}/${MAIN_MISSIONS} · Bonus: ${learned.length - main}/${MISSION_COUNT - MAIN_MISSIONS}`
+      : '';
+    set('player-summary', me ? `${me.name} · posizione ${me.rank} · ${me.total} punti${distance}${totals} · obiettivo: ${control.settings.required} missioni${current === 'ended' ? ' · Concetti allenati: ' + (learned.join(', ') || 'puoi continuare a esercitarti in modalità individuale') : ''}` : '');
     get('help').hidden = !me || ['ended', 'expired', 'kicked', 'offline', 'lobby'].includes(current);
     get('help').disabled = help;
     set('help', help ? 'Aiuto richiesto' : 'Chiedi aiuto');

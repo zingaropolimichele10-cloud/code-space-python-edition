@@ -211,9 +211,12 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     assert.match(await text('flight-status'), /Demo/);
     await evaluate('fly(245)');
     assert.equal(await state(), 'VICTORY');
-    assert.match(await text('victory-missions'), /0 su 5/);
+    assert.match(await text('victory-missions'), /Missioni principali: 0\/5/);
     await capture('08-vittoria');
     await click('#victory-recover');
+    assert.equal(await state(), 'PLAYING');
+    await click('#mission-retry');
+    await click('#pending-missions li:first-child button');
     assert.equal(await state(), 'MISSION');
     await click('#mission-skip');
     await click('#teacher-open');

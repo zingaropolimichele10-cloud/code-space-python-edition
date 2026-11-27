@@ -28,7 +28,11 @@
         <div class="hud" aria-label="Stato della partita">
           <div><span>Vite</span><strong id="lives">3 / 3</strong></div>
           <div><span>Punteggio</span><strong id="score">0</strong></div>
-          <div><span>Missioni</span><strong id="mission-count">0 / 5</strong></div>
+          <div class="hud-missions">
+            <span>Missioni totali</span><strong id="mission-total">0 / 12</strong>
+            <span>Missioni principali</span><strong id="mission-count">0 / 5</strong>
+            <span>Missioni bonus</span><strong id="mission-bonus">0 / 7</strong>
+          </div>
           <div><span>Velocità</span><strong id="speed">5</strong></div>
           <div><span>Scudo</span><strong id="shield">Spento</strong></div>
         </div>
@@ -70,12 +74,13 @@
               <h2>Missione compiuta!</h2>
               <p id="victory-score"></p>
               <p id="victory-missions"></p>
+              <p id="victory-classroom-next" hidden>Dopo il riepilogo del boss il volo riprende nella stanza. Potrai raccogliere altre stelle PYTHON e completare le missioni bonus.</p>
               <p id="victory-stats"></p>
               <p id="victory-rank"></p>
               <p id="victory-upgrades"></p>
               <p id="victory-concepts"></p>
               <button type="button" data-action="start">Rigioca</button>
-              <button type="button" class="secondary" id="victory-recover">Riprendi le missioni</button>
+              <button type="button" class="secondary" id="victory-recover">Continua le missioni</button>
               <button type="button" data-action="menu">Menu principale</button>
             </div>
           </div>
@@ -95,7 +100,8 @@
         <p id="mission-note"></p>
         <details id="flight-systems-panel" hidden><summary>Sistemi sbloccati</summary><p id="flight-systems"></p></details>
         <button type="button" id="open-unlocked" class="secondary" hidden>Scegli missione</button>
-        <button type="button" id="mission-retry" class="secondary" hidden>Riprendi missione</button>
+        <button type="button" id="mission-retry" class="secondary" aria-controls="pending-missions" aria-expanded="false" hidden>Riprendi missione</button>
+        <ul id="pending-missions" hidden></ul>
         <button type="button" id="mute" class="secondary" aria-pressed="false">Audio disattivato</button>
         <p id="audio-status" role="status"></p>
         <label class="setting"><input id="light" type="checkbox"> Grafica leggera</label>
