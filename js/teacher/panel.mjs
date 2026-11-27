@@ -63,7 +63,7 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
     solution.textContent = 'Mostra soluzione';
   }
 
-  get('teacher-open').addEventListener('click', () => {
+  function openTeacher() {
     game.action('pause');
     refresh();
     const { options } = game.world;
@@ -77,7 +77,9 @@ export function bindTeacher({ game, refresh, setLight, audio, syncAudio, center,
     confirm.hidden = true;
     hideSolution();
     dialog.showModal();
-  });
+  }
+  get('teacher-open').addEventListener('click', openTeacher);
+  document.querySelector('[data-open-teacher]').addEventListener('click', openTeacher);
   get('open-unlocked').addEventListener('click', () => {
     game.action('pause');
     refresh();

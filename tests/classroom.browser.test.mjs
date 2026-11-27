@@ -34,6 +34,7 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore e 12 missioni pr
         return response.result.value;
       },
       activate: () => send('Target.activateTarget', { targetId }),
+      reload: () => page('Page.reload'),
       async screenshot() { return Buffer.from((await page('Page.captureScreenshot', { format: 'png' })).data, 'base64'); },
     };
   }
@@ -132,17 +133,20 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore e 12 missioni pr
   await click(parent, '[data-option=rocks]');
   await until(parent, "document.querySelector('[data-option=rocks]').textContent.includes('Riattiva')");
   await student.activate();
-  await student.evaluate(`(() => {
-    const frame = document.querySelector('#flight-frame').contentWindow;
-    const nativeRAF = frame.requestAnimationFrame.bind(frame);
-    frame.Math.random = () => .5;
-    let now = frame.performance.now();
-    frame.requestAnimationFrame = callback => nativeRAF(actual => {
-      now = Math.max(now, actual);
-      now += 50;
-      callback(now);
-    });
-  })()`);
+  async function speedUpFlight() {
+    await student.evaluate(`(() => {
+      const frame = document.querySelector('#flight-frame').contentWindow;
+      const nativeRAF = frame.requestAnimationFrame.bind(frame);
+      frame.Math.random = () => .5;
+      let now = frame.performance.now();
+      frame.requestAnimationFrame = callback => nativeRAF(actual => {
+        now = Math.max(now, actual);
+        now += 50;
+        callback(now);
+      });
+    })()`);
+  }
+  await speedUpFlight();
   const playMission = async mission => {
     const frameDocument = "document.querySelector('#flight-frame').contentDocument";
     await student.evaluate(`(() => {
@@ -154,6 +158,20 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore e 12 missioni pr
       throw Error(`Missione ${mission.id}, stato ${state}. ${error.message}`);
     });
     assert.equal(await student.evaluate(`${frameDocument}.querySelector('#mission-title').textContent`), mission.title);
+    if (mission.id === 2) {
+      await student.evaluate(`
+        const editor = ${frameDocument}.querySelector('#mission-code');
+        editor.value = 'energia = 5 # bozza';
+        editor.dispatchEvent(new Event('input'));
+      `);
+      await until(student, "Object.keys(sessionStorage).some(key => key.includes(':flight:') && sessionStorage[key].includes('energia = 5 # bozza'))");
+      await student.reload();
+      await until(student, `${frameDocument}?.querySelector('#control-center')?.open`, 12000);
+      assert.equal(await student.evaluate(`${frameDocument}.querySelector('#mission-code').value`), 'energia = 5 # bozza');
+      assert.match(await student.evaluate("document.querySelector('#participants').textContent"), /1 connessi/);
+      await speedUpFlight();
+    }
+
     await student.evaluate(`
       ${frameDocument}.querySelector('#mission-code').value = ${JSON.stringify(mission.solution)};
       ${frameDocument}.querySelector('#mission-run').click();
@@ -166,12 +184,21 @@ test('Chromium: demo Classroom dalla lobby al podio, proiettore e 12 missioni pr
   await parent.activate();
   await parent.evaluate("document.querySelector('#rank').scrollIntoView({block:'end'})");
   await capture(parent, '11-classifica');
+  await browser.page('Page.reload');
+  await until(parent, `document.querySelector('#pin-value')?.textContent === '${pin}'`, 12000);
+  await until(parent, "document.querySelector('#host-totals').textContent.includes('5 missioni Python')");
+
   await until(parent, "!document.querySelector('[data-command=boss]').disabled");
   await click(parent, selectors.boss);
   await student.activate();
   await until(student, "document.querySelector('#flight-frame').contentDocument.querySelector('#viewport').dataset.state === 'FINAL_CHALLENGE'", 9000);
   await student.evaluate("document.querySelector('#flight-frame').scrollIntoView()");
   await capture(student, '08-boss');
+  await until(student, "Object.keys(sessionStorage).some(key => key.includes(':flight:') && sessionStorage[key].includes('FINAL_CHALLENGE'))");
+  await student.reload();
+  await until(student, "document.querySelector('#flight-frame').contentDocument?.querySelector('#viewport')?.dataset.state === 'FINAL_CHALLENGE'", 9000);
+  await speedUpFlight();
+
   await until(student, "document.querySelector('#flight-frame').contentDocument.querySelector('#viewport').dataset.state === 'VICTORY'", 13000);
   await parent.activate();
   await until(parent, "document.querySelector('#host-totals').textContent.includes('1 completati')");

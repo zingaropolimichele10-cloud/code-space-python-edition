@@ -9,30 +9,35 @@
   <link rel="icon" href="./assets/favicon.svg">
   <link rel="stylesheet" href="./css/game.css">
   <link rel="stylesheet" href="./css/classroom.css">
+  <link rel="stylesheet" href="./css/immersive.css">
   <script type="module" src="./js/classroom/ui.mjs"></script>
   <script type="module" src="./js/storage/offline.mjs"></script>
 </head>
-<body>
+<body class="space-classroom">
 <p id="offline-notice" class="offline-notice" role="status" hidden></p>
 <main class="shell classroom">
   <header class="class-header">
     <div><p class="edition">Orientamento in ingresso · Ferraris</p><h1>CODE <span>SPACE</span></h1><p class="subtitle">Classroom Edition</p></div>
-    <a href="./index.html">Gioca da solo</a>
+    <a class="space-button" href="./index.html">Gioca da solo <span aria-hidden="true">›</span></a>
   </header>
   <p class="class-status" id="connection" role="status">Pronto per la sessione.</p>
   <p id="feedback" class="class-error" role="alert" hidden></p>
 
   <section id="entry" class="class-card">
+    <div class="class-entry-art" aria-hidden="true"><div class="launch-orbit"></div><img src="./assets/aurora.svg" alt=""></div>
+    <div class="class-entry-controls">
     <div id="join-panel">
       <h2>Unisciti a una sessione</h2>
       <form id="join-form" class="class-form">
         <label>PIN <input id="join-pin" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label>
         <label>Nickname <input name="name" maxlength="16" autocomplete="off" required></label>
         <button>Entra in sala d’attesa</button>
+        <button type="button" class="secondary" id="recover-student" hidden>Recupera partita</button>
       </form>
     </div>
     <div id="host-panel" hidden>
       <h2>Crea una sessione</h2>
+      <button type="button" class="secondary" id="recover-host" hidden>Recupera sessione</button>
       <button id="host-login" type="button">Accedi come Host con Google</button>
       <form id="host-email" class="class-form" hidden>
         <label>Email Host <input type="email" name="email" autocomplete="username" required></label>
@@ -40,6 +45,7 @@
         <button>Accedi al progetto configurato</button>
       </form>
       <form id="create-form" class="class-form" hidden>
+        <label>Lezione <select id="host-group"><option value="0">Sessione libera</option><option value="1">Gruppo 1</option><option value="2">Gruppo 2</option><option value="3">Gruppo 3</option></select></label>
         <label>Titolo sessione <input name="title" maxlength="60" value="Orientamento Ferraris" required></label>
         <label>Giocatori <input name="capacity" type="number" value="30" min="1" max="50" required></label>
         <label>Durata in minuti <input name="minutes" type="number" value="40" min="1" max="90" required></label>
@@ -53,10 +59,25 @@
       </form>
     </div>
     <div id="projector-entry" hidden><h2>Modalità proiettore</h2><button type="button" id="projector-login">Autorizza questa proiezione</button></div>
-    <p class="class-links"><a id="demo-link" href="./classroom.html?demo=1">Prova la dimostrazione locale</a> <a id="switch-role" href="./classroom.html?role=host">Accesso Host</a></p>
+    <p class="class-links"><a class="space-button" id="demo-link" href="./classroom.html?demo=1">Prova la dimostrazione locale</a> <a class="space-button" id="switch-role" href="./classroom.html?role=host">Accesso Host</a></p>
+    </div>
   </section>
 
+  <details id="host-workspace" class="class-card" hidden>
+    <summary>Lezioni e archivio</summary>
+    <label>Sessione <select id="host-history"></select></label>
+    <button type="button" id="host-restore" class="secondary">Recupera sessione</button>
+    <button type="button" id="host-export-json" class="secondary">Esporta backup JSON</button>
+    <button type="button" id="host-export-csv" class="secondary">Esporta risultati CSV</button>
+    <label>Importa backup JSON <input type="file" id="host-import" accept=".json,application/json"></label>
+    <button type="button" id="host-delete-archive" class="secondary">Elimina dall’archivio</button>
+    <p id="archive-status" role="status"></p>
+  </details>
   <section id="room-panel" hidden>
+    <div class="class-flight-tools">
+      <button type="button" id="flight-telemetry" class="secondary" aria-expanded="false" aria-controls="class-telemetry">Stato della sessione</button>
+    </div>
+    <div id="class-telemetry">
     <div class="class-grid">
       <section class="class-card class-identity">
         <p class="edition" id="phase-label"></p><h2 id="room-title"></h2>
@@ -89,7 +110,8 @@
       <label>Ordina <select id="rank-order"><option value="score">Posizione</option><option value="name">Nickname</option><option value="help">Richieste di aiuto</option></select></label></div></div>
       <div class="table-scroll" tabindex="0"><table><thead id="rank-head"></thead><tbody id="rank-body"></tbody></table></div>
     </section>
-    <iframe id="flight-frame" title="Volo Classroom" src="about:blank" hidden></iframe>
+    </div>
+    <iframe allowfullscreen id="flight-frame" title="Volo Classroom" src="about:blank" hidden></iframe>
   </section>
 </main>
 </body>

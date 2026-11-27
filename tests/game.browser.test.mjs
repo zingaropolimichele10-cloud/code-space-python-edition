@@ -292,6 +292,15 @@ test('Game over nel browser e vittoria senza missione facoltativa', async t => {
   const browser = await openBrowser('', {
     beforeLoad: controlledFrames + `
       if (!sessionStorage.getItem('test:checkpoint')) Math.random = () => 0.5;
+      else {
+        const key = 'code-space:progress:v3';
+        const progress = JSON.parse(localStorage.getItem(key));
+        delete progress.integrity;
+        delete progress.checkpoint?.resume;
+        progress.completed = [1,2,3,4];
+        progress.skipped = [];
+        localStorage.setItem(key, JSON.stringify(progress));
+      }
     `,
   });
   t.after(browser.close);
@@ -313,13 +322,7 @@ test('Game over nel browser e vittoria senza missione facoltativa', async t => {
   assert.equal(await evaluate("document.querySelector('#viewport').dataset.state"), 'PLAYING');
   assert.equal(await evaluate("document.querySelector('#mission-retry').hidden"), false);
 
-  await evaluate(`
-    const progress = JSON.parse(localStorage.getItem('code-space:progress:v3'));
-    progress.completed = [1,2,3,4];
-    progress.skipped = [];
-    localStorage.setItem('code-space:progress:v3', JSON.stringify(progress));
-    sessionStorage.setItem('test:checkpoint', '1');
-  `);
+  await evaluate("sessionStorage.setItem('test:checkpoint', '1')");
   await browser.page('Page.reload');
   await waitForPage(browser);
   assert.deepEqual(await evaluate(`(() => {

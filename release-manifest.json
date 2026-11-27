@@ -1,11 +1,12 @@
 {
-  "version": "2.1.2",
+  "version": "2.2.0",
   "runtime": [
     "index.html",
     "aggiorna.html",
     "assets/aurora.svg",
     "assets/favicon.svg",
     "css/game.css",
+    "css/immersive.css",
     "js/audio/sound.mjs",
     "js/game/arcade.mjs",
     "js/game/canvas.mjs",
@@ -20,6 +21,7 @@
     "js/python/protocol.mjs",
     "js/python/runner.mjs",
     "js/storage/offline.mjs",
+    "js/storage/files.mjs",
     "js/storage/progress.mjs",
     "js/teacher/panel.mjs",
     "workers/python.worker.js",
@@ -34,6 +36,7 @@
     "js/classroom/firebase.mjs",
     "js/classroom/game-bridge.mjs",
     "js/classroom/model.mjs",
+    "js/classroom/recovery.mjs",
     "js/classroom/session.mjs",
     "js/classroom/ui.mjs",
     "js/missions/panels.mjs"

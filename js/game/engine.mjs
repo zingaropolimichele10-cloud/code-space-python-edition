@@ -153,8 +153,31 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     world.time = point.time;
     clearStats(point.stats);
     resetSector(point.duration);
+    if (point.lives) world.lives = Math.min(point.lives, world.upgrades.maxLives);
+    if (typeof point.shield === 'boolean') {
+      world.shield = world.upgrades.shield && point.shield;
+      if (world.upgrades.shield && !world.shield) shieldCooling = world.upgrades.reactor ? 10 : 18;
+    }
+    if (typeof point.emergency === 'boolean') world.emergency &&= point.emergency;
+    if (world.boss) {
+      if (point.left > 0) world.finalLeft = Math.min(challengeDuration, point.left);
+      if (point.bossHP > 0) world.boss.hp = Math.min(world.boss.max, point.bossHP);
+    }
     checkpointNow(point.mode);
     return true;
+  }
+
+  function snapshot() {
+    const state = world.state === State.PAUSED ? pausedFrom : world.state;
+    if (![State.PLAYING, State.MISSION, State.FINAL_CHALLENGE].includes(state)) return null;
+    return {
+      mode: state === State.FINAL_CHALLENGE ? state : State.PLAYING,
+      time: world.time, score: world.score, stats: { ...world.stats },
+      lives: world.lives, shield: world.shield, emergency: world.emergency, sector: world.sector,
+      ...(state === State.MISSION ? { mission: world.mission } : {}),
+      ...(state === State.FINAL_CHALLENGE && world.boss
+        ? { duration: challengeDuration, left: world.finalLeft, bossHP: world.boss.hp } : {}),
+    };
   }
 
   function reset() {
@@ -458,5 +481,5 @@ export function createGame({ random = Math.random, nextMission = () => null, sou
     return true;
   }
 
-  return { world, keys, action, step, openMission, closeMission, grant, restore, reset, configure, finishFinal };
+  return { world, keys, action, step, openMission, closeMission, grant, restore, reset, configure, finishFinal, snapshot };
 }

@@ -1,4 +1,4 @@
-# CODE SPACE – Mission Adventure Edition 2.1.2
+# CODE SPACE – Mission Adventure Edition 2.2.0
 Educational Python space game – Ferraris Orientation 2026
 
 ## Sviluppo locale
@@ -24,3 +24,7 @@ Consulta [GitHub Pages e pacchetto offline](docs/DEPLOYMENT.md), la [checklist](
 ## Classroom
 
 Dal menu scegli **Gioca da solo**, **Unisciti a una sessione** o **Crea una sessione — Host**. Il gioco individuale resta offline. La demo locale usa solo schede dello stesso profilo di browser. La configurazione Web pubblica della modalità online è inclusa. Per il collaudo online occorre pubblicare le regole nel progetto Firebase, autorizzare l’UID dell’Host e aggiungere il dominio GitHub Pages. [Configurazione](docs/FIREBASE_SETUP.md) · [Guida Host](docs/HOST_GUIDE.md) · [Guida studente](docs/STUDENT_GUIDE.md) · [Privacy](docs/PRIVACY.md) · [Verifiche 2.1](docs/ADVENTURE_QA.md) · [Procedura di aggiornamento 2.0 → 2.1](docs/RELEASE_2_1.md).
+
+## Quadro di volo e ripresa
+
+Il menu è separato dal quadro di volo. Apri **Missioni totali** nell’HUD per vedere principali, bonus, potenziamenti e grafica leggera. Il gioco recupera automaticamente l’ultima partita in pausa o nel terminale della missione. Usa **Recupera partita** dal menu o **Impostazioni** per esportare e importare un salvataggio individuale. In Classroom il pannello **Lezioni e archivio** recupera le stanze autorizzate ed esporta i risultati. [Guida a recupero e gruppi](docs/RECOVERY_2_2.md)

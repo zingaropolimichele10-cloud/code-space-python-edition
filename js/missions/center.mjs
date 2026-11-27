@@ -178,6 +178,8 @@ export function createCenter({ progress, sound = () => {} }) {
     if (dialog.open) return;
     practice = demonstration;
     active = mission;
+    dialog.dataset.mission = String(mission.id);
+    dialog.querySelector('.mission-brief').open = false;
     attempts = errors = 0;
     since = Date.now();
     pauseSince = 0;
@@ -242,6 +244,11 @@ export function createCenter({ progress, sound = () => {} }) {
       button.disabled = locked || editor.readOnly || status.dataset.result === 'pending';
       skip.hidden = !maySkip() || editor.readOnly;
       skip.disabled = locked;
+    },
+    recoverDrafts({ drafts: savedDrafts, skipped }) {
+      for (const [id, source] of Object.entries(savedDrafts)) drafts.set(Number(id), source);
+      for (const id of skipped) if (!completed.has(id)) pending.add(id);
+      progress.update({ drafts: savedDrafts, skipped: [...pending] });
     },
     hasIncomplete: () => completed.size < missions.length,
     completedMissions: () => missions.filter(({ id }) => completed.has(id)),

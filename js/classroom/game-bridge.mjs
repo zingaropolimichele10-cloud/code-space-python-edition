@@ -1,3 +1,4 @@
+import { studentRecovery } from './recovery.mjs';
 import { State } from '../game/engine.mjs';
 
 const playerStates = {
@@ -9,7 +10,7 @@ export function classroomFrame() {
   return parent !== window && new URLSearchParams(location.search).get('classroom') === '1';
 }
 
-export function connectClassroomGame({ game, center, refresh, audio, syncAudio }) {
+export function connectClassroomGame({ game, center, refresh, audio, syncAudio, progress }) {
   const { world } = game;
   let room;
   let seq = -1;
@@ -65,8 +66,21 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio }
       if (['ended', 'kicked', 'expired'].includes(gate)) center.interrupt();
     } else {
       if (world.state === State.MENU) {
-        game.action('start');
-        world.score = Math.max(0, data.arcade);
+        const recovery = studentRecovery(data.recovery);
+        center.recoverDrafts(recovery);
+        const point = recovery.checkpoint;
+        const resumeBoss = gate === 'boss' && !bossWon && point?.mode === State.FINAL_CHALLENGE && data.bossLeft > 0;
+        if (point && (gate === 'flight' || resumeBoss)) {
+          game.restore({ ...point, mode: resumeBoss ? State.FINAL_CHALLENGE : State.PLAYING,
+            score: data.arcade, ...(resumeBoss ? { duration: settings.bossSeconds, left: data.bossLeft / 1000 } : {}) });
+          bossEntered ||= resumeBoss;
+          if (gate === 'flight' && point.mission && !center.completedMissions().some(mission => mission.id === point.mission)) {
+            game.openMission(point.mission);
+          }
+        } else {
+          game.action('start');
+          world.score = Math.max(0, data.arcade);
+        }
       }
       if (gate === 'boss' && !bossEntered && data.bossSeconds > 0 && !bossWon) {
         center.interrupt();
@@ -105,6 +119,9 @@ export function connectClassroomGame({ game, center, refresh, audio, syncAudio }
   }, 250);
   send({ type: 'cs:ready' });
   return {
+    save() {
+      if (room) send({ type: 'cs:save', room, recovery: studentRecovery(progress.state) });
+    },
     allow: action => flying() && ['pause', 'resume', 'checkpoint'].includes(action),
     report() {
       if (!room || !flying()) return;

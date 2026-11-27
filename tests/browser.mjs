@@ -12,8 +12,8 @@ const mime = {
   '.js': 'text/javascript', '.svg': 'image/svg+xml',
 };
 
-export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900, staticRoot = root, listenHost = '127.0.0.1', clientHost = listenHost, externalOrigin, externalPrefix = prefix, extraArgs = [], pages = {} } = {}) {
-  const profile = await mkdtemp(`${tmpdir()}/codespace-browser-`);
+export async function openBrowser(path = '', { beforeLoad, width = 1360, height = 900, staticRoot = root, listenHost = '127.0.0.1', clientHost = listenHost, externalOrigin, externalPrefix = prefix, extraArgs = [], pages = {}, profilePath } = {}) {
+  const profile = profilePath ?? await mkdtemp(`${tmpdir()}/codespace-browser-`);
   const requests = [];
   let serving = true;
   const server = createServer(async (req, res) => {
@@ -113,12 +113,14 @@ export async function openBrowser(path = '', { beforeLoad, width = 1360, height 
   async function close() {
     if (browser.exitCode === null && browser.signalCode === null && browser.pid) {
       const exited = once(browser, 'exit');
-      browser.kill('SIGKILL');
+      if (profilePath) {
+        await send('Browser.close').catch(() => browser.kill('SIGKILL'));
+      } else browser.kill('SIGKILL');
       await exited;
     }
     server.closeAllConnections();
     await new Promise(resolve => server.close(resolve));
-    await rm(profile, { recursive: true, force: true, maxRetries: 4 });
+    if (!profilePath) await rm(profile, { recursive: true, force: true, maxRetries: 4 });
   }
 
   try {

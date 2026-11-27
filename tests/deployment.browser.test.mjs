@@ -12,7 +12,7 @@ import { openBrowser } from './browser.mjs';
 const project = fileURLToPath(new URL('../', import.meta.url));
 const { version, runtime } = JSON.parse(await readFile(join(project, 'release-manifest.json')));
 const cachePrefix = 'code-space:/code-space-python-edition/:';
-const baselines = { '1.1.0': '2204764', '2.0.0-firebase.2': '8ac2aaf', '2.1.0': '3ad25f3' };
+const baselines = { '1.1.0': '2204764', '2.0.0-firebase.2': '8ac2aaf', '2.1.0': '3ad25f3', '2.1.2': '67dc905' };
 
 async function unpack(t, previous) {
   const dir = await mkdtemp(join(tmpdir(), 'codespace-release-'));
@@ -152,6 +152,9 @@ test('Aggiornamento reale 1.1.0 con recupero del salvataggio',
   t => verifyUpdate(t, '1.1.0'));
 test('Aggiornamento reale da 8ac2aaf: nuova configurazione Firebase nella cache e progressi conservati',
   t => verifyUpdate(t, '2.0.0-firebase.2'));
+
+test('Aggiornamento reale da 2.1.2: nuova cache e avanzamento conservato',
+  t => verifyUpdate(t, '2.1.2'));
 
 test('ZIP estratto avviato dal server Python su loopback e sull’indirizzo LAN del container', async t => {
   const directory = await unpack(t);

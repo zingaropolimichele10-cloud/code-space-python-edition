@@ -6,7 +6,7 @@ import { createGame, State } from '../js/game/engine.mjs';
 
 function memory() {
   const data = new Map();
-  return { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  return { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value), removeItem: key => data.delete(key) };
 }
 
 test('Salvataggio v3, migrazione, convalida e reset', () => {
@@ -28,7 +28,7 @@ test('Salvataggio v3, migrazione, convalida e reset', () => {
   storage.setItem(saveKey, '{broken');
   assert.deepEqual(createProgress(storage).state.completed, []);
   storage.setItem(saveKey, '{"version":7,"completed":[5]}');
-  assert.deepEqual(createProgress(storage).state, normalizeProgress(null));
+  assert.deepEqual(createProgress(storage).state, { ...normalizeProgress(null), audio: restored.audio, light: true });
   assert.equal(normalizeProgress({ version: 2, checkpoint: { mode: 'PAUSED', score: -1, time: 0 } }).checkpoint, null);
 });
 

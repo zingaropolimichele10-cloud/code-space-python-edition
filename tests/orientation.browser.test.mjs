@@ -80,6 +80,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
       await verifyLayout();
       assert.equal(await evaluate(`(() => {
         const canvas = document.getElementById('space');
+        if (document.getElementById('cockpit').hidden) return true;
         const pixel = canvas.getContext('2d').getImageData(8, 8, 1, 1).data;
         return pixel[0] + pixel[1] + pixel[2] > 0;
       })()`), true);
@@ -108,7 +109,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     await evaluate(`const volume = document.getElementById('volume'); volume.value = '33'; volume.dispatchEvent(new Event('input'));`);
     await capture('02-impostazioni');
     await key('Escape','Escape',27);
-    await evaluate("document.getElementById('mute').focus()");
+    await evaluate("document.getElementById('menu-mute').focus()");
     await key('Enter','Enter',13);
     await wait('audioStarts === 1');
     assert.equal(await text('mute'), 'Audio attivo');
@@ -173,7 +174,8 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     await page('Page.reload');
     await loaded(browser);
     assert.equal(await evaluate("document.getElementById('continue').hidden"), false);
-    await click('#continue');
+    if (await state() === 'PAUSED') await click('#paused-panel [data-action=resume]');
+    else await click('#continue');
     assert.equal(await state(), 'PLAYING');
     assert.equal(await evaluate("document.getElementById('final-button').hidden"), false);
     await click('#mission-retry');

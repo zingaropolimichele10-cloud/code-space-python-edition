@@ -7,7 +7,7 @@ import { createGame, State } from './engine.mjs';
 const flying = new Set([State.PLAYING, State.FINAL_CHALLENGE]);
 const arrows = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
 const panels = {
-  [State.MENU]: 'menu-panel', [State.TUTORIAL]: 'tutorial-panel',
+  [State.TUTORIAL]: 'tutorial-panel',
   [State.PAUSED]: 'paused-panel', [State.GAME_OVER]: 'game-over-panel', [State.VICTORY]: 'victory-panel',
 };
 const copy = {
@@ -34,10 +34,46 @@ export function mountGame({ nextMission, onState = () => {},
     if (hud[id].textContent !== value) hud[id].textContent = value;
   };
   let renderedState;
+  const cockpit = byId('cockpit');
+  const menu = byId('menu-panel');
+  const fullscreen = byId('fullscreen');
+  const fullscreenStatus = byId('fullscreen-status');
+  const progressMenu = byId('mission-progress');
+  const lifeIndicators = byId('life-indicators');
+  let lastLives;
+  fullscreen.addEventListener('click', async () => {
+    fullscreenStatus.textContent = '';
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (document.webkitFullscreenElement) await document.webkitExitFullscreen();
+      else if (cockpit.requestFullscreen) await cockpit.requestFullscreen();
+      else if (cockpit.webkitRequestFullscreen) await cockpit.webkitRequestFullscreen();
+      else throw Error();
+    } catch { fullscreenStatus.textContent = 'Schermo intero non disponibile in questo browser.'; }
+  });
+  const syncFullscreen = () => {
+    const active = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+    fullscreen.setAttribute('aria-pressed', String(active));
+    fullscreen.textContent = active ? 'Esci da schermo intero' : 'Schermo intero';
+  };
+  document.addEventListener('fullscreenchange', syncFullscreen);
+  document.addEventListener('webkitfullscreenchange', syncFullscreen);
 
   function refresh() {
     if (renderedState !== world.state) {
       renderedState = world.state;
+      const inMenu = world.state === State.MENU;
+      document.body.classList.toggle('at-launch', inMenu);
+      cockpit.hidden = inMenu;
+      menu.hidden = !inMenu;
+      if (inMenu && (document.fullscreenElement === cockpit || document.webkitFullscreenElement === cockpit)) {
+        try {
+          const exit = document.exitFullscreen ?? document.webkitExitFullscreen;
+          Promise.resolve(exit?.call(document)).catch(() => {});
+        } catch { /* Il controllo nativo resta disponibile. */ }
+      }
+      if (world.state === State.MISSION || inMenu) progressMenu.open = false;
+      if (inMenu) menu.querySelector('button')?.focus({ preventScroll: true });
       byId('viewport').dataset.state = world.state;
       byId('overlay').hidden = !(world.state in panels);
       for (const [state, id] of Object.entries(panels)) byId(id).hidden = state !== world.state;
@@ -53,7 +89,16 @@ export function mountGame({ nextMission, onState = () => {},
     set('flight-note', world.state === State.FINAL_CHALLENGE
       ? `Tempo rimanente: ${Math.max(0, Math.ceil(world.finalLeft))} s`
       : copy[world.state][1]);
-    set('lives', `${world.lives} / ${world.upgrades.maxLives}`);
+    const lives = `${world.lives} / ${world.upgrades.maxLives}`;
+    set('lives', lives);
+    if (lives !== lastLives) {
+      lastLives = lives;
+      lifeIndicators.replaceChildren(...Array.from({ length: world.upgrades.maxLives }, (_, index) => {
+        const pip = document.createElement('i');
+        pip.classList.toggle('filled', index < world.lives);
+        return pip;
+      }));
+    }
     set('score', String(world.score));
     set('speed', String(world.upgrades.speed));
     const main = missionCount();
@@ -131,17 +176,19 @@ export function mountGame({ nextMission, onState = () => {},
   const settings = byId('settings');
   const light = byId('light');
   const settingsLight = byId('settings-light');
-  byId('settings-open').addEventListener('click', () => {
+  function openSettings() {
     game.action('pause');
     refresh();
     settingsLight.checked = light.checked;
     settings.showModal();
-  });
+  }
+  byId('settings-open').addEventListener('click', openSettings);
+  document.querySelector('[data-open-settings]').addEventListener('click', openSettings);
   settingsLight.addEventListener('change', () => {
     setLight(settingsLight.checked);
   });
   new ResizeObserver(() => {
-    canvas.resize(world.light);
+    if (!cockpit.hidden) canvas.resize(world.light);
     canvas.draw(world);
   }).observe(byId('space'));
   setLight(initialLight, false);
@@ -152,7 +199,7 @@ export function mountGame({ nextMission, onState = () => {},
     previous = now;
     tutorial.update(game);
     refresh();
-    canvas.draw(world);
+    if (!cockpit.hidden) canvas.draw(world);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

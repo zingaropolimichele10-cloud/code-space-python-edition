@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.0 — Immersive UI
+
+- Menu a schermo intero, quadro di volo compatto, terminali con accenti per sistema e interfaccia Classroom coordinata.
+- Recupero individuale con tre checkpoint verificati e importazione/esportazione JSON.
+- Recupero nel contesto ufficiale Classroom, coda di sincronizzazione e archivio Host per tre lezioni con esportazione JSON e CSV.
+
 ## 2.1.2 — Percorso delle missioni
 
 - Il quadro di volo distingue missioni totali, principali e bonus.

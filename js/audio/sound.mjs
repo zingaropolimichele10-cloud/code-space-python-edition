@@ -58,19 +58,21 @@ export function createAudio({
 }
 
 export function bindAudio(audio) {
-  const button = document.getElementById('mute');
+  const buttons = document.querySelectorAll('#mute, #menu-mute');
   const slider = document.getElementById('volume');
   const status = document.getElementById('audio-status');
   function sync() {
-    button.textContent = audio.enabled ? 'Audio attivo' : 'Audio disattivato';
-    button.setAttribute('aria-pressed', String(audio.enabled));
+    for (const button of buttons) {
+      button.textContent = audio.enabled ? 'Audio attivo' : 'Audio disattivato';
+      button.setAttribute('aria-pressed', String(audio.enabled));
+    }
     slider.value = String(Math.round(audio.volume * 100));
   }
   const unlock = async () => {
     if (audio.enabled && !await audio.unlock()) status.textContent = 'Audio non disponibile. Puoi continuare a giocare.';
   };
   sync();
-  button.addEventListener('click', () => {
+  for (const button of buttons) button.addEventListener('click', () => {
     audio.configure(audio.enabled, audio.volume);
     status.textContent = '';
     sync();

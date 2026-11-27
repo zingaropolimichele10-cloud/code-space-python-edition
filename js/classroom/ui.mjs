@@ -1,3 +1,5 @@
+import { downloadFile, readJson } from '../storage/files.mjs';
+import { archiveCsv, archiveEntry, importArchive, localValue, mergeReports, privateReportFields, saveLocal, studentRecovery } from './recovery.mjs';
 import { MAIN_MISSIONS, missions, MISSION_COUNT, MISSION_MASK } from '../missions/catalog.mjs';
 import { gate, ranking } from './model.mjs';
 import { sessionService } from './session.mjs';
@@ -6,6 +8,11 @@ import { firebaseAdapter } from './firebase.mjs';
 import config from './config.mjs';
 
 const get = id => document.getElementById(id);
+get('flight-telemetry').addEventListener('click', event => {
+  const expanded = event.currentTarget.getAttribute('aria-expanded') !== 'true';
+  event.currentTarget.setAttribute('aria-expanded', String(expanded));
+  get('class-telemetry').classList.toggle('telemetry-open', expanded);
+});
 const params = new URLSearchParams(location.search);
 const role = ['host', 'projector'].includes(params.get('role')) ? params.get('role') : 'student';
 const demo = params.get('demo') === '1';
@@ -29,15 +36,58 @@ function set(id, value) {
   const node = get(id);
   if (node.textContent !== value) node.textContent = value;
 }
-function readRemembered() {
-  try { return JSON.parse((student && demo ? sessionStorage : localStorage).getItem(namespace)); } catch { return null; }
+const rememberedStorage = () => student && demo ? sessionStorage : localStorage;
+const readRemembered = () => localValue(namespace, rememberedStorage());
+const remember = value => saveLocal(namespace, value, rememberedStorage());
+const studentKey = id => namespace + ':flight:' + id + ':' + store.uid;
+const hostKey = () => namespace + ':archive:' + store.uid;
+let localFlight, lastLocalWrite = 0;
+let archive = new Map();
+let imported = new Map();
+
+function saveFlight(immediate = false) {
+  if (!localFlight || !room || !store?.uid) return;
+  if (!immediate && Date.now() - lastLocalWrite < 850) return;
+  if (saveLocal(studentKey(room), localFlight, rememberedStorage())) lastLocalWrite = Date.now();
 }
-function remember(value) {
-  try {
-    const storage = student && demo ? sessionStorage : localStorage;
-    if (value) storage.setItem(namespace, JSON.stringify(value));
-    else storage.removeItem(namespace);
-  } catch { /* Il gioco resta utilizzabile senza persistenza. */ }
+addEventListener('pagehide', () => saveFlight(true));
+addEventListener('codespace:before-update', () => saveFlight(true));
+
+function drawArchive() {
+  const select = get('host-history');
+  const current = select.value;
+  const items = [...archive.values(), ...[...imported.values()].filter(item => !archive.has(item.room))];
+  items.sort((a, b) => (b.savedAt ?? 0) - (a.savedAt ?? 0));
+  select.replaceChildren(new Option('Seleziona una sessione', ''), ...items.map(item =>
+    new Option(`${item.title} · ${item.pin}${item.ended ? ' · archiviata' : ''}${archive.has(item.room) ? '' : ' · da backup'}`, item.room)));
+  if (items.some(item => item.room === current)) select.value = current;
+}
+
+function archiveCurrent(ended = false, participants = members, results = scores) {
+  if (!host || !room || !control || control.owner !== store.uid) return;
+  const old = archive.get(room);
+  const hasResults = Object.keys(participants).length > 0;
+  const entry = archiveEntry({
+    room, pin: control.pin, title: control.title, phase: ended ? 'ended' : control.phase,
+    expires: control.expires, timing: control, group: old?.group ?? 0, ended, savedAt: Date.now(),
+    settings: { ...control.settings, duration: control.settings.minutes },
+    results: hasResults || !old?.results.length
+      ? ranking(participants, results, control.settings.adventure).map(row => ({
+        name: row.name, rank: row.rank, points: row.total, missions: completed(row.mask), boss: row.boss,
+      })) : old.results,
+  });
+  archive.set(room, entry);
+  saveLocal(hostKey(), [...archive.values()]);
+  drawArchive();
+}
+
+async function recoverHost(id) {
+  const existing = id && await store.get('rooms/' + id).catch(() => null);
+  if (!existing?.settings.adventure || existing.owner !== store.uid || existing.expires <= store.now()) {
+    throw Error('La sessione non è più attiva o non è autorizzata. I risultati importati restano consultabili tramite esportazione.');
+  }
+  remember({ room: id, uid: store.uid });
+  attach(id);
 }
 function fail(error) {
   const message = error?.code === 'PERMISSION_DENIED' || error?.code === 'permission-denied'
@@ -268,11 +318,15 @@ function stopRoom() {
   presenceEpoch++;
   if (endPresence) void Promise.resolve(endPresence()).catch(() => {});
   endPresence = undefined;
+  saveFlight(true);
   room = control = undefined;
   members = {}; scores = {}; metrics = {}; presence = {}; previousRank = {}; rowMoves = {};
+  localFlight = undefined; lastLocalWrite = 0;
   latest = undefined; lastReport = privateReport = ''; help = forcedEnd = frameReady = ready = false;
   frameRoom = undefined; sentPolicy = '';
   get('flight-frame').src = 'about:blank';
+  get('flight-telemetry').setAttribute('aria-expanded', 'false');
+  get('class-telemetry').classList.remove('telemetry-open');
   get('flight-frame').hidden = true;
   get('projector-link').removeAttribute('href');
   get('room-panel').hidden = true;
@@ -281,6 +335,15 @@ function stopRoom() {
 function attach(id) {
   stopRoom();
   room = id;
+  if (student) {
+    const saved = localValue(studentKey(id), rememberedStorage());
+    localFlight = { schema: 1, recovery: studentRecovery(saved?.schema === 1 ? saved.recovery : null),
+      queue: saved?.schema === 1 ? saved.queue : null };
+    if (localFlight.queue?.room === id) {
+      latest = mergeReports(null, localFlight.queue, localFlight.queue.phase);
+      help = latest.help === true;
+    }
+  }
   get('entry').hidden = true;
   get('room-panel').hidden = false;
   const failSync = error => {
@@ -292,6 +355,7 @@ function attach(id) {
     if (!next) { forcedEnd = true; clock(); return; }
     if (control && next.seq < control.seq) return;
     control = next;
+    if (host && (next.phase !== 'ended' || !archive.get(id)?.ended)) archiveCurrent(next.phase === 'ended');
     const join = link({ pin: next.pin });
     if (get('join-link').href !== join && !student) {
       get('join-link').href = join;
@@ -328,6 +392,9 @@ function attach(id) {
         const member = await store.get(`members/${id}/${store.uid}`);
         if (epoch !== presenceEpoch) return;
         if (member) members[store.uid] = member;
+        const confirmed = await store.get(`scores/${id}/${store.uid}`).catch(() => null);
+        if (epoch !== presenceEpoch) return;
+        if (confirmed) scores[store.uid] = confirmed;
         if (member && !member.kicked && fresh.phase !== 'ended') {
           const release = await store.presence(`presence/${id}/${store.uid}/${crypto.randomUUID()}`);
           if (epoch !== presenceEpoch) { await release(); return; }
@@ -358,8 +425,9 @@ function syncFrame(current, now) {
   sentPolicy = key;
   frame.contentWindow.postMessage({
     type: 'cs:policy', room, state: current, seq: control.seq, settings: control.settings,
-    completed: scores[store.uid]?.mask ?? 0, bossLeft, bossSeconds: bossLeft == null ? 0 : Math.ceil(bossLeft / 1000),
-    arcade: scores[store.uid]?.arcade ?? 0, bossWon: scores[store.uid]?.boss ?? false,
+    completed: (scores[store.uid]?.mask ?? 0) | (latest?.mask ?? 0), recovery: localFlight?.recovery,
+    bossLeft, bossSeconds: bossLeft == null ? 0 : Math.ceil(bossLeft / 1000),
+    arcade: Math.max(scores[store.uid]?.arcade ?? 0, latest?.arcade ?? 0), bossWon: scores[store.uid]?.boss ?? false,
   }, location.origin);
 }
 
@@ -369,15 +437,17 @@ async function report(current, now) {
   if (!publicAllowed && current !== 'paused') return;
   const uid = store.uid;
   const last = scores[uid] ?? {};
+  const submitted = latest;
+  const reportRoom = room;
+  const pendingBoss = latest.boss && latest.bossAt === control.at;
   const safeInt = (value, max) => Math.max(0, Math.min(max, Math.trunc(Number(value) || 0)));
   const publicData = {
     adventure: true,
     mask: (last.mask ?? 0) | safeInt(latest.mask, MISSION_MASK), arcade: Math.max(last.arcade ?? 0, safeInt(latest.arcade, 1000)),
-    boss: last.boss === true || (current === 'boss' && latest.boss === true), lives: safeInt(latest.lives, 5),
+    boss: last.boss === true || (current === 'boss' && pendingBoss === true), lives: safeInt(latest.lives, 5),
     sector: safeInt(latest.sector, 4), status: Object.hasOwn(stateText, latest.status) ? latest.status : 'waiting',
   };
-  const privateData = { adventure: true, mission: safeInt(latest.mission, MISSION_COUNT), since: safeInt(latest.since, 9999999999999) || now,
-    attempts: safeInt(latest.attempts, 2000), errors: safeInt(latest.errors, 2000), hints: safeInt(latest.hints, 3), help };
+  const privateData = { adventure: true, ...privateReportFields({ ...latest, help }) };
   privateData.since = privateData.mission ? Math.max(0, privateData.since + now - Date.now()) : 0;
   const publicKey = JSON.stringify(publicData);
   const privateKey = JSON.stringify(privateData);
@@ -389,8 +459,13 @@ async function report(current, now) {
     if (publicAllowed && publicKey !== lastReport) patch[`scores/${room}/${uid}`] = { ...publicData, updated: store.timestamp() };
     if (privateKey !== privateReport) patch[`metrics/${room}/${uid}`] = privateData;
     if (Object.keys(patch).length) await store.update(patch);
+    if (room !== reportRoom) return;
     if (publicAllowed) lastReport = publicKey;
     privateReport = privateKey;
+    if (latest === submitted && publicAllowed && localFlight) {
+      localFlight.queue = null;
+      saveFlight(true);
+    }
   } catch (error) {
     if (['flight', 'boss', 'paused'].includes(policy())) fail(error);
   } finally { writing = false; }
@@ -402,9 +477,17 @@ addEventListener('message', event => {
     frameReady = true;
     sentPolicy = '';
     clock();
-  } else if (event.data?.type === 'cs:report' && event.data.room === room) {
+  } else if (event.data?.type === 'cs:save' && event.data.room === room && localFlight) {
+    localFlight.recovery = studentRecovery(event.data.recovery);
+    saveFlight(true);
+  } else if (event.data?.type === 'cs:report' && event.data.room === room && localFlight) {
     if (latest?.mission !== event.data.mission) help = false;
-    latest = event.data;
+    const phase = control?.phase;
+    const old = latest;
+    const oldForBoss = old?.bossAt === control?.at ? old : { ...old, boss: false };
+    latest = mergeReports(oldForBoss, { ...event.data, help, phase, bossAt: control?.at }, phase);
+    localFlight.queue = latest;
+    saveFlight(old?.mask !== latest.mask || old?.boss !== latest.boss || old?.mission !== latest.mission);
     clock();
   }
 });
@@ -441,11 +524,21 @@ async function login(email, password) {
   }
   const uid = await adapter.host(email, password);
   get('create-form').hidden = false;
+  get('host-workspace').hidden = false;
+  archive = new Map();
+  imported = new Map();
+  for (const [key, index] of [[hostKey(), archive], [hostKey() + ':imports', imported]]) {
+    const items = localValue(key);
+    if (Array.isArray(items)) for (const value of items) {
+      try { const item = archiveEntry(value); index.set(item.room, item); } catch { /* Record non valido. */ }
+    }
+  }
+  drawArchive();
   get('host-login').hidden = true;
   get('host-email').hidden = true;
   const item = readRemembered();
-  const existing = item?.room && await store.get('rooms/' + item.room).catch(() => null);
-  if (existing?.settings.adventure && existing.owner === uid && existing.expires > store.now()) attach(item.room);
+  if (item?.room && (!item.uid || item.uid === uid)) await recoverHost(item.room).catch(() => {});
+  get('recover-host').hidden = true;
 }
 get('host-login').addEventListener('click', event => void run(() => login(), event.currentTarget));
 get('projector-login').addEventListener('click', event => void run(() => login(), event.currentTarget));
@@ -464,15 +557,19 @@ get('create-form').addEventListener('submit', event => {
   for (const key of ['audio', 'skip', 'late']) options[key] = values.has(key);
   options.difficulty = values.get('difficulty');
   void run(async () => {
-    const result = await service.create(values.get('title'), options);
-    remember({ room: result.room });
+    const group = Number(get('host-group').value);
+    const title = group ? 'Gruppo ' + group : values.get('title');
+    const result = await service.create(title, options);
+    archive.set(result.room, archiveEntry({ room: result.room, pin: result.data.pin, title, group, savedAt: Date.now(), results: [] }));
+    remember({ room: result.room, uid: store.uid });
     attach(result.room);
   }, event.submitter);
 });
 async function join(pin, name) {
   await boot();
   const result = await service.join(pin, name);
-  remember({ pin, name: result.member.name });
+  remember({ pin, name: result.member.name, room: result.room, uid: store.uid });
+  get('recover-student').hidden = true;
   attach(result.room);
 }
 get('join-form').addEventListener('submit', event => {
@@ -480,21 +577,93 @@ get('join-form').addEventListener('submit', event => {
   const values = new FormData(event.currentTarget);
   void run(() => join(values.get('pin'), values.get('name')), event.submitter);
 });
+async function recoverStudent(prior) {
+  if (!prior || !/^\d{6}$/.test(prior.pin)) throw Error('Nessuna partita Classroom da recuperare.');
+  const adapter = await boot();
+  if (demo) await adapter.student();
+  if (!adapter.uid || (!demo && adapter.anonymous !== true) || (prior.uid && prior.uid !== adapter.uid)) {
+    throw Error('L’identità della partita non è più disponibile. Entra con un nuovo PIN.');
+  }
+  const ticket = await adapter.get('pins/' + prior.pin);
+  if (!ticket?.adventure || (prior.room && ticket.room !== prior.room) || ticket.expires <= adapter.now()) throw Error('La sessione non è più disponibile.');
+  const member = await adapter.get(`members/${ticket.room}/${adapter.uid}`);
+  if (!member || member.kicked || member.name !== prior.name) throw Error('Iscrizione non recuperabile.');
+  remember({ pin: prior.pin, name: member.name, room: ticket.room, uid: adapter.uid });
+  get('recover-student').hidden = true;
+  attach(ticket.room);
+}
 if (student) {
   const prior = readRemembered();
-  if (prior && (!params.has('pin') || prior.pin === params.get('pin'))) void run(() => join(prior.pin, prior.name));
+  if (prior && (!params.has('pin') || prior.pin === params.get('pin'))) {
+    get('recover-student').hidden = false;
+    get('recover-student').addEventListener('click', event => void run(() => recoverStudent(prior), event.currentTarget));
+    void run(() => recoverStudent(prior));
+  }
 }
 if (projector && params.has('room')) void run(() => login());
-if (host && !demo && (config || emulator)) {
-  const button = get('host-login');
-  button.disabled = true;
-  void boot().catch(fail).finally(() => { button.disabled = false; });
+if (host) {
+  const prior = readRemembered();
+  get('recover-host').hidden = !demo || !prior?.room;
+  get('recover-host').addEventListener('click', event => void run(() => login(), event.currentTarget));
+  if (!demo && (config || emulator)) {
+    const button = get('host-login');
+    button.disabled = true;
+    void boot().then(adapter => {
+      if (prior?.room && adapter.uid && !adapter.anonymous) {
+        get('recover-host').hidden = false;
+        void run(() => login());
+      }
+    }).catch(fail).finally(() => { button.disabled = false; });
+  } else if (demo && prior?.room) void run(() => login());
 }
+const selectedArchive = () => archive.get(get('host-history').value) ?? imported.get(get('host-history').value);
+get('host-restore').addEventListener('click', event => void run(() => recoverHost(selectedArchive()?.room), event.currentTarget));
+get('host-export-json').addEventListener('click', () => {
+  if (!host || !store?.uid) return;
+  if (control && control.phase !== 'ended') archiveCurrent();
+  const entries = [...archive.values(), ...[...imported.values()].filter(item => !archive.has(item.room))];
+  downloadFile('code-space-sessioni.json', JSON.stringify({ schema: 1, kind: 'code-space-classroom', sessions: entries }, null, 2));
+});
+get('host-export-csv').addEventListener('click', () => {
+  if (!host || !store?.uid) return;
+  const selection = selectedArchive();
+  const entries = [...archive.values(), ...[...imported.values()].filter(item => !archive.has(item.room))];
+  downloadFile('code-space-risultati.csv', archiveCsv(selection ? [selection] : entries), 'text/csv;charset=utf-8');
+});
+get('host-import').addEventListener('change', event => {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file || !host || !store?.uid) return;
+  void run(async () => {
+    for (const entry of importArchive(await readJson(file))) imported.set(entry.room, entry);
+    saveLocal(hostKey() + ':imports', [...imported.values()]);
+    drawArchive();
+    set('archive-status', 'Backup aperto in sola lettura. I risultati online restano invariati.');
+  });
+});
+get('host-delete-archive').addEventListener('click', () => {
+  const selection = selectedArchive();
+  if (selection?.room === room && control?.phase !== 'ended') { set('archive-status', 'Termina la sessione prima di eliminare la voce locale.'); return; }
+  if (!host || !store?.uid || !selection || !confirm('Eliminare questa voce dall’archivio locale?')) return;
+  archive.delete(selection.room);
+  imported.delete(selection.room);
+  saveLocal(hostKey() + ':imports', [...imported.values()]);
+  saveLocal(hostKey(), [...archive.values()]);
+  drawArchive();
+});
+
 for (const button of document.querySelectorAll('[data-command]')) {
   button.addEventListener('click', () => {
     const action = button.dataset.command;
     if (action === 'end' && !confirm('Terminare la sessione per tutti?')) return;
-    void run(() => service.command(room, action), button);
+    void run(async () => {
+      await service.command(room, action);
+      if (action === 'end') {
+        const [participants, results] = await Promise.all([store.get('members/' + room), store.get('scores/' + room)])
+          .catch(() => [members, scores]);
+        archiveCurrent(true, participants, results);
+      }
+    }, button);
   });
 }
 for (const button of document.querySelectorAll('[data-option]')) {
@@ -519,12 +688,15 @@ get('message-form').addEventListener('submit', event => {
 });
 get('delete-room').addEventListener('click', () => {
   if (!confirm('Eliminare definitivamente questa sessione e i relativi dati?')) return;
-  void run(async () => { await service.remove(room, control.pin); remember(null); stopRoom(); });
+  void run(async () => { archiveCurrent(true); await service.remove(room, control.pin); remember(null); stopRoom(); });
 });
 get('new-room').addEventListener('click', () => {
   if (control.phase !== 'ended' && !confirm('Terminare questa sessione e prepararne una nuova?')) return;
   void run(async () => {
     if (control.phase !== 'ended') await service.command(room, 'end');
+    archiveCurrent(true);
+    const group = archive.get(room)?.group ?? 0;
+    if (group > 0 && group < 3) get('host-group').value = String(group + 1);
     remember(null);
     stopRoom();
   });
@@ -534,8 +706,15 @@ get('sign-out').addEventListener('click', () => void run(async () => {
   await store.signOut?.();
   location.reload();
 }));
-get('help').addEventListener('click', () => { help = true; drawSoon(); clock(); });
+get('help').addEventListener('click', () => {
+  help = true;
+  if (localFlight && latest) { localFlight.queue = { ...latest, help }; saveFlight(true); }
+  drawSoon();
+  clock();
+});
 get('rank-search').addEventListener('input', drawSoon);
 get('rank-order').addEventListener('change', drawSoon);
 setInterval(clock, 250);
 setInterval(() => { if (host && room) drawSoon(); }, 5000);
+
+setInterval(() => { if (host && ready && control && control.phase !== 'ended') archiveCurrent(); }, 15000);
