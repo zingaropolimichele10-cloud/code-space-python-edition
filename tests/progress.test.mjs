@@ -123,10 +123,22 @@ test('Ripristino delle missioni della fase 2 nello stesso schema della fase 1', 
   const storage = memory();
   storage.setItem(saveKey, JSON.stringify({ version: 3, completed: [1, 2, 3, 4], paint: 'verde' }));
   const progress = createProgress(storage);
-  progress.update({ completed: [1, 2, 3, 4, 7, 11, 12], skipped: [5], drafts: { 5: 'energia = 40\nenergia = energia + 20' } });
+  progress.update({ completed: [1, 2, 3, 4, 7, 11, 18], skipped: [5], drafts: { 5: 'energia = 40\nenergia = energia + 20' } });
   const restored = createProgress(storage).state;
   assert.deepEqual(restored.completed, [1, 2, 3, 4, 7, 11]);
   assert.deepEqual(restored.skipped, [5]);
   assert.equal(restored.drafts[5], 'energia = 40\nenergia = energia + 20');
   assert.equal(restored.paint, 'verde');
+});
+
+test('Ripristino locale delle missioni 12–17 dopo un salvataggio della fase 2', () => {
+  const storage = memory();
+  storage.setItem(saveKey, JSON.stringify({ version: 3, completed: [4, 11], paint: 'viola' }));
+  const progress = createProgress(storage);
+  progress.update({ completed: [4, 11, 13, 17], skipped: [12], drafts: { 12: 'rotta = "devia"' } });
+  const restored = createProgress(storage).state;
+  assert.deepEqual(restored.completed, [4, 11, 13, 17]);
+  assert.deepEqual(restored.skipped, [12]);
+  assert.equal(restored.drafts[12], 'rotta = "devia"');
+  assert.equal(restored.paint, 'viola');
 });

@@ -1,4 +1,4 @@
-// Le missioni 12–22 entrano nel catalogo nelle fasi approvate successive.
+// Le missioni 18–22 entrano nel catalogo nelle fasi approvate successive.
 export const missions = [
   {
     id: 1, titolo: 'Riaccendi Aurora', blocco: 1, concetto: 'Variabile = nome che conserva un valore',
@@ -152,5 +152,104 @@ export const missions = [
     soluzioneEsempio: 'scudo = False\nif vite < 3:\n    scudo = True',
     effettoNelGioco: { anteprima: 'Riserva · 2 vite: accesa · 3 e 4: spenta', upgrade: { autoShield: true }, pannello: 'riserva',
       esito: 'Lo scudo di riserva può assorbire un impatto quando restano meno di tre vite.' },
+  },
+  {
+    id: 12, titolo: "Radar automatico", blocco: 4, concetto: "if = «se», else = «altrimenti».",
+    problema: "Il radar deve distinguere un ostacolo vicino da uno lontano.", perche: "Sotto 50 unità il pannello deve invitare il pilota a deviare.",
+    cosaFare: "Scrivi \"devia\" nel ramo se e \"continua\" nel ramo altrimenti.", spiegazione: "La distanza è fornita dal radar. Python sceglie un solo ramo.",
+    codiceIniziale: "if distanza < 50:\n    rotta = \"\"\nelse:\n    rotta = \"\"", righeModificabili: [2, 4], variabiliFornite: ["distanza"],
+    scenariDiTest: [49, 50, 80].map(distanza => ({
+      input: { distanza }, atteso: { rotta: { type: 'str', value: distanza < 50 ? 'devia' : 'continua' } },
+    })),
+    indizi: [
+      "Il secondo ramo copre i valori per cui il primo confronto è falso.",
+      "Con 49 si esegue la prima riga rientrata. Con 50 si esegue la seconda.",
+      "if distanza < 50:\n    rotta = \"devia\"\nelse:\n    rotta = \"continua\"",
+    ],
+    soluzioneEsempio: "if distanza < 50:\n    rotta = \"devia\"\nelse:\n    rotta = \"continua\"",
+    effettoNelGioco: { anteprima: "Radar · Devia a 49, continua da 50", upgrade: {}, pannello: "radar",
+      esito: "Il radar ha scelto la rotta corretta in tutte le prove." },
+  },
+  {
+    id: 13, titolo: "Livelli di allarme", blocco: 4, concetto: "elif = «altrimenti, se».",
+    problema: "La spia dell’energia deve distinguere tre livelli.", perche: "L’equipaggio deve riconoscere un problema prima di restare senza energia.",
+    cosaFare: "Completa nell’ordine le tre etichette: rosso, giallo, verde.", spiegazione: "Rosso sotto 20, giallo da 20 a meno di 50, verde da 50 in su. Python usa il primo ramo vero.",
+    codiceIniziale: "if energia < 20:\n    allarme = \"\"\nelif energia < 50:\n    allarme = \"\"\nelse:\n    allarme = \"\"", righeModificabili: [2, 4, 6], variabiliFornite: ["energia"],
+    scenariDiTest: [19, 20, 49, 50, 80].map(energia => ({
+      input: { energia }, atteso: { allarme: { type: 'str', value: energia < 20 ? 'rosso' : energia < 50 ? 'giallo' : 'verde' } },
+    })),
+    indizi: [
+      "Leggi i confronti dall’alto verso il basso.",
+      "Sotto 20 basta il primo confronto. Da 20 a 49 serve il secondo.",
+      "if energia < 20:\n    allarme = \"rosso\"\nelif energia < 50:\n    allarme = \"giallo\"\nelse:\n    allarme = \"verde\"",
+    ],
+    soluzioneEsempio: "if energia < 20:\n    allarme = \"rosso\"\nelif energia < 50:\n    allarme = \"giallo\"\nelse:\n    allarme = \"verde\"",
+    effettoNelGioco: { anteprima: "Allarme · Rosso, giallo o verde", upgrade: {}, pannello: "allarme",
+      esito: "La spia dell’energia distingue i tre livelli." },
+  },
+  {
+    id: 14, titolo: "Doppia sicurezza", blocco: 4, concetto: "and = «e», entrambe le condizioni devono essere vere.",
+    problema: "La riserva deve proteggere Aurora senza scaricare la batteria.", perche: "Lo scudo può attivarsi solo con poche vite e carica sufficiente.",
+    cosaFare: "Sostituisci False dopo and con il controllo energia > 20.", spiegazione: "> significa «maggiore di». Con 20 unità esatte l’energia è insufficiente.",
+    codiceIniziale: "scudo = False\nif vite < 3 and False:\n    scudo = True", righeModificabili: [2], variabiliFornite: ["vite", "energia"],
+    scenariDiTest: [[2, 21], [2, 20], [3, 21], [4, 10]].map(([vite, energia]) => ({
+      input: { vite, energia }, atteso: { scudo: { type: 'bool', value: vite < 3 && energia > 20 } },
+    })),
+    indizi: [
+      "Uno dei due sì da solo non basta.",
+      "Dopo and fai un secondo confronto, questa volta sulla carica.",
+      "if vite < 3 and energia > 20:",
+    ],
+    soluzioneEsempio: "scudo = False\nif vite < 3 and energia > 20:\n    scudo = True",
+    effettoNelGioco: { anteprima: "Difesa · Via libera solo con poche vite e carica sufficiente", upgrade: {}, pannello: "sicurezza",
+      esito: "La spia di difesa si accende solo quando entrambi i controlli danno il via libera." },
+  },
+  {
+    id: 15, titolo: "Propulsori a catena", blocco: 5, concetto: "for = ripeti una volta per ogni valore.",
+    problema: "I propulsori richiedono tre impulsi di avvio.", perche: "Ripetere una riga accende le tre spie in sequenza.",
+    cosaFare: "Cambia 1 in 3 dentro range.", spiegazione: "Range(3) fornisce 0, 1 e 2. La riga rientrata si ripete tre volte.",
+    codiceIniziale: "for i in range(1):\n    print(\"Impulso\")", righeModificabili: [1], variabiliFornite: [],
+    scenariDiTest: [{ input: {}, output: ['Impulso', 'Impulso', 'Impulso'] }],
+    indizi: [
+      "Guarda quante volte vuoi ripetere l’istruzione rientrata.",
+      "Il numero tra le parentesi di range decide quante volte parte.",
+      "for i in range(3):",
+    ],
+    soluzioneEsempio: "for i in range(3):\n    print(\"Impulso\")",
+    effettoNelGioco: { anteprima: "Propulsori · Tre impulsi", upgrade: {}, pannello: "impulsi",
+      esito: "Il pannello ha registrato tre impulsi." },
+  },
+  {
+    id: 16, titolo: "Generatore automatico", blocco: 5, concetto: "accumulare = aggiungere a un totale a ogni giro.",
+    problema: "Il generatore registra cinque scariche, ma il totale rimane a zero.", perche: "Ogni scarica va aggiunta una sola volta.",
+    cosaFare: "Sostituisci 0 con i nella riga del totale.", spiegazione: "Range(1, 6) va da 1 a 5. Il limite 6 è escluso.",
+    codiceIniziale: "totale = 0\nfor i in range(1, 6):\n    totale = totale + 0\n    print(totale)", righeModificabili: [3], variabiliFornite: [],
+    scenariDiTest: [{ input: {}, atteso: { totale: { type: 'int', value: 15 } }, output: ['1', '3', '6', '10', '15'] }],
+    indizi: [
+      "Il valore della scarica cambia da un giro all’altro.",
+      "Aggiungi al totale il valore che il ciclo assegna a i.",
+      "    totale = totale + i",
+    ],
+    soluzioneEsempio: "totale = 0\nfor i in range(1, 6):\n    totale = totale + i\n    print(totale)",
+    effettoNelGioco: { anteprima: "Generatore · 15 unità", upgrade: {}, pannello: "generatore",
+      esito: "Il generatore ha sommato una scarica per giro, per un totale di 15 unità." },
+  },
+  {
+    id: 17, titolo: "Conto alla rovescia", blocco: 5, concetto: "while = ripeti finché la condizione è vera.",
+    problema: "Il conto alla rovescia salta alcuni numeri.", perche: "Aurora deve sottrarre un solo passo prima di ciascuna nuova prova.",
+    cosaFare: "Cambia 2 in 1 nella sottrazione del contatore.", spiegazione: "Quando il contatore arriva a zero il ciclo finisce. Se resta sempre positivo, il limite di tempo ferma l’esecuzione.",
+    codiceIniziale: "while contatore > 0:\n    print(contatore)\n    contatore = contatore - 2", righeModificabili: [3], variabiliFornite: ["contatore"],
+    scenariDiTest: [3, 2, 0].map(contatore => ({
+      input: { contatore }, atteso: { contatore: { type: 'int', value: 0 } },
+      output: Array.from({ length: contatore }, (_, index) => String(contatore - index)),
+    })),
+    indizi: [
+      "Il ciclo deve avvicinarsi allo zero.",
+      "Il numero successivo è sempre uno in meno del precedente.",
+      "    contatore = contatore - 1",
+    ],
+    soluzioneEsempio: "while contatore > 0:\n    print(contatore)\n    contatore = contatore - 1",
+    effettoNelGioco: { anteprima: "Conto alla rovescia · Nessun numero saltato", upgrade: {}, pannello: "conto",
+      esito: "Il conto è arrivato a zero anche partendo da valori differenti." },
   },
 ];

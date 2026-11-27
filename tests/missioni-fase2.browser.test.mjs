@@ -26,7 +26,7 @@ test('Missioni 5–11 nel Worker Skulpt con dati di bordo variabili', async t =>
     [11, 'scudo = False\nif vite < 3:\n    scudo = vite < 3', 'scudo = True'],
   ];
   const execute = (id, source) => evaluate(`prova(${id}${source === undefined ? '' : ', ' + JSON.stringify(source)})`);
-  assert.deepEqual(await evaluate('missions.map(({ id }) => id)'), Array.from({ length: 11 }, (_, i) => i + 1));
+  assert.deepEqual(await evaluate('missions.slice(0, 11).map(({ id }) => id)'), Array.from({ length: 11 }, (_, i) => i + 1));
   for (const [id, alternative, wrong] of attempts) {
     await t.test(`Missione ${id}`, async () => {
       const solution = await execute(id);

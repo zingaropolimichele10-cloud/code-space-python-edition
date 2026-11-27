@@ -97,7 +97,7 @@ test('Revisione finale: testo letterale, limite risorse, annullamento e cambio d
     editor.dispatchEvent(new Event('input'));
   })()`);
   assert.equal(await evaluate("document.getElementById('mission-run').disabled"), false);
-  assert.equal(await evaluate("document.getElementById('mission-count').textContent"), '0 / 11');
+  assert.equal(await evaluate("document.getElementById('mission-count').textContent"), '0 / 17');
   await code('while True:\n    pass');
   await evaluate("document.getElementById('mission-run').click(); document.getElementById('mission-skip').click();");
   assert.equal(await state(), 'PLAYING');

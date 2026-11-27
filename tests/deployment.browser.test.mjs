@@ -74,6 +74,19 @@ test('Cache offline dopo il primo avvio: ricarica, laboratorio e vero Worker sen
   await waitFor(browser, "['success','error'].includes(document.getElementById('mission-status').dataset.result)");
   assert.equal(await browser.evaluate("document.getElementById('mission-status').dataset.result"), 'success');
   assert.match(await browser.evaluate("document.getElementById('mission-instruments').textContent"), /2 vite · Accesa.*3 vite · Spenta/);
+  await browser.evaluate(`(() => {
+    document.getElementById('mission-done').click();
+    document.getElementById('teacher-open').click();
+    document.getElementById('teacher-mission').value = '16';
+    document.getElementById('teacher-launch').click();
+    const editor = document.getElementById('mission-code');
+    editor.value = editor.value.replace('totale + 0', 'totale + i');
+    editor.dispatchEvent(new Event('input'));
+    document.getElementById('mission-run').click();
+  })()`);
+  await waitFor(browser, "['success','error'].includes(document.getElementById('mission-status').dataset.result)");
+  assert.equal(await browser.evaluate("document.getElementById('mission-status').dataset.result"), 'success');
+  assert.match(await browser.evaluate("document.getElementById('mission-instruments').textContent"), /Giro 1 · 1 unità.*Giro 5 · 15 unità/);
   await browser.page('Page.navigate', { url: browser.origin + browser.prefix + 'laboratorio.html' });
   await waitFor(browser, "document.readyState === 'complete' && !!document.getElementById('codice')");
   await browser.evaluate("document.querySelector('button[type=submit]').click()");

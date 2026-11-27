@@ -149,7 +149,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     await evaluate("editor.value = 'velocita = 5 * 2'; editor.dispatchEvent(new Event('input'));");
     await click('#mission-run');
     await wait("document.getElementById('mission-status').dataset.result === 'success'");
-    assert.equal(await text('mission-count'), '0 / 11');
+    assert.equal(await text('mission-count'), '0 / 17');
     await click('#mission-done');
     assert.equal(await state(), 'TUTORIAL');
     await click('#tutorial-panel [data-action=start]');
@@ -211,7 +211,7 @@ test('Percorso di orientamento, editor nativo, audio, disposizione e controlli d
     assert.match(await text('flight-status'), /Demo/);
     await evaluate('fly(245)');
     assert.equal(await state(), 'VICTORY');
-    assert.match(await text('victory-missions'), /0 su 11/);
+    assert.match(await text('victory-missions'), /0 su 17/);
     await capture('08-vittoria');
     await click('#victory-recover');
     assert.equal(await state(), 'MISSION');

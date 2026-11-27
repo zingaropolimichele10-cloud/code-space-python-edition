@@ -202,3 +202,19 @@ kbd { border: 1px solid #446281; border-radius: .25rem; padding: .1rem .3rem; co
 .mission-instruments[hidden] { display: none; }
 .mission-instruments span { background: #102c42; border-radius: .25rem; padding: .2rem .4rem; }
 .mission-instruments meter { width: 5rem; height: .85rem; }
+.mission-instruments .calc-step {
+  border-inline-start: 2px solid #61dfff;
+  animation: instrument-step .2s ease-out both;
+  animation-delay: var(--step-delay);
+}
+@keyframes instrument-step {
+  from { opacity: .25; transform: translateY(.2rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mission-instruments .calc-step { animation: none; }
+}
+.mission-instruments [data-signal="rosso"] { border-inline-start: 3px solid #ff8976; }
+.mission-instruments [data-signal="giallo"] { border-inline-start: 3px solid #ffda71; }
+.mission-instruments [data-signal="verde"] { border-inline-start: 3px solid #76e4b4; }
+#mission-hints li { white-space: pre-wrap; }

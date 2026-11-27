@@ -188,7 +188,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     assert.equal(await evaluate("document.querySelector('#mission-code').value"), 'velocita = 6');
     assert.equal(await evaluate("document.querySelectorAll('#mission-hints li').length"), 3);
     assert.match(await submit('velocita = 5 * 2', 'success'), /intero 10/);
-    assert.equal(await text('mission-count'), '1 / 11');
+    assert.equal(await text('mission-count'), '1 / 17');
     await finish();
     assert.equal(await state(), 'PLAYING');
   });
@@ -201,9 +201,9 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     await key('ArrowRight', 'keyUp');
     assert.ok((await paint())[0] - x > 45);
     for (const [title, code, count] of [
-      ['Messaggio di bordo', 'print("Aurora " + "online")', '2 / 11'],
-      ['Interruttore scudo', 'scudo = 2 < 3', '3 / 11'],
-      ['Vernice spaziale', 'colore = "b" + "lu"', '4 / 11'],
+      ['Messaggio di bordo', 'print("Aurora " + "online")', '2 / 17'],
+      ['Interruttore scudo', 'scudo = 2 < 3', '3 / 17'],
+      ['Vernice spaziale', 'colore = "b" + "lu"', '4 / 17'],
     ]) {
       await advance(220);
       assert.equal(await text('mission-title'), title);
@@ -237,7 +237,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     for (let index = 0; index < 3; index++) {
       await action('tutorial');
       await action('start');
-      assert.deepEqual((await hud()).slice(0, 3), ['3 / 3', '0', '4 / 11']);
+      assert.deepEqual((await hud()).slice(0, 3), ['3 / 3', '0', '4 / 17']);
       await action('pause');
       await evaluate("document.querySelector('#paused-panel [data-action=menu]').click()");
     }
@@ -245,7 +245,7 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
     assert.deepEqual(await evaluate("JSON.parse(localStorage.getItem('code-space:missioni-1.1:progress:v3')).completed"), [1, 2, 3, 4]);
     await browser.page('Page.reload');
     await waitForPage(browser);
-    assert.equal(await text('mission-count'), '4 / 11');
+    assert.equal(await text('mission-count'), '4 / 17');
   });
 
   await t.test('In volo: missioni 5–11, salto, recupero e strumenti di bordo', async () => {
@@ -281,8 +281,48 @@ test('Arcade e missioni nel browser sotto il percorso GitHub Pages', async t => 
       if (title === 'Scudo intelligente') await saveScreenshot(browser, 'fase2-scudo-intelligente');
       await finish();
     }
-    assert.equal(await text('mission-count'), '11 / 11');
+    assert.equal(await text('mission-count'), '11 / 17');
     assert.equal(await text('flight-message'), 'Vite: 3');
+    assert.equal(await evaluate('peakFrames'), 1);
+  });
+
+  await t.test('In volo: decisioni e cicli dalle missioni 12–17', async () => {
+    const lessons = await evaluate(`import('./js/missions/catalog.mjs').then(({ missions }) => missions.slice(11))`);
+    const labels = [/49 unità · ↗ Devia.*50 unità · ↑ Continua/, /19 unità · rosso.*20 unità · giallo.*50 unità · verde/,
+      /2 vite · 21 energia · Via libera.*2 vite · 20 energia · In attesa/, /Impulso 1.*Impulso 2.*Impulso 3/,
+      /Giro 1 · 1 unità.*Giro 5 · 15 unità/, /321Fine · 0.*Da 0 · nessun giro/];
+    for (const [index, lesson] of lessons.entries()) {
+      await advance(230);
+      assert.equal(await state(), 'MISSION');
+      assert.equal(await text('mission-title'), lesson.titolo);
+      if (lesson.id === 12) {
+        await click('#mission-skip');
+        await click('#mission-retry');
+        assert.equal(await text('mission-title'), lesson.titolo);
+        for (let i = 0; i < 2; i++) {
+          await click('#mission-hint');
+          assert.doesNotMatch(await text('mission-hints'), /rotta = "devia"/);
+        }
+        await click('#mission-hint');
+        assert.match(await text('mission-hints'), /rotta = "devia"/);
+      }
+      await source(lesson.soluzioneEsempio);
+      await evaluate("document.querySelector('#mission-code').dispatchEvent(new Event('input', { bubbles: true }))");
+      await submit(lesson.soluzioneEsempio, 'success');
+      assert.match(await text('mission-instruments'), labels[index]);
+      if (lesson.id >= 15) {
+        assert.equal(await evaluate("document.querySelectorAll('#mission-instruments .calc-step').length"),
+          lesson.scenariDiTest[0].output.length);
+      }
+      if (lesson.id === 16 && process.env.CODESPACE_SCREENSHOTS) {
+        await evaluate(`Promise.all(document.querySelector('#mission-instruments')
+          .getAnimations({ subtree: true }).map(animation => animation.finished))`);
+        await saveScreenshot(browser, 'fase3-generatore-automatico');
+      }
+      await finish();
+    }
+    assert.equal(await text('mission-count'), '17 / 17');
+    assert.equal(await text('flight-message'), '3\n2\n1');
     await advance(230);
     assert.equal(await dialog(), false);
     assert.equal(await evaluate('peakFrames'), 1);

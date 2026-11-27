@@ -12,6 +12,7 @@ export function showInstruments(panel, mission, cases) {
     const item = document.createElement('span');
     item.textContent = text;
     panel.append(item);
+    return item;
   }
 
   function meter(text, value) {
@@ -21,6 +22,17 @@ export function showInstruments(panel, mission, cases) {
     bar.value = value;
     bar.setAttribute('aria-label', text);
     panel.append(bar);
+  }
+
+  // Ogni passo corrisponde a una riga stampata e verificata nel Worker.
+  function steps(format) {
+    output.trimEnd().split('\n').forEach((line, index) => {
+      const item = label(format(line, index));
+      if (cases) {
+        item.classList.add('calc-step');
+        item.style.setProperty('--step-delay', `${index * 100}ms`);
+      }
+    });
   }
 
   switch (kind) {
@@ -46,6 +58,39 @@ export function showInstruments(panel, mission, cases) {
     case 'riserva':
       for (const sample of samples) {
         label(`${sample.input.vite} vite · ${sample.variables.scudo.value ? 'Accesa' : 'Spenta'}`);
+      }
+      break;
+    case 'radar':
+      for (const sample of samples) {
+        const devia = sample.variables.rotta.value === 'devia';
+        label(`${sample.input.distanza} unità · ${devia ? '↗ Devia' : '↑ Continua'}`);
+      }
+      break;
+    case 'allarme':
+      for (const sample of samples) {
+        const color = sample.variables.allarme.value;
+        label(`${sample.input.energia} unità · ${color}`).dataset.signal = color;
+      }
+      break;
+    case 'sicurezza':
+      for (const sample of samples) {
+        const { vite, energia } = sample.input;
+        label(`${vite} vite · ${energia} energia · ${sample.variables.scudo.value ? 'Via libera' : 'In attesa'}`);
+      }
+      break;
+    case 'impulsi':
+      steps((line, index) => `${line} ${index + 1}`);
+      break;
+    case 'generatore':
+      steps((line, index) => `Giro ${index + 1} · ${line} unità`);
+      break;
+    case 'conto':
+      steps(line => line);
+      label(`Fine · ${variables.contatore.value}`);
+      for (const sample of samples.slice(1)) {
+        const values = sample.output.trimEnd().split('\n').filter(Boolean);
+        const sequence = values.length ? values.join(' → ') : 'nessun giro';
+        label(`Da ${sample.input.contatore} · ${sequence} · Fine: ${sample.variables.contatore.value}`);
       }
       break;
   }

@@ -196,6 +196,7 @@ export function createCenter({ progress, sound = () => {} }) {
     preview.querySelector('figcaption').textContent = 'Risultato atteso';
     delete preview.dataset.paint;
     editor.readOnly = false;
+    editor.rows = Math.max(4, active.codiceIniziale.split('\n').length);
     reward.hidden = true;
     indent.disabled = false;
     updateEditor(active, practice ? undefined : drafts.get(active.id));

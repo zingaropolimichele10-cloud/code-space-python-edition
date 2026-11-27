@@ -14,7 +14,7 @@ const feedback = {
   VARIABLE_TYPE: 'Tipo errato. Controlla il valore assegnato.',
   RESOURCE_LIMIT: 'Il programma richiede troppe risorse. Riduci le dimensioni dei valori.',
   SOURCE_LIMIT: 'Il codice supera il limite di 8.192 caratteri.',
-  OUTPUT_LIMIT: 'La console ha ricevuto troppo testo. Controlla quante volte stampi.',
+  OUTPUT_LIMIT: 'La console ha ricevuto troppo testo. Controlla quante volte stampi e se il ciclo può finire.',
   DIVISION_BY_ZERO: 'Controlla il divisore: è zero.',
   INTERPRETER_TIMEOUT: 'Tempo scaduto. Controlla che il ciclo possa finire.',
   WORKER_TIMEOUT: 'Tempo scaduto. Controlla che il ciclo possa finire.',
@@ -77,7 +77,7 @@ export async function validateMission(mission, source, run, isCurrent = () => tr
       const lines = result.output.replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n');
       if (scenario.output.length ? lines.length !== scenario.output.length || lines.some((line, i) => line !== scenario.output[i])
         : result.output.length > 0) {
-        return fail(`Riga ${row}. Controlla il messaggio mostrato da print e gli spazi.`);
+        return fail(`Riga ${row}. Controlla il testo stampato da print, l’ordine delle righe e gli spazi.`);
       }
     }
     cases.push({ input: scenario.input, variables, output: result.output ?? '' });
